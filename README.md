@@ -12,18 +12,42 @@ dependencias que instalar.
 No hay nada que compilar. Cualquier servidor estático sirve:
 
 ```bash
-cd sistema-am
-python3 -m http.server 8000
-# abrir http://localhost:8000
+python3 -m http.server 5500 --bind 127.0.0.1
+# abrir http://127.0.0.1:5500
 ```
+
+> `--bind 127.0.0.1` no es opcional en algunos entornos: sin él el proceso
+> arranca pero no queda escuchando, y el navegador no muestra nada.
 
 > Abrir `index.html` con doble clic **no funciona**: el navegador bloquea el
 > `<script src>` a `config/` por política de archivos locales (`file://`).
 
-## Despliegue
+En Claude Code, `.claude/launch.json` ya trae esa configuración lista.
 
-Subir el repositorio a Vercel. Se publica solo, como sitio estático.
-`.vercelignore` ya excluye `database/` y `docs/`.
+### Qué revisar antes de subir un cambio
+
+Con el servidor arriba, que carguen sin error de consola el Home y los 7
+módulos. Los módulos deben quedarse en la pantalla de login: si alguno muestra
+datos sin haber iniciado sesión, hay un problema de RLS y no se sube.
+
+## Control de versiones y despliegue
+
+El repositorio es **privado**: contiene el esquema SQL, las funciones de
+seguridad y documentación interna de AMSA.
+
+```bash
+git add -A
+git commit -m "descripción del cambio"
+git push
+```
+
+Vercel está conectado al repositorio y publica solo en cada push.
+`.vercelignore` excluye `database/` y `docs/` del sitio publicado — siguen
+versionados en git, pero no llegan a internet.
+
+> `.gitignore` y `.vercelignore` **no son lo mismo**:
+> `.gitignore` decide qué no entra al repo; `.vercelignore`, qué está en el
+> repo pero no se publica.
 
 ## Estructura
 
