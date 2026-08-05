@@ -4,7 +4,7 @@
     {
       "name": "sistema-am",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "5500"],
+      "runtimeArgs": ["-m", "http.server", "5500", "--bind", "127.0.0.1"],
       "port": 5500
     }
   ]
