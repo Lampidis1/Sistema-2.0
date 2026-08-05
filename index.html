@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema AM · Antofagasta Minerals</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#006973 0%,#00A399 60%,#00857a 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .box{background:#fff;border-radius:20px;box-shadow:0 24px 70px rgba(0,0,0,.35);width:100%;max-width:520px;padding:44px 40px;text-align:center}
+  .logo{height:66px;margin-bottom:8px}
+  h1{font-family:'Barlow Condensed',sans-serif;font-size:1.9rem;font-weight:800;color:#006973;letter-spacing:.03em;text-transform:uppercase;line-height:1;margin-top:14px}
+  .sub{color:#5F6973;font-size:.82rem;margin:6px 0 32px;letter-spacing:.06em;text-transform:uppercase}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:520px){.cards{grid-template-columns:1fr}h1{font-size:1.6rem}}
+  .card{background:#f7fafa;border:2px solid #e4eef0;border-radius:14px;padding:26px 18px;text-decoration:none;color:inherit;transition:.16s;display:block}
+  .card:hover{transform:translateY(-4px);border-color:#F2A900;box-shadow:0 14px 34px rgba(0,0,0,.14)}
+  .ic{font-size:2.6rem;margin-bottom:10px}
+  .ct{font-family:'Barlow Condensed',sans-serif;font-size:1.35rem;font-weight:800;color:#006973;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
+  .cd{font-size:.8rem;color:#5F6973;line-height:1.45}
+  .foot{margin-top:28px;color:#98a4ac;font-size:.72rem;letter-spacing:.04em}
+  .badge{display:inline-block;background:#E4F6F5;color:#006973;border-radius:20px;padding:4px 14px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-top:18px}
+</style>
+</head>
+<body>
+  <div class="box">
+    <img src="shared/assets/logo-amsa-600.png" alt="Antofagasta Minerals" class="logo">
+    <h1>Sistema AM</h1>
+    <div class="sub">Relaciones Comunitarias</div>
+    <!-- Las tarjetas las genera config/modules.config.js. No editar acá. -->
+    <div class="cards" id="cards"></div>
+    <div class="badge">🔒 Acceso restringido</div>
+    <div class="foot">Cada plataforma solicita inicio de sesión · v2.0</div>
+  </div>
+<script src="config/modules.config.js"></script>
+<script>
+// El Home no conoce ningun modulo: solo pinta lo que declara modules.config.js.
+(function () {
+  var cont = document.getElementById('cards');
+  var mods = (window.AM_MODULES || []).filter(function (m) { return m.visibleEnHome; });
+  function esc(t) {
+    return String(t).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  cont.innerHTML = mods.map(function (m) {
+    var prox = m.estado === 'proximamente';
+    return '<a class="card" href="' + (prox ? '#' : esc(m.ruta)) + '"' +
+           (prox ? ' style="opacity:.55;cursor:default" onclick="return false"' : '') + '>' +
+           '<div class="ic">' + esc(m.icono) + '</div>' +
+           '<div class="ct">' + esc(m.nombre) + (prox ? ' · Próximamente' : '') + '</div>' +
+           '<div class="cd">' + esc(m.descripcion) + '</div>' +
+           '</a>';
+  }).join('');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MGI · Gestión Hotelería</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="../../config/supabase.config.js"></script>
+<link rel="stylesheet" href="mgi.css">
+</head>
+<body>
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <img src="../../shared/assets/logo-amsa-873.png" alt="AM">
+    <div class="gate-t">MGI · Hotelería</div>
+    <div class="gate-s">Gestión de proveedores de hospedaje</div>
+    <div class="gate-err" id="gErr"></div>
+    <div id="loginStep">
+      <input id="gEmail" type="email" placeholder="correo@empresa.cl" autocomplete="username">
+      <input id="gPass" type="password" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrar()">
+      <button onclick="entrar()" id="gBtn">Ingresar</button>
+      <div style="margin-top:13px;font-size:.8rem;color:#5F6973">¿No tienes cuenta? <a onclick="verReg()" style="color:#5b4fcf;font-weight:700;cursor:pointer">Solicitar acceso</a></div>
+    </div>
+    <div id="perfStep" style="display:none">
+      <div style="font-size:.82rem;color:#5F6973;margin-bottom:12px">Completa tu nombre para continuar</div>
+      <input id="gNombre" placeholder="Nombre"><input id="gApellido" placeholder="Apellido">
+      <button onclick="guardarPerfilPub()">Guardar y entrar</button>
+    </div>
+    <div id="regStep" style="display:none">
+      <div style="font-size:.82rem;color:#5F6973;margin-bottom:12px">Solicita acceso MGI. Un administrador debe aprobarte.</div>
+      <input id="rNombre" placeholder="Nombre"><input id="rApellido" placeholder="Apellido">
+      <input id="rEmail" type="email" placeholder="correo@empresa.cl"><input id="rPass" type="password" placeholder="Contraseña (mín. 6)">
+      <button onclick="registrarse()">Solicitar acceso</button>
+      <div style="margin-top:12px;font-size:.8rem"><a onclick="verLogin()" style="color:#5b4fcf;font-weight:700;cursor:pointer">← Volver</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="top">
+  <img src="../../shared/assets/logo-amsa-873.png" alt="AM">
+  <div><div class="top-t">MGI · Habitabilidad</div><div class="top-sub">Hotelería · Lavanderías · Alimentación</div></div>
+  <div class="top-user"><span id="uName"></span><button class="btn-out" onclick="salir()">Salir</button></div>
+</div>
+<div class="wrap">
+  <div id="mgiSecciones" style="display:flex;gap:0;background:#fff;border-bottom:2px solid var(--border);border-radius:12px 12px 0 0;margin-bottom:14px;overflow-x:auto;box-shadow:0 2px 6px rgba(0,0,0,.05)">
+    <button class="mgi-sec-btn" data-sec="hoteleria" onclick="setSeccionMGI('hoteleria',this)" style="flex:1;min-width:120px;padding:13px 16px;border:none;background:none;color:#5b4fcf;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;border-bottom:3px solid #5b4fcf">🏨 Hotelería</button>
+    <button class="mgi-sec-btn" data-sec="lavanderias" onclick="setSeccionMGI('lavanderias',this)" style="flex:1;min-width:120px;padding:13px 16px;border:none;background:none;color:#8a90a0;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;border-bottom:3px solid transparent">🧺 Lavanderías</button>
+    <button class="mgi-sec-btn" data-sec="alimentacion" onclick="setSeccionMGI('alimentacion',this)" style="flex:1;min-width:120px;padding:13px 16px;border:none;background:none;color:#8a90a0;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;border-bottom:3px solid transparent">🍽 Alimentación</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+    <div id="mgiEstKPI" style="flex:1;min-width:220px"></div>
+    <button onclick="abrirGestorCriterios()" style="background:#5b4fcf;color:#fff;border:none;border-radius:9px;padding:10px 16px;font-weight:700;cursor:pointer;white-space:nowrap">📏 Gestionar criterios de estandarización</button>
+  </div>
+  <div class="bar">
+    <input class="search" id="q" placeholder="🔍 Buscar hotelería..." oninput="render()">
+    <div class="view-toggle">
+      <button class="view-btn active" id="bCards" onclick="setView('cards')">▦ Fichas</button>
+      <button class="view-btn" id="bList" onclick="setView('list')">☰ Lista</button>
+      <button class="view-btn" id="bAgenda" onclick="setView('agenda')">📞 Agenda</button>
+    </div>
+    <select class="sel" id="orden" onchange="render()"><option value="az">A → Z</option><option value="za">Z → A</option><option value="loc">Localidad</option></select>
+    <button class="btn-p" style="padding:9px 16px" onclick="nuevoHotel()">➕ Nuevo hotel</button>
+  </div>
+  <div id="resumenMGI"></div>
+  <div class="count" id="count"></div>
+  <div id="cont"><div class="loading">Inicia sesión…</div></div>
+</div>
+
+<!-- MODAL EDICIÓN -->
+<div class="modal" id="editModal">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div id="editModalTitle" style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:#4338ca;text-transform:uppercase">🏨 Editar proveedor</div>
+      <button onclick="cerrarEdit()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <div class="sec-t">Datos generales</div>
+    <div class="grid2">
+      <div class="fld"><label>Razón social</label><input id="eRazon"></div>
+      <div class="fld"><label>Nombre fantasía</label><input id="eFantasia"></div>
+      <div class="fld"><label>RUT</label><input id="eRut"></div>
+      <div class="fld"><label>Localidad</label><input id="eLocalidad"></div>
+      <div class="fld"><label>Dirección</label><input id="eDireccion"></div>
+      <div class="fld"><label>Correo empresa</label><input id="eCorreo"></div>
+      <div class="fld"><label>Teléfono empresa</label><input id="eFono"></div>
+    </div>
+    <div class="fld"><label>Descripción</label><textarea id="eDesc" rows="2"></textarea></div>
+    <div class="sec-t">Contacto principal</div>
+    <div class="grid2">
+      <div class="fld"><label>Nombre</label><input id="ecNombre"></div>
+      <div class="fld"><label>Cargo</label><input id="ecCargo"></div>
+      <div class="fld"><label>Teléfono</label><input id="ecFono"></div>
+      <div class="fld"><label>Correo</label><input id="ecCorreo"></div>
+    </div>
+    <div class="sec-t">Habitaciones</div>
+    <div class="grid2">
+      <div class="fld"><label>Habitaciones totales</label><input id="eHabTotal" type="number" min="0" oninput="renderContratos()"></div>
+      <div class="fld"><label>Hab. simples</label><input id="eHabSimples" type="number" min="0"></div>
+      <div class="fld"><label>🚿 Simples con baño privado</label><input id="eHabSimplesBanio" type="number" min="0" placeholder="0"></div>
+      <div class="fld"><label>Hab. dobles</label><input id="eHabDobles" type="number" min="0"></div>
+      <div class="fld"><label>🚿 Dobles con baño privado</label><input id="eHabDoblesBanio" type="number" min="0" placeholder="0"></div>
+    </div>
+    <div class="sec-t">Contratos / Ocupación <span id="eCamasResumen" style="font-weight:600;color:var(--green);text-transform:none;font-size:.8rem;float:right"></span></div>
+    <div id="eContratos" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div style="background:#f7f6fd;border-radius:9px;padding:11px;margin-top:8px">
+      <div style="font-size:.74rem;font-weight:700;color:#5b4fcf;margin-bottom:7px">➕ Agregar contrato</div>
+      <div class="grid2">
+        <div class="fld"><label>🛏 Hab. simples (1 cama)</label><input id="ctSimples" type="number" min="0" placeholder="0"></div>
+        <div class="fld"><label>🛏🛏 Hab. dobles (2 camas)</label><input id="ctDobles" type="number" min="0" placeholder="0"></div>
+        <div class="fld"><label><input type="checkbox" id="ctEsAmsa" onchange="ctAmsaToggle()" style="width:auto;margin-right:5px">Contrato con minera AMSA</label>
+          <select id="ctAmsa" style="display:none"><option value="Centinela">Centinela</option><option value="Antucoya">Antucoya</option><option value="Zaldívar">Zaldívar</option><option value="Los Pelambres">Los Pelambres</option></select></div>
+        <div class="fld" id="ctCliBox"><label>Cliente / empresa</label><input id="ctCli" placeholder="Ej: Empresa contratista"></div>
+        <div class="fld"><label>RUT de la empresa</label><input id="ctRut" placeholder="76.123.456-7"></div>
+        <div class="fld"><label>Desde</label><input id="ctDesde" type="date"></div>
+        <div class="fld"><label>Hasta</label><input id="ctHasta" type="date"></div>
+      </div>
+      <button class="mini" style="margin-top:6px;background:#5b4fcf;color:#fff;border-color:#5b4fcf" onclick="addContrato()">＋ Agregar a la lista</button>
+    </div>
+    <div class="sec-t">Servicios</div>
+    <div id="eServs" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    <button type="button" class="mini" onclick="toggleServPanelMGI()" style="margin:6px 0;background:#f3f1fb;border-color:#5b4fcf;color:#5b4fcf">＋ Seleccionar servicios</button>
+    <div id="eServPanel" style="display:none;background:#f7f6fd;border-radius:9px;padding:12px;margin-bottom:8px">
+      <div id="eServGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 12px"></div>
+    </div>
+    <div class="chip-add"><input id="eServInput" placeholder="Otro servicio (ej: WiFi, Desayuno)" style="flex:1;border:1.5px solid var(--border);border-radius:7px;padding:7px 10px;font-size:.85rem"><button class="mini" onclick="addServ()">＋</button></div>
+    <div class="sec-t">👷 Trabajadores <span id="eTrabResumen" style="font-weight:600;color:var(--text-muted);text-transform:none;font-size:.8rem;float:right"></span></div>
+    <div id="eTrabList"><div style="font-size:.78rem;color:var(--text-muted)">—</div></div>
+    <div style="background:#f7f6fd;border-radius:9px;padding:11px;margin-top:8px">
+      <div class="grid2">
+        <div class="fld"><label>Nombre</label><input id="trNombre" placeholder="Nombre y apellido"></div>
+        <div class="fld"><label>Sexo</label><select id="trSexo"><option value="Mujer">Mujer</option><option value="Hombre">Hombre</option></select></div>
+      </div>
+      <div style="font-size:.72rem;font-weight:700;color:#5b4fcf;margin:6px 0">Funciones (varias)</div>
+      <div id="trFuncsChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
+      <div style="display:flex;gap:6px"><input id="trFuncCustom" placeholder="Otra función..." style="flex:1;border:1.5px solid var(--border);border-radius:7px;padding:6px 9px;font-size:.82rem"><button class="mini" onclick="addTrFuncCustom()">＋</button></div>
+      <button class="mini" style="margin-top:8px;background:#5b4fcf;color:#fff;border-color:#5b4fcf" onclick="addTrabajadorMGI()">＋ Agregar trabajador</button>
+    </div>
+    <div class="sec-t">Visitas <button class="mini" style="float:right;background:#5b4fcf;color:#fff;border-color:#5b4fcf" onclick="nuevaVisitaMGI()">＋ Nueva visita</button></div>
+    <div id="eVisitas"><div style="font-size:.78rem;color:var(--text-muted)">—</div></div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn-s" style="flex:1" onclick="cerrarEdit()">Cancelar</button>
+      <button class="btn-p" style="flex:2" onclick="guardarEdit()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<script src="mgi.js"></script>
+
+<!-- MODAL NUEVA VISITA MGI -->
+<div class="modal" id="vModal">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:#4338ca;text-transform:uppercase">🗓️ Nueva visita</div>
+      <button onclick="cerrarVModal()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:12px">Responsable: <b id="vResp"></b></div>
+    <div class="grid2">
+      <div class="fld"><label>Fecha</label><input id="vFecha" type="date"></div>
+      <div class="fld"><label>Título</label><input id="vTitulo" placeholder="Motivo de la visita"></div>
+    </div>
+    <div class="sec-t">👥 Participantes</div>
+    <div id="vParts"></div>
+    <div class="grid2" style="margin-top:8px">
+      <div class="fld"><label>Nombre *</label><input id="vpNombre"></div>
+      <div class="fld"><label>Empresa *</label><input id="vpEmpresa"></div>
+      <div class="fld"><label>Correo</label><input id="vpCorreo"></div>
+      <div class="fld"><label>Teléfono</label><input id="vpTel"></div>
+    </div>
+    <button class="mini" style="margin-top:6px;background:#5b4fcf;color:#fff;border-color:#5b4fcf" onclick="addVPart()">＋ Agregar participante</button>
+    <div class="sec-t">📝 De qué se trató la reunión</div>
+    <textarea id="vResumen" rows="4" placeholder="Redacta libremente los temas tratados, acuerdos generales, contexto y observaciones de la reunión..." style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.88rem;font-family:inherit;line-height:1.5;resize:vertical"></textarea>
+    <div class="sec-t">📷 Fotos de la visita <span style="font-size:.72rem;color:var(--text-muted);font-weight:400">(opcional, máx. 3)</span></div>
+    <div id="vFotoUploadArea" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+      <label id="vFotoLabel0" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;width:110px;height:84px;border:2px dashed #c9c3f5;border-radius:8px;background:#f7f6fd;color:#5b4fcf;font-size:.78rem;gap:4px;position:relative" title="Foto 1">
+        <span id="vFotoThumb0" style="display:none;position:absolute;inset:0;border-radius:6px;overflow:hidden"><img id="vFotoImg0" style="width:100%;height:100%;object-fit:cover"/></span>
+        <span id="vFotoPlaceholder0" style="display:flex;flex-direction:column;align-items:center;gap:3px">📷<span>Foto 1</span></span>
+        <input type="file" accept="image/*" style="display:none" onchange="agregarVFoto(this,0)"/>
+      </label>
+      <label id="vFotoLabel1" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;width:110px;height:84px;border:2px dashed #c9c3f5;border-radius:8px;background:#f7f6fd;color:#5b4fcf;font-size:.78rem;gap:4px;position:relative" title="Foto 2">
+        <span id="vFotoThumb1" style="display:none;position:absolute;inset:0;border-radius:6px;overflow:hidden"><img id="vFotoImg1" style="width:100%;height:100%;object-fit:cover"/></span>
+        <span id="vFotoPlaceholder1" style="display:flex;flex-direction:column;align-items:center;gap:3px">📷<span>Foto 2</span></span>
+        <input type="file" accept="image/*" style="display:none" onchange="agregarVFoto(this,1)"/>
+      </label>
+      <label id="vFotoLabel2" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;width:110px;height:84px;border:2px dashed #c9c3f5;border-radius:8px;background:#f7f6fd;color:#5b4fcf;font-size:.78rem;gap:4px;position:relative" title="Foto 3">
+        <span id="vFotoThumb2" style="display:none;position:absolute;inset:0;border-radius:6px;overflow:hidden"><img id="vFotoImg2" style="width:100%;height:100%;object-fit:cover"/></span>
+        <span id="vFotoPlaceholder2" style="display:flex;flex-direction:column;align-items:center;gap:3px">📷<span>Foto 3</span></span>
+        <input type="file" accept="image/*" style="display:none" onchange="agregarVFoto(this,2)"/>
+      </label>
+    </div>
+    <button type="button" class="mini" style="margin-top:6px" onclick="limpiarVFotos()">🗑 Limpiar fotos</button>
+    <div class="sec-t">✅ Compromisos</div>
+    <div id="vComps"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input id="vcDesc" placeholder="Descripción del compromiso" style="flex:1;border:1.5px solid var(--border);border-radius:7px;padding:8px 10px;font-size:.86rem">
+      <button class="mini" style="background:#5b4fcf;color:#fff;border-color:#5b4fcf" onclick="addVComp()">＋ Compromiso</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn-s" style="flex:1" onclick="cerrarVModal()">Cancelar</button>
+      <button class="btn-p" style="flex:2;background:linear-gradient(135deg,#F2A900,#d89400)" onclick="finalizarVisitaMGI()">Finalizar visita →</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL MINUTA MGI -->
+<div class="modal" id="vMinutaModal" style="z-index:60">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:#4338ca">Vista previa de la minuta</div>
+      <button onclick="cerrarVMinuta()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <div id="vMinutaPrev" style="border:1px solid var(--border);border-radius:10px;padding:18px;background:#fff"></div>
+    <div style="margin-top:14px"><div style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">✍ Firmas de los asistentes</div><div id="vFirmas"></div></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn-s" style="flex:1" onclick="cerrarVMinuta()">Volver</button>
+      <button class="btn-p" style="flex:2" onclick="emitirMinutaMGI()">📄 Generar PDF y guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RESPONSABLE MGI (selector asistentes + calendario) -->
+<div id="respModalMGI" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10001;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:420px;width:100%;padding:24px">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:800;color:#5b4fcf;text-transform:uppercase;margin-bottom:14px">Agregar responsable</div>
+    <div class="fld" style="margin-bottom:10px"><label>Responsable (desde asistentes)</label>
+      <select id="respAsistenteMGI" onchange="respAsistenteChangeMGI()" style="width:100%;border:1.5px solid var(--border);border-radius:7px;padding:9px 10px;font-size:.88rem"></select></div>
+    <div id="respOtroBoxMGI" style="display:none;margin-bottom:10px"><div class="fld"><label>Nombre (otro)</label><input id="respOtroNombreMGI" placeholder="Nombre del responsable"></div></div>
+    <div class="fld" style="margin-bottom:10px"><label>Área</label><input id="respAreaMGI" placeholder="Área / cargo"></div>
+    <div class="fld" style="margin-bottom:10px"><label>Fecha límite</label><input id="respFechaMGI" type="date"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button onclick="cerrarRespMGI()" style="flex:1;padding:10px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
+      <button onclick="guardarRespMGI()" style="flex:2;padding:10px;background:linear-gradient(135deg,#5b4fcf,#4338ca);color:#fff;border:none;border-radius:9px;font-weight:800;cursor:pointer">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FICHA MGI v13 -->
+<div class="fmodal-ov" id="fmodalOv" onclick="if(event.target===this)cerrarFichaMGI()">
+  <div class="fmodal">
+    <div class="fmodal-head">
+      <button class="fmodal-close" onclick="cerrarFichaMGI()">✕</button>
+      <div class="fm-loc" id="fmLoc"></div>
+      <div class="fm-nom" id="fmNom"></div>
+    </div>
+    <div class="fmodal-body" id="fmBody"></div>
+    <div class="fmodal-foot">
+      <button class="fm-pdf" id="fmPdfBtn">📄 Exportar Ficha PDF</button>
+      <button class="fm-pdf" id="fmEstBtn" style="background:#5b4fcf">📏 Estandarización</button>
+      <button class="fm-cerrar" onclick="cerrarFichaMGI()">Cerrar</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL GESTOR DE CRITERIOS (crear/editar/asignar por rubro con hitos) -->
+<div id="gestorModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:900px;width:100%;max-height:92vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:800;color:#4338ca;text-transform:uppercase">📏 Criterios de estandarización</div>
+      <button onclick="cerrarGestorCriterios()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <div id="gestorRubroTabs" style="display:flex;gap:8px;margin-bottom:14px"></div>
+    <div id="gestorBody"></div>
+  </div>
+</div>
+<!-- MODAL ESTANDARIZACIÓN -->
+<div id="estModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:680px;width:100%;max-height:92vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:#4338ca;text-transform:uppercase">📏 Estandarización de habitabilidad</div>
+      <button onclick="cerrarEstandarizacionMGI()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <div id="estProvNombre" style="font-size:.85rem;color:var(--text-muted);margin-bottom:10px"></div>
+    <div id="estResumen" style="margin-bottom:14px"></div>
+    <div id="estLista"></div>
+    <div style="border-top:1px dashed var(--border);margin-top:14px;padding-top:12px;font-size:.78rem;color:var(--text-muted)">
+      💡 Para crear o modificar criterios e hitos usa el botón <b style="color:#5b4fcf">📏 Gestionar criterios de estandarización</b> en la parte superior.
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Nada de esto debe quedar publicado en internet.
+
+# Esquema de base de datos, funciones de seguridad y politicas RLS
+database/
+
+# Documentacion interna
+docs/
+CLAUDE.md
+README.md
+
+# Basura del sistema
+.DS_Store

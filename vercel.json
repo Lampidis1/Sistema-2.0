@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    { "source": "/proveedores.html",   "destination": "/modules/proveedores/",   "permanent": false },
+    { "source": "/empleabilidad.html", "destination": "/modules/empleabilidad/", "permanent": false },
+    { "source": "/movil.html",         "destination": "/modules/movil/",         "permanent": false },
+    { "source": "/mgi.html",           "destination": "/modules/mgi/",           "permanent": false },
+    { "source": "/centinela.html",     "destination": "/modules/centinela/",     "permanent": false },
+    { "source": "/antucoya.html",      "destination": "/modules/antucoya/",      "permanent": false },
+    { "source": "/zaldivar.html",      "destination": "/modules/zaldivar/",      "permanent": false }
+  ]
+}

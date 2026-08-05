@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Proveedores Comunitarios AM · V100 · Región de Antofagasta</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="../../config/supabase.config.js" onerror="console.log('config.js opcional no encontrado')"></script>
+
+<link rel="stylesheet" href="proveedores.css">
+</head>
+<body>
+
+<!-- ░░ LOGIN GATE ░░ -->
+<div id="loginGate" style="position:fixed;inset:0;z-index:10000;background:linear-gradient(135deg,#006973 0%,#00A399 100%);display:flex;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.35);width:100%;max-width:400px;padding:34px 32px;text-align:center">
+    <img src="../../shared/assets/logo-amsa-873.png" alt="Antofagasta Minerals" style="height:46px;margin-bottom:8px">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:800;color:#006973;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px">Proveedores Comunitarios</div>
+    <div style="font-size:.74rem;color:#5F6973;letter-spacing:.08em;text-transform:uppercase;margin-bottom:24px">Acceso restringido · v2.0</div>
+    <div id="loginError" style="display:none;background:#fdecea;color:#c0392b;border:1px solid #f5b7b1;border-radius:8px;padding:8px 12px;font-size:.8rem;margin-bottom:14px"></div>
+    <div id="loginStep">
+    <div style="text-align:left;margin-bottom:12px">
+      <label style="font-size:.7rem;font-weight:700;color:#5F6973;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px">Correo</label>
+      <input id="loginEmail" type="email" autocomplete="username" placeholder="usuario@aminerals.cl" style="width:100%;border:1.5px solid #D7DEE4;border-radius:8px;padding:10px 12px;font-size:.9rem;outline:none;box-sizing:border-box" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
+    </div>
+    <div style="text-align:left;margin-bottom:20px">
+      <label style="font-size:.7rem;font-weight:700;color:#5F6973;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px">Contraseña</label>
+      <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••" style="width:100%;border:1.5px solid #D7DEE4;border-radius:8px;padding:10px 12px;font-size:.9rem;outline:none;box-sizing:border-box" onkeydown="if(event.key==='Enter')iniciarSesion()">
+    </div>
+    <button id="loginBtn" onclick="iniciarSesion()" style="width:100%;padding:12px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:opacity .15s">Ingresar</button>
+    <div style="margin-top:14px;font-size:.8rem;color:#5F6973">¿No tienes cuenta? <a onclick="mostrarRegistro()" style="color:#00A399;font-weight:700;cursor:pointer">Solicitar acceso</a></div>
+  </div>
+  <div id="registroStep" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <input id="regNombre" placeholder="Nombre" style="border:1.5px solid #D7DEE4;border-radius:8px;padding:10px 12px;font-size:.9rem;outline:none">
+      <input id="regApellido" placeholder="Apellido" style="border:1.5px solid #D7DEE4;border-radius:8px;padding:10px 12px;font-size:.9rem;outline:none">
+    </div>
+    <input id="regEmail" type="email" placeholder="correo@aminerals.cl" style="width:100%;border:1.5px solid #D7DEE4;border-radius:8px;padding:10px 12px;font-size:.9rem;outline:none;margin-bottom:10px;box-sizing:border-box">
+    <input id="regPass" type="password" placeholder="Contraseña (mín. 6)" style="width:100%;border:1.5px solid #D7DEE4;border-radius:8px;padding:10px 12px;font-size:.9rem;outline:none;margin-bottom:16px;box-sizing:border-box">
+    <button id="regBtn" onclick="registrarseAdmin()" style="width:100%;padding:12px;background:linear-gradient(135deg,#F2A900,#d89400);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;cursor:pointer">Solicitar acceso</button>
+    <div style="margin-top:14px;font-size:.8rem;color:#5F6973"><a onclick="mostrarLoginStep()" style="color:#00A399;font-weight:700;cursor:pointer">← Volver a iniciar sesión</a></div>
+  </div>
+  <div id="loginHint" style="font-size:.72rem;color:#9aa3af;margin-top:16px;line-height:1.5">El acceso a la plataforma principal es solo para correos @aminerals.cl y requiere aprobación del administrador.</div>
+  </div>
+</div>
+
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="header-logo">
+      <img src="../../shared/assets/logo-amsa-873.png" alt="Antofagasta Minerals" style="height:38px">
+    </div>
+    <div class="header-divider"></div>
+    <div class="header-titles">
+      <div class="header-title">Proveedores Comunitarios AM · <span style="color:var(--primary-mid)">V100</span></div>
+      <div class="header-subtitle">Directorio Regional — Antofagasta Minerals</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="edited-badge" id="editedBadge">✏ Con ediciones</span>
+    <button class="btn-sheet-export" id="btnExportSheet" onclick="actualizarSheet()" disabled style="font-size:.78rem;padding:7px 13px;margin-right:6px">☁️ Guardar en nube</button>
+    <button class="btn-download-header" id="btnToggleExcel" onclick="toggleUploadSection()" title="Mostrar/ocultar carga desde Excel">📂 Excel</button>
+    <button class="btn-download-header" id="btnDownload" onclick="downloadConsolidado()" disabled>
+      ⬇ Solo Excel
+    </button>
+    <button class="mobile-menu-btn" onclick="toggleMobileNav()" aria-label="Menú">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ═══ NAV TABS v6 ═══════════════════════════════════════════════════════ -->
+<nav class="nav-tabs-main" id="navMain">
+  <button class="nav-tab active" onclick="switchPage('directorio',this)" data-page="directorio">
+    &#128269; Directorio
+  </button>
+  <button class="nav-tab" onclick="switchPage('dashboard',this)" data-page="dashboard">
+    &#128202; Dashboard
+  </button>
+  <button class="nav-tab" onclick="switchPage('hoteleria',this)" data-page="hoteleria">
+    &#127968; Hoteler&#237;a <span class="tab-badge" id="badgeHabs">&#8212;</span>
+  </button>
+  <button class="nav-tab" onclick="switchPage('acuerdos_dash',this)" data-page="acuerdos_dash">
+    &#128196; Contratos <span class="tab-badge" id="badgeAcuerdos">&#8212;</span>
+  </button>
+  <button class="nav-tab" onclick="switchPage('licitaciones_dir',this)" data-page="licitaciones_dir">
+    &#128220; Licitaciones <span class="tab-badge" id="badgeLicitaciones">&#8212;</span>
+  </button>
+  <button class="nav-tab" onclick="switchPage('compromisos',this)" data-page="compromisos">
+    &#9202; Compromisos <span class="tab-badge" id="badgeCompromisos" style="display:none">0</span>
+  </button>
+  <button class="nav-tab" onclick="switchPage('programas_dash',this)" data-page="programas_dash">
+    &#127775; Programas <span class="tab-badge" id="badgeProgramas">&#8212;</span>
+  </button>
+  <button class="nav-tab" onclick="switchPage('estandarizacion',this)" data-page="estandarizacion">
+    &#128207; Estandarizaci&#243;n
+  </button>
+  <button class="nav-tab" onclick="switchPage('kanban',this)" data-page="kanban">
+    &#128203; Kanban
+  </button>
+  <button class="nav-tab" onclick="switchPage('usuarios',this)" data-page="usuarios" id="navUsuarios" style="display:none">
+    &#128100; Usuarios <span class="tab-badge" id="badgeUsuarios" style="display:none">0</span>
+  </button>
+</nav>
+<!-- PAGE DIRECTORIO -->
+<div class="page active" id="page-directorio">
+
+<!-- SUPABASE SYNC BAR -->
+<div class="gsync-bar" id="gsyncBar">
+  <div class="gsync-status">
+    <div class="gsync-dot" id="gsyncDot"></div>
+    <span id="gsyncLabel">Sin conectar</span>
+  </div>
+  <span style="color:var(--border)">|</span>
+  <span id="userBadge" style="display:none;align-items:center;gap:6px;font-size:.75rem;color:var(--primary);font-weight:700">
+    <span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>
+    <span id="userEmail"></span>
+  </span>
+  <button class="btn-gsync secondary" onclick="syncAhora()" id="btnSyncNow" style="display:none">&#8635; Sync</button>
+  <button class="btn-gsync secondary" onclick="cerrarSesion()" id="btnLogout" style="display:none;border-color:#D0311B;color:#D0311B">&#128274; Cerrar sesión</button>
+  <button onclick="resetearDatos()" style="background:none;border:1.5px solid #D0311B;border-radius:5px;padding:3px 10px;font-size:.72rem;cursor:pointer;color:#D0311B;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.04em" title="Limpiar datos locales del navegador">🗑 Resetear local</button>
+  <span id="gsyncLastSync" style="color:var(--text-muted);font-size:.72rem"></span>
+</div>
+
+<!-- UPLOAD ZONE (comprimida: se abre con el botón 📂 Excel del header) -->
+<div class="upload-section" id="uploadSection" style="display:none">
+  <div class="upload-label">📂 Cargar datos</div>
+  <button class="btn-sheet-load" id="btnSheetLoad" onclick="cargarDesdeNube()" title="Carga los proveedores guardados en Supabase">
+    &#9729;&#65039; Cargar desde la nube
+  </button>
+  <div id="sheetSourceBadge" style="display:none">
+    <span class="sheet-source-badge">&#128994; Datos cargados desde Supabase</span>
+    <button onclick="limpiarFuenteSheet()" style="background:none;border:none;font-size:.75rem;color:var(--text-muted);cursor:pointer;margin-left:4px">&#10005; Cambiar a Excel</button>
+  </div>
+  <div class="upload-divider">o usa Excel</div>
+  <div class="upload-drop" id="dropArea">
+    <input type="file" id="fileInput" multiple accept=".xlsx,.xls" onchange="handleFiles(this.files)">
+    <div class="upload-icon">📊</div>
+    <div>
+      <div class="upload-text-main">Arrastra archivos Excel aquí</div>
+      <div class="upload-text-sub">Usa la plantilla descargable · Formato .xlsx</div>
+    </div>
+  </div>
+  <div id="fileChips" class="file-chips" style="display:none"></div>
+  <button class="btn-load" id="btnLoad" onclick="processFiles()" disabled>⚡ Cargar Excel</button>
+  <button class="btn-sheet-load" onclick="descargarPlantilla()" style="background:linear-gradient(135deg,#5F6973,#7a858f)" title="Descarga la plantilla Excel vacía">&#11015; Plantilla</button>
+  <button class="btn-sheet-export" id="btnUploadSupa" onclick="cargaMasivaSupabase()" title="Sube los proveedores cargados a Supabase">&#9729;&#65039; Carga masiva a Supabase</button>
+  <div id="uploadStatus" class="upload-status" style="display:none"></div>
+</div>
+
+<!-- HERO -->
+<div class="hero" id="heroStrip" style="display:none">
+  <h1>Directorio de Proveedores</h1>
+  <p>Registro consolidado y editable de proveedores comunitarios de la Región de Antofagasta.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="hs-num" id="statTotal">0</div><div class="hs-label">Proveedores</div></div>
+    <div class="hero-stat"><div class="hs-num" id="statFactura">0</div><div class="hs-label">Autorizados</div></div>
+    <div class="hero-stat"><div class="hs-num" id="statRubros">0</div><div class="hs-label">Rubros</div></div>
+    <div class="hero-stat"><div class="hs-num" id="statLocalidades">0</div><div class="hs-label">Localidades</div></div>
+    <div class="hero-stat"><div class="hs-num" id="statEdited">0</div><div class="hs-label">Con ediciones</div></div>
+  </div>
+</div>
+
+<!-- NO DATA -->
+<div id="noDataScreen" class="no-data">
+  <div class="nd-icon">📂</div>
+  <h2>Carga los archivos Excel para comenzar</h2>
+  <p>Cada localidad tiene su propio Excel. El buscador los combina y permite editarlos aquí.</p>
+  <div class="nd-steps">
+    <div class="nd-step"><div class="nd-num">1</div><p>Descarga la <strong>plantilla</strong> y llena los datos de tu localidad</p></div>
+    <div class="nd-step"><div class="nd-num">2</div><p>Arrastra los <strong>.xlsx</strong> de todas las localidades</p></div>
+    <div class="nd-step"><div class="nd-num">3</div><p>Edita registros y descarga la <strong>base consolidada</strong></p></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="mainApp" style="display:none">
+  <div class="main">
+    <aside class="sidebar">
+      <div class="sb-section">
+        <div class="sb-title">Búsqueda</div>
+        <div class="search-box">
+          <span class="si">🔍</span>
+          <input type="text" id="searchInput" placeholder="Nombre, servicio, dirección…" oninput="var _m=document.getElementById('searchInputMobile');if(_m)_m.value=this.value;applyFilters()">
+        </div>
+      </div>
+      <div class="sb-section"><div class="sb-title">Localidad</div><div id="localidadFilters"></div></div>
+      <div class="sb-section"><div class="sb-title">Facturación</div><div id="facturacionFilters"></div></div>
+      <div class="sb-section"><div class="sb-title">Rubro</div><div id="rubroFilters"></div></div>
+      <div class="sb-section"><div class="sb-title">Agrupación Gremial</div><div id="agrupFilters"></div></div>
+      <div class="sb-section"><div class="sb-title">Servicios con Antofagasta Minerals</div><div id="amFilters"></div></div>
+      <div class="sb-section"><div class="sb-title">⛏ Asignado a faena minera</div><div id="faenaMineraFilters"></div></div>
+      <div class="sb-section"><div class="sb-title">📐 Rango de trabajos</div><div id="rangoFilters"></div></div>
+      <div class="sb-section">
+        <div class="sb-title">Edición</div>
+        <div class="filter-chip" id="chipEdited" onclick="toggleEditedFilter()">✏ Solo editados <span class="chip-count" id="editedCount">0</span></div>
+      </div>
+      <button class="btn-clear" onclick="clearFilters()">✕ Limpiar filtros</button>
+    </aside>
+
+    <div class="content">
+      <div class="tabs">
+        <div class="tab active" onclick="showTab('directorio',this)">📋 Directorio</div>
+        <div class="tab" onclick="showTab('estadisticas',this)">📊 Estadísticas</div>
+      </div>
+
+      <!-- DIRECTORIO -->
+      <div id="tab-directorio">
+        <div class="mobile-search-bar">
+          <span class="msb-ico">🔍</span>
+          <input type="text" id="searchInputMobile" placeholder="Buscar proveedor por nombre…" oninput="var s=document.getElementById('searchInput');if(s){s.value=this.value;}applyFilters()">
+        </div>
+        <div class="results-bar">
+          <div class="results-count">Mostrando <strong id="resultsCount">0</strong> proveedores</div>
+          <div id="selDirBar" style="display:none;align-items:center;gap:10px;background:var(--dc-teal-lt,#E4F6F5);border:1px solid rgba(0,163,153,.3);border-radius:8px;padding:5px 12px">
+            <span style="font-size:.8rem;font-weight:700;color:var(--dc-teal-dk,#006973)"><strong id="selDirCount">0</strong> seleccionados</span>
+            <button onclick="descargarSeleccionDir()" style="background:var(--dc-teal-dk,#006973);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:.78rem;font-weight:700;cursor:pointer">⬇ Descargar selección</button>
+            <button onclick="limpiarSelDir()" style="background:none;border:none;color:var(--dc-gray,#5F6973);cursor:pointer;font-size:.78rem">✕ Limpiar</button>
+          </div>
+          <div class="view-toggle">
+            <button class="view-btn active" id="btnCards" onclick="setView('cards')">▦ Tarjetas</button>
+            <button class="view-btn" id="btnTable" onclick="setView('table')">☰ Tabla</button>
+            <button class="view-btn" id="btnAgenda" onclick="setView('agenda')">📞 Agenda</button>
+          </div>
+          <select id="ordenDir" onchange="applyFilters()" style="border:1.5px solid var(--border);border-radius:7px;padding:7px 10px;font-size:.82rem;cursor:pointer" title="Ordenar">
+            <option value="az">Nombre A → Z</option>
+            <option value="za">Nombre Z → A</option>
+            <option value="loc">Por localidad</option>
+          </select>
+          <button class="rbar-extra" onclick="abrirRutDuplicados()" style="border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;font-size:.82rem;cursor:pointer;background:#fff;color:var(--primary)" title="Buscar empresas con el mismo RUT">🔎 RUT duplicados</button>
+          <button class="btn-add-prov" onclick="openNuevoProveedor()" title="Agregar un proveedor nuevo">➕ Nuevo proveedor</button>
+        </div>
+        <div id="viewCards" class="cards-grid"></div>
+        <div id="viewTable" style="display:none">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Nombre / Razón Social</th><th>Localidad</th><th>Contacto</th><th>Rubros</th><th>Facturar</th><th>Estado</th></tr></thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="viewAgenda" style="display:none"></div>
+        <div id="emptyResults" class="empty-results" style="display:none"><p>🔍 Sin resultados con los filtros aplicados.</p></div>
+      </div>
+
+      <!-- ESTADÍSTICAS -->
+      <div id="tab-estadisticas" style="display:none">
+        <div class="kpi-grid" id="kpiGrid"></div>
+        <div class="stats-grid">
+          <div class="stat-card" style="grid-column:span 2">
+            <div class="stat-card-title">Distribución por Rubro</div>
+            <div style="height:320px"><canvas id="chartRubros"></canvas></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">Capacidad de Facturación</div>
+            <div style="height:250px"><canvas id="chartFactura"></canvas></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">Categoría Tributaria SII</div>
+            <div style="height:250px"><canvas id="chartCategoria"></canvas></div>
+          </div>
+          <div class="stat-card" style="grid-column:span 2">
+            <div class="stat-card-title">Proveedores por Localidad</div>
+            <div style="height:240px"><canvas id="chartLocalidad"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VER/EDITAR -->
+<div class="modal-overlay" id="modal" onmousedown="overlayMouseDown(event)" onclick="closeModalOverlay(event)">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+</div><!-- /page-directorio -->
+
+<!-- PAGE DASHBOARD -->
+<div class="page" id="page-dashboard">
+  <div class="dash-page" id="dashboardContent"></div>
+</div>
+
+<!-- PAGE HOTELERIA -->
+<div class="page" id="page-hoteleria">
+  <div class="dash-page" id="hoteleriaContent"></div>
+</div>
+
+<!-- PAGE ACUERDOS DASHBOARD -->
+<div class="page" id="page-acuerdos_dash">
+  <div class="dash-page" id="acuerdosDashContent"></div>
+</div>
+
+<!-- PAGE LICITACIONES (directorio buscador) -->
+<div class="page" id="page-licitaciones_dir">
+  <div style="padding:22px 36px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap">
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;color:var(--primary);text-transform:uppercase;margin:0">📜 Licitaciones</h2>
+      <span style="font-size:.82rem;color:var(--text-muted)" id="licDirCount"></span>
+    </div>
+    <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:16px">Trazabilidad de procesos de licitación por proveedor. Busca un proveedor para ver o registrar sus licitaciones y el avance por hitos.</p>
+    <input id="licDirSearch" placeholder="🔍 Buscar proveedor por nombre..." oninput="renderLicitacionesDir()" style="width:100%;max-width:460px;border:1.5px solid var(--border);border-radius:9px;padding:11px 14px;font-size:.92rem;margin-bottom:18px">
+    <div id="licDirContent"></div>
+  </div>
+</div>
+
+<!-- PAGE PROGRAMAS DASHBOARD -->
+<div class="page" id="page-programas_dash">
+  <div class="dash-page" id="programasDashContent"></div>
+</div>
+
+<div class="page" id="page-estandarizacion">
+  <div style="padding:22px 36px" id="estPageWrap">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800;color:var(--primary);text-transform:uppercase">&#128207; Estandarizaci&#243;n de habitabilidad</div>
+      <div id="estRubroTabs" style="display:flex;gap:8px"></div>
+    </div>
+    <div id="estPageBody"><div style="color:var(--text-muted);font-size:.9rem">Cargando...</div></div>
+  </div>
+</div>
+<!-- PAGE KANBAN -->
+<div class="page" id="page-kanban">
+  <div class="kanban-wrap">
+    <div class="kanban-side">
+      <div class="kb-group-title">⚙️ Operación</div>
+      <button class="kb-nav active" data-board="proyectos"   onclick="kbSelect('proyectos',this)">📁 Proyectos / Iniciativas</button>
+      <button class="kb-nav" data-board="reuniones"   onclick="kbSelect('reuniones',this)">🗓️ Reuniones</button>
+      <button class="kb-nav" data-board="compromisos" onclick="kbSelect('compromisos',this)">✅ Compromisos</button>
+      <button class="kb-nav" data-board="reclamos"    onclick="kbSelect('reclamos',this)">📣 Reclamos</button>
+      <div class="kb-group-title">🤝 Red y Abastecimiento</div>
+      <button class="kb-nav" data-board="contactos"     onclick="kbSelect('contactos',this)">👥 Contactos</button>
+      <button class="kb-nav" data-board="prov_locales"  onclick="kbSelect('prov_locales',this)">🏪 Proveedores Locales</button>
+      <button class="kb-nav" data-board="rca"           onclick="kbSelect('rca',this)">📋 Cumplimiento RCA</button>
+      <div class="kb-group-title">📊 Resumen</div>
+      <button class="kb-nav" data-board="dashboard"     onclick="kbSelect('dashboard',this)">📈 Dashboard Kanban</button>
+    </div>
+    <div class="kanban-content" id="kanbanContent"></div>
+  </div>
+</div>
+
+<!-- PAGE USUARIOS -->
+<div class="page" id="page-usuarios">
+  <div style="background:#fff;border-radius:14px;border:1px solid var(--border);padding:20px;max-width:980px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:10px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;color:var(--primary);text-transform:uppercase">👤 Gestión de usuarios</div>
+      <button class="kb-add" onclick="renderUsuarios()">↻ Actualizar</button>
+    </div>
+    <div style="font-size:.83rem;color:var(--text-muted);margin-bottom:16px">Aprueba o rechaza las solicitudes de acceso. Los pendientes no ven ningún dato hasta que los apruebes.</div>
+    <div id="usuariosContent"><div class="kb-empty">Cargando…</div></div>
+  </div>
+</div>
+
+<!-- PAGE COMPROMISOS -->
+<div class="page" id="page-compromisos">
+  <div style="max-width:1080px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;color:var(--primary);text-transform:uppercase">⏲ Compromisos de visitas</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="compFiltro" onchange="renderCompromisosDash()" style="border:1.5px solid var(--border);border-radius:7px;padding:7px 10px;font-size:.83rem">
+          <option value="abiertos">Abiertos</option>
+          <option value="vencidos">Vencidos</option>
+          <option value="todos">Todos</option>
+          <option value="cumplidos">Cumplidos</option>
+        </select>
+        <button class="kb-add" onclick="renderCompromisosDash()">↻ Actualizar</button>
+      </div>
+    </div>
+    <div id="compromisosContent"><div class="kb-empty">Cargando…</div></div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">&#215;</button>
+  <img id="lightboxImg" src="" alt="foto">
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="proveedores.js"></script>
+
+<!-- MODAL AYUDA SUPABASE -->
+<div id="syncHelpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:14px;padding:26px 28px;max-width:560px;width:93%;position:relative;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+    <button onclick="document.getElementById('syncHelpModal').style.display='none'" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:#aaa">&#10005;</button>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">&#9729;&#65039; Conectar Supabase</div>
+    <div style="font-size:.84rem;line-height:1.65;color:var(--text)">
+      <b>1. Crea el proyecto en Supabase</b>
+      <ol style="margin:6px 0 10px 16px;line-height:1.9">
+        <li>Entra a <b>supabase.com</b> &#8594; New project</li>
+        <li>Copia <b>Project URL</b> y la <b>anon public key</b> (Settings &#8594; API)</li>
+      </ol>
+      <b>2. Crea las tablas</b>
+      <ol style="margin:6px 0 10px 16px;line-height:1.9">
+        <li>SQL Editor &#8594; pega el script <code>supabase_schema.sql</code> &#8594; Run</li>
+      </ol>
+      <b>3. Crea usuarios y entra</b>
+      <ol style="margin:6px 0 10px 16px;line-height:1.9">
+        <li>Authentication &#8594; Users &#8594; <b>Add user</b> (correo + contraseña) para cada persona autorizada</li>
+        <li>Desactiva "Allow new users to sign up" para que nadie se registre solo</li>
+        <li>Abre el sistema, inicia sesión con tu correo &#8594; los datos se cargan automáticamente</li>
+      </ol>
+      <div style="background:#E4F6F5;border-radius:8px;padding:10px 14px;margin-top:10px;font-size:.8rem">
+        <b>Vercel:</b> al desplegar, define las variables de entorno
+        <code>NEXT_PUBLIC_SUPABASE_URL</code> y <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>,
+        o crea un <code>config.js</code> con <code>window.SUPA_CFG={url:'...',key:'...'}</code>. El anon key es público por diseño; la seguridad real son el <b>login</b> y las políticas <b>RLS</b> (solo usuarios autenticados leen/escriben).
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ MODAL NUEVO PROVEEDOR ░░ -->
+<div id="nuevoProvModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:580px;width:100%;max-height:90vh;overflow-y:auto;padding:26px 26px 22px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.04em">➕ Nuevo proveedor</div>
+      <button onclick="cerrarNuevoProveedor()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <div class="np-grid">
+      <div class="np-field full"><label>Razón social *</label><input id="npRazon" placeholder="Empresa SpA"></div>
+      <div class="np-field"><label>Nombre fantasía</label><input id="npFantasia" placeholder="Nombre comercial"></div>
+      <div class="np-field"><label>RUT empresa</label><input id="npRut" placeholder="76.123.456-7"></div>
+      <div class="np-field"><label>Localidad / Comuna</label><input id="npLocalidad" placeholder="Sierra Gorda"></div>
+      <div class="np-field"><label>Dirección</label><input id="npDireccion" placeholder="Calle 123"></div>
+      <div class="np-field full"><label>Rubros (separa con coma)</label><input id="npRubros" placeholder="Transporte, Hospedaje"></div>
+      <div class="np-field"><label>Contacto principal</label><input id="npContacto" placeholder="Nombre"></div>
+      <div class="np-field"><label>Cargo</label><input id="npCargo" placeholder="Gerente"></div>
+      <div class="np-field"><label>Teléfono</label><input id="npFono" placeholder="+56 9 1234 5678"></div>
+      <div class="np-field"><label>Correo</label><input id="npCorreo" placeholder="correo@empresa.cl"></div>
+      <div class="np-field"><label>Autorización facturar</label>
+        <select id="npFacturar"><option>Sin información</option><option>Autorizado</option><option>No autorizado</option><option>Boleta honorario</option></select>
+      </div>
+      <div class="np-field"><label>Servicios con AM</label><input id="npServicioAM" placeholder="Sí / En proceso / No"></div>
+      <div class="np-field full"><label>📐 Rango de trabajos</label>
+        <select id="npRango"><option value="">— Sin definir —</option></select>
+      </div>
+      <div class="np-field full"><label style="font-weight:700;color:var(--primary)">🌐 Publicar en accesos de abastecimiento</label>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;text-transform:none;font-weight:500">
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="npPubCen" style="width:16px;height:16px"> Centinela</label>
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="npPubAnt" style="width:16px;height:16px"> Antucoya</label>
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="npPubZal" style="width:16px;height:16px"> Cía. Minera Zaldívar</label>
+        </div></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button onclick="cerrarNuevoProveedor()" style="flex:1;padding:11px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
+      <button onclick="guardarNuevoProveedor()" style="flex:2;padding:11px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;letter-spacing:.05em;cursor:pointer">Guardar proveedor</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ░░ MODAL KANBAN CARD ░░ -->
+<div id="kbCardModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div id="kbCardTitle" style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:var(--primary);text-transform:uppercase"></div>
+      <button onclick="kbCloseCard()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <input type="hidden" id="kbCardBoard"><input type="hidden" id="kbCardId">
+    <div class="kb-modal-grid">
+      <div class="kb-fld full"><label>Título *</label><input id="kbcTitulo"></div>
+      <div class="kb-fld full"><label>Descripción</label><textarea id="kbcDesc" rows="2"></textarea></div>
+      <div class="kb-fld"><label>Responsable</label><input id="kbcResp"></div>
+      <div class="kb-fld"><label>Faena / Empresa</label><input id="kbcFaena" placeholder="Centinela, Zaldívar..."></div>
+      <div class="kb-fld"><label>Localidad / Comuna</label><input id="kbcLocalidad"></div>
+      <div class="kb-fld"><label>Fecha límite</label><input id="kbcFechaLim" type="date"></div>
+      <div class="kb-fld"><label>Prioridad</label><select id="kbcPrioridad"><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select></div>
+      <div class="kb-fld"><label>Columna / Estado</label><select id="kbcColumna"></select></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button id="kbcDelBtn" onclick="kbDeleteCard()" style="padding:10px 14px;background:#fdecea;color:#c0311b;border:none;border-radius:9px;font-weight:700;cursor:pointer">🗑 Eliminar</button>
+      <button onclick="kbCloseCard()" style="flex:1;padding:10px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
+      <button onclick="kbSaveCardForm()" style="flex:2;padding:10px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;cursor:pointer">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ MODAL RCA EMPRESA ░░ -->
+<div id="rcaEmpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:var(--primary);text-transform:uppercase">🏢 Empresa contratista</div>
+      <button onclick="rcaCloseEmpresa()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <input type="hidden" id="rcaEmpId">
+    <div class="kb-modal-grid">
+      <div class="kb-fld full"><label>Nombre empresa *</label><input id="rcaEmpNombre"></div>
+      <div class="kb-fld"><label>RUT</label><input id="rcaEmpRut"></div>
+      <div class="kb-fld"><label>Comuna</label><input id="rcaEmpComuna"></div>
+      <div class="kb-fld full"><label>Faena asociada</label><input id="rcaEmpFaena" placeholder="Centinela, Zaldívar..."></div>
+      <div class="kb-fld full"><label>Notas</label><textarea id="rcaEmpNotas" rows="2"></textarea></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button onclick="rcaCloseEmpresa()" style="flex:1;padding:10px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
+      <button onclick="rcaSaveEmpresa()" style="flex:2;padding:10px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;cursor:pointer">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ MODAL RCA CONTACTO ░░ -->
+<div id="rcaCtModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:var(--primary);text-transform:uppercase">👤 Contacto contratista</div>
+      <button onclick="rcaCloseContacto()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <input type="hidden" id="rcaCtEmp"><input type="hidden" id="rcaCtId">
+    <div class="kb-modal-grid">
+      <div class="kb-fld"><label>Nombre *</label><input id="rcaCtNombre"></div>
+      <div class="kb-fld"><label>Cargo</label><input id="rcaCtCargo"></div>
+      <div class="kb-fld"><label>Teléfono</label><input id="rcaCtTel"></div>
+      <div class="kb-fld"><label>Correo</label><input id="rcaCtCorreo"></div>
+      <div class="kb-fld full"><label>Notas (lo relevante del contacto)</label><textarea id="rcaCtNotas" rows="3"></textarea></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button onclick="rcaCloseContacto()" style="flex:1;padding:10px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
+      <button onclick="rcaSaveContacto()" style="flex:2;padding:10px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;cursor:pointer">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ MODAL RCA COMPRA ░░ -->
+<div id="rcaCompModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:var(--primary);text-transform:uppercase">🧾 Compra de bien / servicio</div>
+      <button onclick="rcaCloseCompra()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <input type="hidden" id="rcaCompId">
+    <div class="kb-modal-grid">
+      <div class="kb-fld full"><label>Empresa contratista *</label><select id="rcaCompEmp"></select></div>
+      <div class="kb-fld"><label>Año</label><input id="rcaCompAnio"></div>
+      <div class="kb-fld"><label>Fecha</label><input id="rcaCompFecha" type="date"></div>
+      <div class="kb-fld"><label>Nombre empresa (compra)</label><input id="rcaCompEmpNom"></div>
+      <div class="kb-fld"><label>RUT</label><input id="rcaCompRut"></div>
+      <div class="kb-fld"><label>Comuna</label><input id="rcaCompComuna"></div>
+      <div class="kb-fld"><label>N° Factura</label><input id="rcaCompFactura"></div>
+      <div class="kb-fld full"><label>Tipo de bien o servicio</label><input id="rcaCompTipo"></div>
+      <div class="kb-fld"><label>Monto neto ($)</label><input id="rcaCompMonto" inputmode="numeric"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button onclick="rcaCloseCompra()" style="flex:1;padding:10px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
+      <button onclick="rcaSaveCompra()" style="flex:2;padding:10px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;cursor:pointer">Guardar</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="rcaXlsInput" accept=".xlsx,.xls" style="display:none" onchange="rcaProcesarExcelCompras(this.files)">
+
+
+<!-- ░░ MODAL PERFIL (primer ingreso) ░░ -->
+<div id="perfModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10001;align-items:center;justify-content:center;padding:18px">
+  <div style="background:#fff;border-radius:14px;max-width:420px;width:100%;padding:26px">
+    <button id="perfCerrar" onclick="cerrarModalPerfil()" style="float:right;background:none;border:none;font-size:1.3rem;color:#aaa;cursor:pointer">&#10005;</button>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:800;color:var(--primary);text-transform:uppercase;margin-bottom:6px">👤 Tu perfil</div>
+    <div id="perfMsg" style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px;display:none">Completa tu nombre y apellido. Aparecerá como responsable en visitas y registros.</div>
+    <div style="display:flex;flex-direction:column;gap:11px">
+      <div class="kb-fld"><label>Nombre *</label><input id="perfNombre" placeholder="Jorge"></div>
+      <div class="kb-fld"><label>Apellido</label><input id="perfApellido" placeholder="Lampidis"></div>
+    </div>
+    <button onclick="guardarPerfil()" style="width:100%;margin-top:18px;padding:11px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;letter-spacing:.05em;cursor:pointer">Guardar</button>
+  </div>
+</div>
+
+<!-- ░░ MODAL EDITAR LICITACIÓN ░░ -->
+<div id="licEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:620px;width:100%;max-height:92vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:var(--primary);text-transform:uppercase">📑 Editar licitación</div>
+      <button onclick="cerrarEditLic()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <div class="kb-modal-grid">
+      <div class="kb-fld full"><label>Compañía AMSA</label><select id="licEditCo"></select></div>
+      <div class="kb-fld full"><label>Servicio / Rubro</label><input id="licEditServ"></div>
+      <div class="kb-fld full"><label>📝 Descripción del servicio</label><textarea id="licEditDesc" rows="2" placeholder="Detalle del servicio prestado"></textarea></div>
+      <div class="kb-fld"><label>Área AMSA</label><input id="licEditArea"></div>
+      <div class="kb-fld"><label>ADC</label><input id="licEditAdc"></div>
+      <div class="kb-fld"><label>N° Orden de Servicio</label><input id="licEditOs"></div>
+      <div class="kb-fld"><label>Monto CLP</label><input id="licEditMonto" inputmode="numeric"></div>
+      <div class="kb-fld"><label>Fecha inicio</label><input id="licEditInicio" type="date"></div>
+      <div class="kb-fld"><label>Fecha fin</label><input id="licEditFin" type="date"></div>
+      <div class="kb-fld"><label>USD manual (valor proyecto)</label><input id="licEditUsd" inputmode="numeric" placeholder="opcional"></div>
+      <div class="kb-fld full"><label>📄 PDF orden/contrato</label><input id="licEditPdf" type="file" accept="application/pdf"><div id="licEditPdfLink" style="font-size:.78rem;margin-top:4px"></div></div>
+      <div class="kb-fld full"><label>📷 Fotos (antes / durante / final)</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div><input id="licEditFoto1" type="file" accept="image/*" style="font-size:.7rem"><div id="licFotoPrev1"></div></div>
+          <div><input id="licEditFoto2" type="file" accept="image/*" style="font-size:.7rem"><div id="licFotoPrev2"></div></div>
+          <div><input id="licEditFoto3" type="file" accept="image/*" style="font-size:.7rem"><div id="licFotoPrev3"></div></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button onclick="cerrarEditLic()" style="flex:1;padding:10px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
+      <button onclick="guardarEditLicitacion()" style="flex:2;padding:10px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;cursor:pointer">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ MODAL ESTANDARIZACIÓN ░░ -->
+<div id="estModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:680px;width:100%;max-height:92vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:var(--primary);text-transform:uppercase">📏 Estandarización de habitabilidad</div>
+      <button onclick="cerrarEstandarizacion()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <div id="estProvNombre" style="font-size:.85rem;color:var(--text-muted);margin-bottom:10px"></div>
+    <div id="estResumen" style="margin-bottom:14px"></div>
+    <div id="estLista"></div>
+    <div style="border-top:1px dashed var(--border);margin-top:14px;padding-top:12px;display:none">
+      <div style="font-size:.79rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">＋ Nuevo criterio</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="estNuevoNombre" placeholder="Nombre del criterio (ej: Baños privados, Extintores...)" style="flex:2;min-width:180px;border:1.5px solid var(--border);border-radius:7px;padding:8px 10px;font-size:.86rem">
+        <select id="estNuevaCat" style="border:1.5px solid var(--border);border-radius:7px;padding:8px 10px;font-size:.86rem">
+          <option value="General">General (aplica a todos)</option>
+          <option value="Hotelería">Hotelería</option>
+          <option value="Lavandería">Lavandería</option>
+          <option value="Alimentación">Alimentación</option>
+        </select>
+        <button onclick="addCriterioEst()" style="background:var(--primary);color:#fff;border:none;border-radius:7px;padding:8px 16px;font-weight:700;cursor:pointer">＋ Agregar</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ░░ MODAL VISITA v3 ░░ -->
+<div id="visitaV3Modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:92vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:var(--primary);text-transform:uppercase">🗓️ Nueva visita</div>
+      <button onclick="cerrarVisitaV3()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:12px">Responsable: <b id="visV3Resp"></b> · <span id="visV3Faena"></span></div>
+    <div class="kb-modal-grid">
+      <div class="kb-fld"><label>Fecha</label><input id="visV3Fecha" type="date"></div>
+      <div class="kb-fld"><label>Título</label><input id="visV3Titulo" placeholder="Motivo de la visita"></div>
+    </div>
+    <div class="vis-section"><div class="vis-section-t">👥 Participantes</div>
+      <div id="visV3Parts"></div>
+      <div class="kb-modal-grid" style="margin-top:8px">
+        <div class="kb-fld"><label>Nombre *</label><input id="vpNombre"></div>
+        <div class="kb-fld"><label>Empresa *</label><input id="vpEmpresa"></div>
+        <div class="kb-fld"><label>Correo</label><input id="vpCorreo"></div>
+        <div class="kb-fld"><label>Teléfono</label><input id="vpTel"></div>
+      </div>
+      <button class="vis-add" onclick="addParticipante()">＋ Agregar participante</button>
+    </div>
+    <div class="vis-section"><div class="vis-section-t">📝 De qué se trató la reunión</div>
+      <textarea id="visV3Resumen" rows="4" placeholder="Redacta libremente los temas tratados, acuerdos generales, contexto y observaciones de la reunión..." style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.88rem;font-family:inherit;line-height:1.5;resize:vertical"></textarea>
+    <div style="margin-top:12px;font-size:.79rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.05em">📷 Fotos de la visita <span style="font-size:.72rem;color:var(--text-muted);font-weight:400;text-transform:none">(opcional, máx. 3)</span></div>
+    <div id="visFotoUploadArea" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+      <label id="visFotoLabel0" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;width:110px;height:84px;border:2px dashed #b0d8e0;border-radius:8px;background:#f7fbfc;color:#00778A;font-size:.78rem;gap:4px;position:relative" title="Foto 1">
+        <span id="visFotoThumb0" style="display:none;position:absolute;inset:0;border-radius:6px;overflow:hidden"><img id="visFotoImg0" style="width:100%;height:100%;object-fit:cover"/></span>
+        <span id="visFotoPlaceholder0" style="display:flex;flex-direction:column;align-items:center;gap:3px">📷<span>Foto 1</span></span>
+        <input type="file" accept="image/*" style="display:none" onchange="agregarVisFoto(this,0)"/>
+      </label>
+      <label id="visFotoLabel1" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;width:110px;height:84px;border:2px dashed #b0d8e0;border-radius:8px;background:#f7fbfc;color:#00778A;font-size:.78rem;gap:4px;position:relative" title="Foto 2">
+        <span id="visFotoThumb1" style="display:none;position:absolute;inset:0;border-radius:6px;overflow:hidden"><img id="visFotoImg1" style="width:100%;height:100%;object-fit:cover"/></span>
+        <span id="visFotoPlaceholder1" style="display:flex;flex-direction:column;align-items:center;gap:3px">📷<span>Foto 2</span></span>
+        <input type="file" accept="image/*" style="display:none" onchange="agregarVisFoto(this,1)"/>
+      </label>
+      <label id="visFotoLabel2" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;width:110px;height:84px;border:2px dashed #b0d8e0;border-radius:8px;background:#f7fbfc;color:#00778A;font-size:.78rem;gap:4px;position:relative" title="Foto 3">
+        <span id="visFotoThumb2" style="display:none;position:absolute;inset:0;border-radius:6px;overflow:hidden"><img id="visFotoImg2" style="width:100%;height:100%;object-fit:cover"/></span>
+        <span id="visFotoPlaceholder2" style="display:flex;flex-direction:column;align-items:center;gap:3px">📷<span>Foto 3</span></span>
+        <input type="file" accept="image/*" style="display:none" onchange="agregarVisFoto(this,2)"/>
+      </label>
+    </div>
+    <button type="button" onclick="limpiarVisFotos()" style="margin-top:8px;font-size:.74rem;background:none;border:1px solid #ccc;border-radius:5px;padding:3px 10px;cursor:pointer;color:#718096">🗑 Limpiar fotos</button>
+    </div>
+    <div class="vis-section"><div class="vis-section-t">✅ Acuerdos / Compromisos</div>
+      <div id="visV3Comps"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="vcDesc" placeholder="Descripción del compromiso" style="flex:1;border:1.5px solid var(--border);border-radius:7px;padding:8px 10px;font-size:.86rem">
+        <button class="vis-add" style="margin:0" onclick="addCompromiso()">＋ Compromiso</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button onclick="cerrarVisitaV3()" style="flex:1;padding:11px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
+      <button onclick="finalizarVisita()" style="flex:2;padding:11px;background:linear-gradient(135deg,#F2A900,#d89400);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;cursor:pointer">Finalizar visita →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ MODAL MINUTA + FIRMA ░░ -->
+<div id="minutaModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:92vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:var(--primary)">Vista previa de la minuta</div>
+      <button onclick="cerrarMinuta()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <div id="minutaPreview" style="border:1px solid var(--border);border-radius:10px;padding:18px;background:#fff"></div>
+    <div style="margin-top:14px">
+      <div style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">✍ Firmas de los asistentes</div>
+      <div id="firmasContainer"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button onclick="cerrarMinuta()" style="flex:1;padding:11px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Volver</button>
+      <button onclick="emitirMinuta()" style="flex:2;padding:11px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;cursor:pointer">📄 Generar PDF y guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ MODAL VINCULAR VISITAS ░░ -->
+<div id="vincVisitasModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:800;color:var(--primary)">🔗 Vincular visitas previas</div>
+      <button onclick="cerrarVincVisitas()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <div style="font-size:.8rem;color:var(--text-muted);margin-bottom:10px">Marca las visitas que precedieron a esta licitación.</div>
+    <div id="vincVisitasList"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button onclick="cerrarVincVisitas()" style="flex:1;padding:10px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
+      <button onclick="guardarVincVisitas()" style="flex:2;padding:10px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:9px;font-weight:800;cursor:pointer">Guardar</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="moliFileInput" accept=".xlsx,.xls" style="display:none" onchange="procesarMOLI(this.files)">
+
+
+<!-- ░░ MODAL PROGRAMA (catálogo) ░░ -->
+<div id="progCatModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:92vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div id="progCatModalTitle" style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:#5b4fcf;text-transform:uppercase">Nuevo programa / iniciativa</div>
+      <button onclick="cerrarProgCat()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="kb-fld"><label>Título del programa *</label><input id="progCatTitulo" placeholder="Ej: Programa Formación Proveedores"></div>
+      <div class="kb-fld"><label>Contexto / ¿de qué se trata? *</label><textarea id="progCatContexto" rows="4" placeholder="Describe el objetivo y alcance del programa"></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="kb-fld"><label>Fecha inicio *</label><input id="progCatIni" type="date"></div>
+        <div class="kb-fld"><label>Fecha término *</label><input id="progCatFin" type="date"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button id="progCatDelBtn" onclick="eliminarProgramaCat()" style="display:none;padding:10px 14px;background:#fdecea;color:#c0311b;border:none;border-radius:9px;font-weight:700;cursor:pointer">🗑 Eliminar</button>
+      <button onclick="cerrarProgCat()" style="flex:1;padding:10px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
+      <button onclick="guardarProgramaCat()" style="flex:2;padding:10px;background:linear-gradient(135deg,#5b4fcf,#4338ca);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;cursor:pointer">Guardar programa</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ MODAL RESPONSABLE (desde asistentes + otros + calendario) ░░ -->
+<div id="respModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:420px;width:100%;padding:24px">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:800;color:var(--primary);text-transform:uppercase;margin-bottom:14px">Agregar responsable</div>
+    <div class="kb-fld" style="margin-bottom:10px"><label>Responsable (desde asistentes)</label>
+      <select id="respAsistente" onchange="respAsistenteChange()" style="width:100%;border:1.5px solid var(--border);border-radius:7px;padding:9px 10px;font-size:.88rem"></select></div>
+    <div id="respOtroBox" style="display:none;margin-bottom:10px"><div class="kb-fld"><label>Nombre (otro)</label><input id="respOtroNombre" placeholder="Nombre del responsable"></div></div>
+    <div class="kb-fld" style="margin-bottom:10px"><label>Área</label><input id="respArea" placeholder="Área / cargo"></div>
+    <div class="kb-fld" style="margin-bottom:10px"><label>Fecha límite</label><input id="respFecha" type="date"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button onclick="cerrarResp()" style="flex:1;padding:10px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
+      <button onclick="guardarResp()" style="flex:2;padding:10px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:9px;font-weight:800;cursor:pointer">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ MODAL LLAMADA / PRÓRROGA ░░ -->
+<div id="llamadaModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:440px;width:100%;padding:24px">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:800;color:var(--primary);text-transform:uppercase;margin-bottom:4px">📞 Registrar llamada / seguimiento</div>
+    <div id="llamCompDesc" style="font-size:.84rem;color:var(--text);margin-bottom:3px;font-weight:600"></div>
+    <div id="llamFechaActual" style="font-size:.78rem;color:var(--text-muted);margin-bottom:12px"></div>
+    <div class="kb-fld" style="margin-bottom:10px"><label>Teléfono al que se llamó</label><input id="llamTelefono" placeholder="+56 9 ..."></div>
+    <div class="kb-fld" style="margin-bottom:10px"><label>Detalle / resultado de la llamada</label><textarea id="llamDetalle" rows="2" placeholder="Qué se conversó, compromisos, etc."></textarea></div>
+    <div class="kb-fld" style="margin-bottom:10px"><label>Acción sobre el plazo</label>
+      <select id="llamModo" onchange="llamModoChange()" style="width:100%;border:1.5px solid var(--border);border-radius:7px;padding:9px 10px;font-size:.88rem">
+        <option value="dias">Sumar días al plazo</option>
+        <option value="fecha">Fijar una fecha nueva</option>
+        <option value="nota">Solo registrar (sin cambiar plazo)</option>
+      </select>
+    </div>
+    <div id="llamDiasBox" class="kb-fld" style="margin-bottom:10px"><label>Días a sumar</label><input id="llamDias" type="number" min="1" value="7"></div>
+    <div id="llamFechaBox" class="kb-fld" style="margin-bottom:10px;display:none"><label>Nueva fecha límite</label><input id="llamFechaNueva" type="date"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button onclick="cerrarLlamada()" style="flex:1;padding:10px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
+      <button onclick="guardarLlamada()" style="flex:2;padding:10px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:9px;font-weight:800;cursor:pointer">Guardar seguimiento</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ MODAL TRABAJADOR HOTELERÍA ░░ -->
+<div id="trabModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:440px;width:100%;padding:24px">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:800;color:var(--primary);text-transform:uppercase;margin-bottom:14px">👷 Nuevo trabajador</div>
+    <div class="kb-fld" style="margin-bottom:11px"><label>Nombre</label><input id="trabNombre" placeholder="Nombre y apellido"></div>
+    <div class="kb-fld" style="margin-bottom:11px"><label>Sexo</label><select id="trabSexo"><option value="Mujer">Mujer</option><option value="Hombre">Hombre</option></select></div>
+    <div style="font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px">Funciones (puede tener varias)</div>
+    <div id="trabFuncsChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <input id="trabFuncCustom" placeholder="Otra función..." style="flex:1;border:1.5px solid var(--border);border-radius:7px;padding:7px 10px;font-size:.84rem">
+      <button onclick="addTrabFuncCustom()" style="border:1.5px solid var(--border);background:#fff;border-radius:7px;padding:0 13px;cursor:pointer">＋</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button onclick="cerrarTrabModal()" style="flex:1;padding:10px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
+      <button onclick="guardarTrabajador()" style="flex:2;padding:10px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:9px;font-weight:800;cursor:pointer">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ MODAL RUT DUPLICADOS ░░ -->
+<div id="rutDupModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:var(--primary);text-transform:uppercase">🔎 Empresas con RUT repetido</div>
+      <button onclick="document.getElementById('rutDupModal').style.display='none'" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <div style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px">Una misma empresa puede tener varios hoteles con distintas direcciones. Revisa los grupos y elimina solo los registros que sean duplicados reales.</div>
+    <div id="rutDupContent"><div style="text-align:center;padding:30px;color:var(--text-muted)">Cargando…</div></div>
+  </div>
+</div>
+
+<!-- ═══ MENÚ MÓVIL (hamburguesa) v11 ═══ -->
+<div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="toggleMobileNav()"></div>
+<div class="mobile-nav-panel" id="mobileNavPanel">
+  <div class="mobile-nav-head">
+    <img src="../../shared/assets/logo-amsa-900.png" alt="AMSA" class="mnav-logo">
+    <button class="mnav-cloud" onclick="actualizarSheet();toggleMobileNav()" title="Guardar en nube" style="display:none">☁️</button>
+    <button class="mnav-close" onclick="toggleMobileNav()" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="mnav-actions">
+    <button class="mnav-act danger" onclick="cerrarSesion()">&#128274; Cerrar sesión</button>
+  </div>
+  <div class="mnav-collapse" style="display:none">
+    <div class="mnav-collapse-head" onclick="toggleMnavCargar()">
+      <span>📂 Cargar datos</span>
+      <span class="mnav-tri" id="mnavTri">▼</span>
+    </div>
+    <div class="mnav-collapse-body" id="mnavCargarBody" style="display:none">
+      <button class="mnav-act" onclick="cargarDesdeNube();toggleMobileNav()">☁️ Cargar desde la nube</button>
+      <label class="mnav-act" style="cursor:pointer;text-align:center">📊 Subir Excel
+        <input type="file" accept=".xlsx,.xls" multiple style="display:none" onchange="handleFiles(this.files);toggleMobileNav()">
+      </label>
+    </div>
+  </div>
+  <div class="mnav-secciones">
+    <div class="mobile-nav-item" onclick="mobileGo('directorio')">Directorio</div>
+    <div class="mobile-nav-item" onclick="mobileGo('dashboard')">Dashboard</div>
+    <div class="mobile-nav-item" onclick="mobileGo('hoteleria')">Hotelería</div>
+    <div class="mobile-nav-item" onclick="mobileGo('acuerdos_dash')">Contratos</div>
+    <div class="mobile-nav-item" onclick="mobileGo('licitaciones_dir')">Licitaciones</div>
+    <div class="mobile-nav-item" onclick="mobileGo('compromisos')">Compromisos</div>
+    <div class="mobile-nav-item" onclick="mobileGo('programas_dash')">Programas</div>
+    <div class="mobile-nav-item" onclick="mobileGo('kanban')">Kanban</div>
+    <div class="mobile-nav-item" id="mobileNavUsuarios" style="display:none" onclick="mobileGo('usuarios')">Usuarios</div>
+  </div>
+</div>
+<!-- Botón flotante de filtros (solo móvil, en directorio) -->
+<button class="mobile-filter-btn" id="mobileFilterBtn" onclick="toggleMobileSidebar()" title="Filtros">⚙</button>
+
+
+<!-- MODAL SUBIR MINUTA MANUALMENTE (fallback) -->
+<div id="modalSubirMinuta" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10010;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:440px;width:100%;padding:24px">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:800;color:var(--primary);text-transform:uppercase;margin-bottom:6px">📤 Subir minuta manualmente</div>
+    <div style="font-size:.8rem;color:var(--text-muted);margin-bottom:16px">Úsalo si una visita se descargó pero no quedó guardada en el sistema. Adjunta el PDF para dejar registro.</div>
+    <div class="form-field full" style="margin-bottom:10px"><label>Título de la visita *</label><input id="smTitulo" placeholder="Ej: Visita de seguimiento"></div>
+    <div class="form-field full" style="margin-bottom:10px"><label>Fecha *</label><input id="smFecha" type="date"></div>
+    <div class="form-field full" style="margin-bottom:10px"><label>Responsable AM</label><input id="smResponsable"></div>
+    <div class="form-field full" style="margin-bottom:14px"><label>Archivo PDF de la minuta *</label><input id="smArchivo" type="file" accept="application/pdf"></div>
+    <div style="display:flex;gap:10px">
+      <button onclick="cerrarSubirMinutaManual()" style="flex:1;padding:10px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
+      <button id="smBtnGuardar" onclick="confirmarSubirMinutaManual()" style="flex:2;padding:10px;background:var(--primary);color:#fff;border:none;border-radius:9px;font-weight:800;cursor:pointer">Subir y registrar</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

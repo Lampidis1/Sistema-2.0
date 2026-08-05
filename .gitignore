@@ -1,0 +1,39 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# .gitignore — Sistema AM
+#
+# OJO: esto NO es lo mismo que .vercelignore.
+#   .gitignore    → qué NO entra al repositorio
+#   .vercelignore → qué SÍ está en el repo pero NO se publica en internet
+#                   (database/ y docs/ viven en git, pero no se despliegan)
+#
+# El repositorio DEBE ser privado: contiene el esquema completo, las políticas
+# RLS y documentación interna de AMSA.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Basura del sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Nunca: credenciales y secretos (Regla de oro 4 — service_role JAMÁS)
+.env
+.env.*
+*.pem
+*.key
+service_role*
+**/secrets.*
+
+# Vercel
+.vercel
+
+# Dependencias (el proyecto no usa npm, pero por si alguien corre algo)
+node_modules/
+
+# Preferencias locales de herramientas
+.claude/settings.local.json
+.vscode/
+.idea/

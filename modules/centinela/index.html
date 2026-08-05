@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proveedores Centinela · Abastecimiento</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="../../config/supabase.config.js"></script>
+<link rel="stylesheet" href="../../shared/css/faena-consulta.css">
+</head>
+<body>
+<!-- LOGIN -->
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <img src="../../shared/assets/logo-amsa-873.png" alt="Antofagasta Minerals">
+    <div class="gate-t">Proveedores Centinela</div>
+    <div class="gate-s">Acceso Abastecimiento</div>
+    <div class="gate-err" id="gErr"></div>
+    <div id="loginStep">
+      <input id="gEmail" type="email" placeholder="correo@empresa.cl" autocomplete="username">
+      <input id="gPass" type="password" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrar()">
+      <button onclick="entrar()" id="gBtn">Ingresar</button>
+      <div style="margin-top:13px;font-size:.8rem;color:#5F6973">¿No tienes cuenta? <a onclick="verRegistro()" style="color:#00A399;font-weight:700;cursor:pointer">Solicitar acceso</a></div>
+    </div>
+    <div id="perfStep" style="display:none">
+      <div style="font-size:.82rem;color:#5F6973;margin-bottom:12px">Completa tu nombre para continuar</div>
+      <input id="gNombre" type="text" placeholder="Nombre">
+      <input id="gApellido" type="text" placeholder="Apellido">
+      <button onclick="guardarPerfilPub()">Guardar y entrar</button>
+    </div>
+    <div id="regStep" style="display:none">
+      <div style="font-size:.82rem;color:#5F6973;margin-bottom:12px">Solicita acceso. Un administrador debe aprobarte.</div>
+      <input id="rNombre" type="text" placeholder="Nombre">
+      <input id="rApellido" type="text" placeholder="Apellido">
+      <input id="rEmail" type="email" placeholder="correo@empresa.cl">
+      <input id="rPass" type="password" placeholder="Contraseña (mín. 6)">
+      <button onclick="registrarsePub()">Solicitar acceso</button>
+      <div style="margin-top:12px;font-size:.8rem"><a onclick="verLogin()" style="color:#00A399;font-weight:700;cursor:pointer">← Volver</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="top">
+  <img src="../../shared/assets/logo-amsa-873.png" alt="AM">
+  <div><div class="top-t">Proveedores Centinela</div><div class="top-sub">Acceso Abastecimiento</div></div>
+  <div class="top-user"><span id="uName"></span><button class="btn-out" onclick="salir()">Salir</button></div>
+</div>
+<button class="mobile-filter-btn" id="mobileFilterBtn" onclick="toggleSidebar()" title="Filtros">⚙</button>
+<div class="layout-fa">
+  <aside class="sidebar-fa" id="sidebarFa">
+    <div class="sb-fa-sec">
+      <div class="sb-fa-lbl">Búsqueda</div>
+      <div class="search-fa"><span>🔍</span><input id="q" placeholder="Nombre, rubro, localidad..." oninput="render()"></div>
+    </div>
+    <div class="sb-fa-sec" id="filtros"></div>
+    <button class="btn-xls" id="btnXls" onclick="descargarSeleccion()" disabled style="width:100%;margin-top:10px">⬇ Descargar selección (0)</button>
+  </aside>
+  <div class="content-fa">
+    <div class="count" id="count"></div>
+    <div id="cont"><div class="loading">Inicia sesión para ver los proveedores.</div></div>
+  </div>
+</div>
+<div class="foot">Antofagasta Minerals · Faena Centinela · Listado de proveedores comunitarios para abastecimiento.</div>
+
+<!-- Configuracion de esta faena. Debe ir ANTES del script compartido. -->
+<script>window.FAENA_CFG = { nombre: 'Centinela', clave: 'Centinela', slug: 'centinela' };</script>
+<script src="../../shared/js/faena-consulta.js"></script>
+
+<!-- MODAL FICHA v12 -->
+<div class="fmodal-ov" id="fmodalOv" onclick="if(event.target===this)cerrarFicha()">
+  <div class="fmodal">
+    <div class="fmodal-head">
+      <button class="fmodal-close" onclick="cerrarFicha()">✕</button>
+      <div class="fm-loc" id="fmLoc"></div>
+      <div class="fm-nom" id="fmNom"></div>
+      <div class="fm-razon" id="fmRazon"></div>
+    </div>
+    <div class="fmodal-body" id="fmBody"></div>
+    <div class="fmodal-foot">
+      <button class="fm-pdf" id="fmPdfBtn">📄 Exportar Ficha PDF</button>
+      <button class="fm-cerrar" onclick="cerrarFicha()">Cerrar</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
