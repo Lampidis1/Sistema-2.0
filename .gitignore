@@ -27,6 +27,15 @@ npm-debug.log*
 service_role*
 **/secrets.*
 
+# Respaldos de la base — NUNCA entran al repositorio (Regla de oro 5).
+# Contienen datos de personas: RUT, nombres, telefonos, CVs.
+backups/*
+*.dump
+*.sql.gz
+database/respaldos/
+# ...salvo el script que los genera, que no contiene datos.
+!backups/respaldar-datos.sh
+
 # Vercel
 .vercel
 
