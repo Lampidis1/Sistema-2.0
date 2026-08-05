@@ -86,16 +86,23 @@ Dos cosas que muerden a todo el mundo la primera vez:
 
 ## ⚠️ Acción pendiente para el administrador
 
-Hay un script SQL **escrito y sin ejecutar** que cierra un agujero real: hoy
-cualquiera puede listar y descargar el bucket de documentos completo, sin
-tener cuenta. Y como `signUp()` está abierto, basta con registrarse para
-seguir teniendo acceso aunque quedes pendiente de aprobación.
+**P-1a quedó aplicado el 2026-08-05.** Ya no se puede listar el bucket de
+documentos sin cuenta: la política `doc_public_read` fue reemplazada por
+`doc_auth_read`, que exige sesión iniciada **y** usuario aprobado. Verificado
+contra la base real: antes devolvía `fichas`, `minutas` y `visitas`; ahora
+devuelve vacío. No rompió nada — subir archivos y abrir documentos guardados
+sigue funcionando igual.
 
-**→ `database/migraciones/2026-07-21_p1a_bloquear_listado_anonimo.sql`**
+`database/setup_database.sql` ya trae la política corregida, así que
+reinstalar desde cero no reabre el agujero.
 
-Se pega en Supabase → SQL Editor → ejecutar. No rompe nada, es reversible y
-re-ejecutable; el propio archivo trae los pasos de verificación. Detalle en
-`docs/PENDIENTES.md` → P-1.
+**Lo que sigue abierto es P-1b:** quien ya tenga la URL de un documento puede
+abrirla sin iniciar sesión, porque el bucket sigue siendo público y las URLs
+de `getPublicUrl()` no caducan.
 
-`database/setup_database.sql` ya quedó actualizado con la misma política, así
-que reinstalar desde cero no reabre el agujero.
+**→ `database/migraciones/2026-07-21_p1b_bucket_privado.sql`**
+
+⚠️ **Ese script NO se ejecuta solo.** Rompe 5 módulos si se aplica antes de
+desplegar los cambios de frontend que firman las URLs. El alcance completo y
+las dos trampas (los `<img>` no llevan el JWT; varios `fetch()` de exportación
+fallan en silencio) están en `docs/PENDIENTES.md` → P-1.

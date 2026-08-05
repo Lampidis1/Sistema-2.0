@@ -13,7 +13,28 @@ Estado: 🔴 sin decidir · 🟡 aprobado, sin hacer · 🟢 resuelto
 
 ## Seguridad y privacidad
 
-### P-1 · 🟡 El bucket `documentos` está abierto — se enumera y se lee sin cuenta
+### P-1 · 🟡 PARCIAL — P-1a aplicado (2026-08-05); falta P-1b
+
+> **P-1a EJECUTADO EN PRODUCCIÓN el 2026-08-05.** La enumeración anónima quedó
+> cerrada: `doc_public_read` fue reemplazada por `doc_auth_read`, restringida a
+> `to authenticated` + `es_aprobado()`.
+>
+> **Verificado contra la base real, antes y después:**
+>
+> | Prueba (solo con la `anon key`, sin cuenta) | Antes | Después |
+> |---|---|---|
+> | `list()` en la raíz del bucket | `fichas`, `minutas`, `visitas` | `[]` |
+> | `list()` sobre `fichas` y sobre `minutas` | devolvía contenido | `[]` |
+>
+> No rompió nada: el bucket sigue `public = true`, así que las URLs ya
+> guardadas (`pdf_url`, `minuta_pdf_url`, `foto1_url`) siguen resolviendo, y
+> `doc_auth_insert` quedó intacta, así que subir archivos sigue funcionando.
+>
+> Reversión: `backups/2026-08-05/01-politicas-storage-ANTES-de-P1.sql`.
+>
+> **Sigue abierto el agujero (b):** quien ya tenga la URL de un documento la
+> abre sin sesión. Eso es P-1b y requiere tocar el frontend — ver el alcance
+> real más abajo, son 5 módulos.
 
 **Dónde:** `database/setup_database.sql:566` y `:571`
 
