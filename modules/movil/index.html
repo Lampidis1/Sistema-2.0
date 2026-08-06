@@ -157,5 +157,16 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<script>window.AUTH_CFG = {
+  storageKey: 'am_mov_auth',
+  slug: 'movil',
+  altSlugs: ['empleabilidad','principal'],
+  origen: 'movil',
+  rolSolicitado: 'usuario',
+  faenaSolicitada: 'movil',
+  msgPassCorta: 'Mínimo 6 caracteres',
+  onAcceso: function(user){ return _movilOnAcceso(user); }
+};</script>
+<script src="../../shared/js/auth-guard.js"></script>
 <script src="movil.js"></script></body>
 </html>

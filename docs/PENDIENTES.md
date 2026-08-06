@@ -283,17 +283,43 @@ el propio dominio. No cambia nada visual.
 
 ## Estructura y mantenibilidad
 
-### P-6 · 🔴 El login está duplicado 7 veces
+### P-6 · 🟡 PARCIAL — fase 1 hecha (2026-08-06): movil + empleabilidad
 
 Cada módulo trae su propia copia del bloque `signInWithPassword` +
 `getSession`. Un bug de autenticación hay que arreglarlo en 7 archivos, y si
 se olvida uno queda una puerta con comportamiento distinto.
 
-**Arreglo:** extraer a `shared/js/auth-guard.js` y que los 7 lo carguen.
+**No son 7 copias idénticas — son 3 "dialectos" distintos.** Se comparó a
+mano (archivo por archivo, con `diff`) antes de tocar nada:
 
-> Ya es posible: al separar el JS de los HTML, el login quedó accesible en
-> `modules/<id>/<id>.js`. Antes estaba enterrado dentro del HTML y no se podía
-> compartir.
+| Grupo | Archivos | Patrón |
+|---|---|---|
+| **A — casi idénticos** | `movil.js` + `empleabilidad.js` | mismos IDs de DOM (`lgEmail`, `gateErr`...), misma lógica de acceso |
+| **B — similares entre sí** | `mgi.js` + `faena-consulta.js` | IDs propios (`gEmail`, `gErr`...), flujo de "completar perfil" inline |
+| **C — el outlier** | `proveedores.js` | IDs propios, restricción `@aminerals.cl`, y el panel de administración completo vive ahí adentro (ver P-7) |
+
+**Fase 1 (hecha):** se extrajo el grupo A a `shared/js/auth-guard.js`,
+parametrizado vía `window.AUTH_CFG` (mismo patrón que `FAENA_CFG` de
+`faena-consulta.js`): `storageKey`, `slug`, `altSlugs`, los 3 parámetros de
+`registrar_solicitud`, el texto de "contraseña muy corta", un
+`onRegistroOk` opcional, y `onAcceso(user)` — el módulo hace ahí lo que le
+es propio (qué mostrar, qué cargar).
+
+Dos diferencias reales entre `movil` y `empleabilidad` que había que
+preservar, no homogeneizar — se encontraron con un `diff` directo, no a
+simple vista:
+- El texto de "contraseña muy corta" es distinto entre los dos.
+- `empleabilidad` muestra un `alert()` extra tras registrarse; `movil` no.
+
+Ambos quedaron parametrizados en `AUTH_CFG`, cada módulo con su propio valor.
+
+**Corregido de paso:** `empleabilidad` y `movil` conceden acceso también a
+cualquiera con el slug `'principal'`, no solo entre ellos dos — es
+comportamiento real en producción, no documentado en `CLAUDE.md` §5. Se
+preservó tal cual (no se "corrigió"); solo se deja anotado acá.
+
+**Fases siguientes, sin hacer:** grupo B (`mgi` + faenas) y `proveedores.js`
+(entrelazado con P-7, mayor riesgo).
 
 ⚠️ Al hacerlo, cargar con `<script src>` clásico. **Nunca `type="module"`**:
 hay 457 `onclick=` en el HTML que dependen de que las funciones sean globales.

@@ -1,61 +1,18 @@
 
 // ═══════════ CONFIG ═══════════
-const CFG={ url:(window.SUPA_CFG&&window.SUPA_CFG.url)||'', key:(window.SUPA_CFG&&window.SUPA_CFG.key)||'' };
-let SB=null, USER=null, ES_ADMIN=false;
-function initSB(){ if(SB)return true; if(!CFG.url||!CFG.key){gateErr('Falta config.js');return false;} SB=supabase.createClient(CFG.url,CFG.key,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'am_mov_auth'}}); return true; }
+// Login, registro y restauración de sesión: shared/js/auth-guard.js (P-6).
+// window.AUTH_CFG se define en index.html, antes de cargar ese script.
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function toast(m,t){ const e=document.getElementById('toast'); e.textContent=m; e.className='toast '+(t||''); e.style.display='block'; setTimeout(()=>e.style.display='none',2600); }
-function gateErr(m){ const e=document.getElementById('gateErr'); if(!m){e.style.display='none';return;} e.textContent=m; e.style.display='block'; }
 function miNombre(){ return (USER&&USER.email)||''; }
 
-// ═══════════ AUTH ═══════════
-function verRegistro(){ document.getElementById('loginStep').style.display='none'; document.getElementById('regStep').style.display='block'; gateErr(''); }
-function verLogin(){ document.getElementById('regStep').style.display='none'; document.getElementById('pendStep').style.display='none'; document.getElementById('loginStep').style.display='block'; gateErr(''); }
-async function entrar(){
-  gateErr(''); if(!initSB())return;
-  const email=document.getElementById('lgEmail').value.trim().toLowerCase(), pass=document.getElementById('lgPass').value;
-  if(!email||!pass){gateErr('Ingresa correo y contraseña');return;}
-  const btn=document.getElementById('lgBtn'); btn.disabled=true; btn.textContent='Ingresando…';
-  try{ const {data,error}=await SB.auth.signInWithPassword({email,password:pass}); if(error)throw error; await trasLogin(data.user); }
-  catch(e){ gateErr(e.message.includes('Invalid')?'Correo o contraseña incorrectos':e.message); }
-  finally{ btn.disabled=false; btn.textContent='Ingresar'; }
-}
-async function registrarse(){
-  gateErr(''); if(!initSB())return;
-  const nombre=document.getElementById('rgNombre').value.trim(), apellido=document.getElementById('rgApellido').value.trim();
-  const email=document.getElementById('rgEmail').value.trim().toLowerCase(), pass=document.getElementById('rgPass').value;
-  if(!nombre||!email||!pass){gateErr('Completa nombre, correo y contraseña');return;}
-  if(pass.length<6){gateErr('Mínimo 6 caracteres');return;}
-  const btn=document.getElementById('rgBtn'); btn.disabled=true; btn.textContent='Creando…';
-  try{
-    const {data,error}=await SB.auth.signUp({email,password:pass}); if(error)throw error;
-    const uid=data.user&&data.user.id;
-    if(uid){ try{ await SB.rpc('registrar_solicitud',{p_uid:uid,p_nombre:nombre,p_apellido:apellido,p_email:email,p_origen:'movil',p_rol_sol:'usuario',p_faena_sol:'movil'}); }catch(e){} }
-    verLogin(); toast('✅ Solicitud enviada. Un administrador debe aprobarte.','ok');
-  }catch(e){ gateErr(e.message.includes('already registered')?'Ese correo ya está registrado':e.message); }
-  finally{ btn.disabled=false; btn.textContent='Solicitar acceso'; }
-}
-async function salir(){ try{ await SB.auth.signOut(); }catch(e){} location.reload(); }
-async function trasLogin(user){
-  USER=user; const md=(user&&user.app_metadata)||{};
-  ES_ADMIN=(md.rol==='admin');
-  const accesos=md.accesos||[];
-  const ok = ES_ADMIN || (md.estado==='aprobado' && (accesos.includes('movil')||accesos.includes('empleabilidad')||accesos.includes('principal')));
-  if(!ok){ document.getElementById('loginStep').style.display='none'; document.getElementById('regStep').style.display='none'; document.getElementById('pendStep').style.display='block'; return; }
+async function _movilOnAcceso(user){
   document.getElementById('gate').style.display='none';
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('hUser').textContent=(user.email||'').split('@')[0];
   await cargarLevantados();
   construirCuestionario();
 }
-window.addEventListener('DOMContentLoaded',async()=>{ if(!initSB())return; const {data}=await SB.auth.getSession(); if(data&&data.session&&data.session.user){
-  // Refrescar el token para traer los accesos actualizados. Sin esto, si el
-  // usuario maestro cambia los permisos de alguien, esa persona sigue con el
-  // JWT viejo hasta cerrar sesion. Ver docs/PENDIENTES.md P-10.
-  let usuario=data.session.user;
-  try{ const {data:ref}=await SB.auth.refreshSession(); if(ref&&ref.session&&ref.session.user) usuario=ref.session.user; }catch(e){}
-  await trasLogin(usuario);
-} });
 
 // ═══════════ NAVEGACIÓN ═══════════
 function movTab(p,btn){ document.querySelectorAll('.page').forEach(x=>x.classList.remove('active')); document.getElementById('page-'+p).classList.add('active'); document.querySelectorAll('.tabbar button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); if(p==='listado')renderListado(); if(p==='cuestionario')refrescarCuestionarioActual(); window.scrollTo(0,0); }
