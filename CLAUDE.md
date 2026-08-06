@@ -86,11 +86,21 @@ Nada de analytics, tracking, ni APIs de terceros. Solo Supabase y las 7
 librerías ya presentes. Agregar una dependencia es una decisión del dueño del
 proyecto, no del que está programando.
 
-### 🥇 Regla 7 — El Home no tiene lógica
+### 🥇 Regla 7 — El Home casi no tiene lógica
 
-`index.html` solo lee `config/modules.config.js` y pinta botones. No sabe qué
-es un proveedor ni qué es una faena, y así debe seguir. Para agregar un módulo
+`index.html` lee `config/modules.config.js` y pinta botones. No sabe qué es
+un proveedor ni qué es una faena, y así debe seguir. Para agregar un módulo
 al menú se edita el config, **nunca el Home**.
+
+> ⚠️ **Única excepción (P-3, `docs/PENDIENTES.md`), acotada a propósito:**
+> el Home lee las `storageKey` de sesión de los 8 módulos en `localStorage`
+> (sin red, sin cargar Supabase) para **ocultar** — nunca para revelar — las
+> tarjetas de `proveedores`/`empleabilidad` si la sesión existente no tiene
+> ese acceso. Sigue sin saber qué es un módulo: solo compara el slug
+> `acceso`/`accesoAlterno` de cada entrada contra `accesos` del JWT. Los 6
+> módulos ocultos por `visibleEnHome: false` siguen ocultos siempre, sin
+> importar el acceso real — eso seguiría siendo un cambio de comportamiento
+> mayor, no cubierto por esta excepción.
 
 ### 🥇 Regla 8 — Un módulo no depende de otro
 
