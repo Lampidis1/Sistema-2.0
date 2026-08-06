@@ -39,6 +39,58 @@
 (function () {
   var cont = document.getElementById('cards');
   var mods = (window.AM_MODULES || []).filter(function (m) { return m.visibleEnHome; });
+
+  // ── P-3 (docs/PENDIENTES.md) ────────────────────────────────────────────
+  // Si ya existe una sesion guardada de ALGUN modulo, se usa para OCULTAR
+  // tarjetas a las que esa sesion no tiene acceso. Sin sesion en ningun
+  // lado (visitante nuevo), se muestran todas igual que siempre -- esto
+  // nunca REVELA una tarjeta que hoy esta oculta por visibleEnHome:false.
+  //
+  // Sin red, sin cargar Supabase: cada modulo guarda su sesion en
+  // localStorage bajo su propia storageKey (no hay "la sesion" unica), asi
+  // que se leen directo y se decodifica el JWT a mano, igual que ya hacen
+  // los modulos entre si.
+  var STORAGE_KEYS = ['am_v2_auth', 'am_emp_auth', 'am_mov_auth', 'am_mgi',
+    'am_pub_centinela', 'am_pub_antucoya', 'am_pub_zaldivar', 'am_admin_auth'];
+
+  function decodeJwt(token) {
+    try {
+      var b = token.split('.')[1];
+      return JSON.parse(atob(b.replace(/-/g, '+').replace(/_/g, '/')));
+    } catch (e) { return null; }
+  }
+
+  function leerSesion() {
+    for (var i = 0; i < STORAGE_KEYS.length; i++) {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEYS[i]);
+        if (!raw) continue;
+        var token = (JSON.parse(raw) || {}).access_token;
+        if (!token) continue;
+        var payload = decodeJwt(token);
+        if (!payload || !payload.exp || payload.exp * 1000 < Date.now()) continue;
+        var md = payload.app_metadata || {};
+        return { rol: md.rol || '', estado: md.estado || '', accesos: Array.isArray(md.accesos) ? md.accesos : [] };
+      } catch (e) { /* clave con formato inesperado: seguir probando las demas */ }
+    }
+    return null; // sin sesion valida en ningun modulo
+  }
+
+  function tieneAcceso(m, sesion) {
+    if (!sesion) return true; // sin sesion: no se oculta nada
+    if (sesion.rol === 'admin') return true;
+    if (sesion.estado !== 'aprobado') return false;
+    var alt = m.accesoAlterno ? [].concat(m.accesoAlterno) : [];
+    var slugs = [m.acceso].concat(alt);
+    for (var i = 0; i < slugs.length; i++) {
+      if (sesion.accesos.indexOf(slugs[i]) !== -1) return true;
+    }
+    return false;
+  }
+
+  var sesion = leerSesion();
+  mods = mods.filter(function (m) { return tieneAcceso(m, sesion); });
+
   function esc(t) {
     return String(t).replace(/[&<>"]/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];

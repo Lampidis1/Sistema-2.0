@@ -225,22 +225,47 @@ personales y limpiarla al cerrar sesión.
 
 ---
 
-### P-3 · 🔴 El Home no pide sesión y muestra los botones a cualquiera
+### P-3 · 🟡 PARCIAL — resuelto para ocultar (2026-08-06); nunca revela
 
-`index.html` no tiene autenticación. Muestra las tarjetas de Proveedores y
-Empleabilidad a quien abra la URL.
+`index.html` no tenía autenticación. Mostraba las tarjetas de Proveedores y
+Empleabilidad a quien abriera la URL, sin mirar quién es.
 
-Hoy no se filtran los botones según los `accesos` del usuario, simplemente
-porque el Home no sabe quién es. Entrar igual no se puede: cada módulo tiene
-su propio login y RLS protege los datos. Lo que se filtra es información sobre
-qué sistemas existen.
-
-**Arreglo:** poner la guardia de sesión también en el Home y filtrar
-`AM_MODULES` contra `app_metadata.accesos`. El config ya trae el campo
-`acceso` de cada módulo, así que es casi solo conectarlo.
-
-⚠️ Al filtrar, hay que excluir `lector`: está dentro del arreglo `accesos`
-pero **no es un módulo**, y aparecería como botón fantasma.
+> **Tensión real con `CLAUDE.md` §7** ("el Home no tiene lógica"): filtrar
+> por sesión **es lógica**, aunque sea liviana y sin red. Se decidió con el
+> dueño del proyecto un alcance acotado: **el Home solo oculta, nunca
+> revela.** Las 2 tarjetas visibles hoy (`proveedores`, `empleabilidad`) se
+> ocultan si existe una sesión que no da acceso a ellas. Los 6 módulos ya
+> ocultos (`movil`, `mgi`, `admin`, las 3 faenas) siguen ocultos siempre,
+> sin importar el acceso real — se sigue entrando por URL directa, sin
+> cambio ahí. Un filtro completo (mostrar todo lo que corresponda, `Home`
+> como dashboard personalizado) quedó fuera de alcance — es una decisión de
+> producto más grande, no solo un fix de seguridad.
+>
+> **Detalle técnico real:** no existe "la sesión" — cada uno de los 8
+> módulos guarda la suya bajo su propia `storageKey` de Supabase
+> (`am_v2_auth`, `am_emp_auth`, `am_mov_auth`, `am_mgi`,
+> `am_pub_centinela/antucoya/zaldivar`, `am_admin_auth`). El Home lee las 8
+> claves de `localStorage` directo (sin cargar Supabase, sin red) y
+> decodifica el JWT de la primera que tenga un token no vencido — misma
+> técnica que ya usan los módulos entre sí para leer `app_metadata`.
+>
+> **Sin sesión en ninguna de las 8 claves → se muestran ambas tarjetas,
+> exactamente como antes.** Solo se oculta cuando hay una sesión real que
+> confirma que esa cuenta no tiene el acceso.
+>
+> Se aprovechó para documentar en `config/modules.config.js` un
+> comportamiento real no anotado antes (encontrado al investigar P-6):
+> `empleabilidad` también se habilita con el slug `'principal'`, no solo
+> `'movil'`. `accesoAlterno` ahora acepta un array.
+>
+> **Verificado** (inyección aislada, mismo método que P-6/P-7, sin tocar
+> datos reales): sin sesión → 2 tarjetas; sesión con acceso solo a `mgi` →
+> 0 tarjetas; sesión `rol:'admin'` → 2 tarjetas; sesión con solo `movil` →
+> Empleabilidad sí, Proveedores no.
+>
+> `lector` no aparece como `acceso`/`accesoAlterno` de ningún módulo, así
+> que el riesgo de "botón fantasma" que mencionaba este punto no llega a
+> producirse con el alcance implementado.
 
 ---
 

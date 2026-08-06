@@ -44,7 +44,10 @@ window.AM_MODULES = [
     icono: '👥',
     ruta: 'modules/empleabilidad/',
     acceso: 'empleabilidad',
-    accesoAlterno: 'movil',       // tener 'movil' también habilita este módulo
+    // 'movil' habilita este módulo (documentado); 'principal' también lo
+    // habilita en el código real (verificado en empleabilidad.js/movil.js
+    // al investigar P-6) aunque no estaba anotado acá antes.
+    accesoAlterno: ['movil', 'principal'],
     estado: 'activo',
     visibleEnHome: true,
     doc: 'docs/modulos/empleabilidad.md',
