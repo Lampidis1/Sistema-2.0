@@ -499,6 +499,30 @@ de las políticas RLS con el mismo criterio.**
 
 ---
 
+### P-15 · 🔴 Sin protección de contraseñas filtradas — bloqueado por plan
+
+El linter de seguridad de Supabase marca `auth_leaked_password_protection`
+como deshabilitado: no se valida al registrarse ni al cambiar clave si la
+contraseña ya apareció en una filtración conocida (HaveIBeenPwned).
+
+**Intentado y bloqueado (2026-08-05):** Supabase lo rechaza con
+`Configuring leaked password protection via HaveIBeenPwned.org is available
+on Pro Plans and up`. La organización (`mavro spa`) está en plan **Free**. No
+es una decisión pendiente, es un límite del plan — se revisa si algún día se
+pasa a Pro.
+
+**Por qué el riesgo real es menor de lo que parece:** el registro no es
+autoservicio libre. `signUp()` deja al usuario en `estado: 'pendiente'` y un
+admin aprueba manualmente con `aprobar_usuario_v2()` — hay un humano
+revisando antes de dar acceso real (ver §5 de `CLAUDE.md`).
+
+**Mitigación sin costo, pendiente de aprobar:** agregar una validación mínima
+de fuerza de contraseña (longitud, no solo dígitos) en el `signUp()` del
+frontend. Está duplicado en los 7 módulos — mismo alcance que P-6, mejor
+resolverlos juntos.
+
+---
+
 ## Orden sugerido
 
 | # | Pendiente | Estado | Por qué en esa posición |
