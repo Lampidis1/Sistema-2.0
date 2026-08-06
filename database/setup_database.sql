@@ -430,8 +430,14 @@ begin
 end $$;
 
 -- perfiles
+-- P-12 (docs/PENDIENTES.md): antes "using (true)" -- cualquier autenticado,
+-- aprobado o no, leia la tabla completa. El frontend solo lee su propio
+-- perfil (id=auth.uid()); el panel de admin usa listar_solicitudes(),
+-- SECURITY DEFINER, no pasa por esta politica.
 drop policy if exists perfiles_read on public.perfiles;
-create policy perfiles_read on public.perfiles for select using (true);
+create policy perfiles_read on public.perfiles for select
+  to authenticated
+  using (id = auth.uid() OR es_admin());
 drop policy if exists perfiles_upsert_own on public.perfiles;
 create policy perfiles_upsert_own on public.perfiles for insert with check (id = auth.uid());
 drop policy if exists perfiles_update_own on public.perfiles;

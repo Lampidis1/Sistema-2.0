@@ -543,15 +543,46 @@ sesión, asumiendo que se pierde al cerrar la pestaña.
 
 ---
 
-### P-12 · 🔴 El registro (`signUp`) está abierto en los 7 módulos
+### P-12 · 🟡 PARCIAL — auditoría RLS hecha (2026-08-06); registro sigue abierto
 
 Cualquiera puede crear una cuenta. Queda en estado `pendiente` y el frontend
 la bloquea, pero **es una cuenta autenticada real** frente a la API de
 Supabase. Toda política que se apoye solo en `to authenticated` sin verificar
 `estado='aprobado'` queda expuesta a cualquiera que se registre.
 
-Ya se corrigió en la política de storage de P-1a. **Conviene auditar el resto
-de las políticas RLS con el mismo criterio.**
+> **Auditoría de las 30 políticas RLS del schema `public`, hecha el
+> 2026-08-06.** Se verificó primero que `tiene_acceso()`, `es_principal()`,
+> `es_mgi()`, `es_empleabilidad()` y `es_editor()` exigen `estado='aprobado'`
+> internamente (o `es_admin()`, que lo bypasea a propósito) — así que
+> cualquier política que use alguna de esas funciones ya estaba bien. De 29
+> políticas de datos, **27 estaban correctas.** Dos no:
+>
+> | Política | Antes | Después |
+> |---|---|---|
+> | `perfiles_read` | `using (true)` — cualquier autenticado leía la tabla completa | `using (id = auth.uid() OR es_admin())` |
+> | `cvlogs_ins` | `with check (true)` — cualquier autenticado insertaba | `with check (es_admin() OR es_principal() OR es_empleabilidad())` |
+>
+> `perfiles` tiene nombre/apellido/email/estado/rol_solicitado de **todos**
+> los usuarios — se verificó el frontend completo (los 3 usos de
+> `.from('perfiles')`, en proveedores/mgi/faena-consulta) y ninguno necesita
+> leer el perfil de otro; siempre filtran por `id=auth.uid()`. El panel de
+> admin usa `listar_solicitudes()` (`SECURITY DEFINER`), no pasa por esta
+> política.
+>
+> **Verificado con la `anon key` real, sin sesión, antes y después:**
+> `perfiles` pasó de devolver la tabla completa a `[]`; el insert en
+> `cv_logs` pasó de aceptarse a rechazarse con `42501` (RLS violation).
+>
+> No rompe nada: cada módulo sigue leyendo su propio perfil, y `movil` (el
+> único que inserta en `cv_logs`) sigue pudiendo hacerlo — ya estaba
+> gateado por `movil`/`empleabilidad`/`principal` en el frontend, ahora
+> también en la base.
+
+**Sigue sin resolver:** el registro (`signUp`) en sí sigue abierto en los 7
+módulos — cualquiera puede crear una cuenta, solo que ahora esa cuenta no
+puede leer/escribir nada hasta que un admin la apruebe. Cerrar el registro
+en sí sería un cambio de comportamiento visible (afecta el flujo de "pedir
+acceso"), no una migración de RLS — queda fuera del alcance de este punto.
 
 ---
 

@@ -216,8 +216,12 @@ end $$;
 alter table public.cv_logs enable row level security;
 drop policy if exists cvlogs_sel on public.cv_logs;
 create policy cvlogs_sel on public.cv_logs for select using (es_admin() or es_principal() or es_empleabilidad());
+-- P-12 (docs/PENDIENTES.md): antes "with check (true)" -- cualquier
+-- autenticado, aprobado o no, insertaba. Solo movil.js inserta aqui, y ya
+-- exige acceso a movil/empleabilidad/principal en el frontend.
 drop policy if exists cvlogs_ins on public.cv_logs;
-create policy cvlogs_ins on public.cv_logs for insert to authenticated with check (true);
+create policy cvlogs_ins on public.cv_logs for insert to authenticated
+  with check (es_admin() or es_principal() or es_empleabilidad());
 drop policy if exists cvlogs_del on public.cv_logs;
 create policy cvlogs_del on public.cv_logs for delete using (es_admin());
 
