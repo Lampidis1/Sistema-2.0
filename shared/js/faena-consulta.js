@@ -80,6 +80,38 @@ function gErr(m){ const e=document.getElementById('gErr'); e.textContent=m||''; 
 
 function initSB(){ if(!window.SUPA_CFG){ gErr('Falta config.js'); return false; } SB=window.supabase.createClient(window.SUPA_CFG.url, window.SUPA_CFG.key, {auth:{persistSession:true,storageKey:'am_pub_'+PUB_COL}}); return true; }
 
+// ── URLs firmadas (P-1b) ────────────────────────────────────────────────
+// Este modulo es de solo lectura: nunca sube archivos, solo muestra fotos
+// que subio proveedores.js. Mismo mecanismo de firma que alla.
+function _rutaDocumentoFaena(url){
+  if(!url) return null;
+  const m=String(url).match(/\/object\/public\/documentos\/(.+)$/);
+  return m ? decodeURIComponent(m[1]) : url;
+}
+function resolverUrlFirmadaFaena(url, ttlSeg){
+  if(!url) return Promise.resolve(null);
+  if(!SB) return Promise.resolve(url);
+  return SB.storage.from('documentos').createSignedUrl(_rutaDocumentoFaena(url), ttlSeg||3600)
+    .then(function(r){ return (r.error||!r.data) ? null : r.data.signedUrl; })
+    .catch(function(){ return null; });
+}
+function _hidratarImgsFirmadasFaena(root){
+  var imgs=[];
+  if(root.nodeType===1 && root.matches && root.matches('img[data-firmar]')) imgs.push(root);
+  if(root.querySelectorAll){ var found=root.querySelectorAll('img[data-firmar]'); for(var i=0;i<found.length;i++) imgs.push(found[i]); }
+  imgs.forEach(function(img){
+    var raw=img.getAttribute('data-firmar'); if(!raw) return;
+    img.removeAttribute('data-firmar');
+    resolverUrlFirmadaFaena(raw).then(function(u){ if(u) img.src=u; });
+  });
+}
+(function _iniciarHidratacionImagenesFaena(){
+  var start=function(){ new MutationObserver(function(muts){
+    muts.forEach(function(m){ m.addedNodes.forEach(function(n){ if(n.nodeType===1) _hidratarImgsFirmadasFaena(n); }); });
+  }).observe(document.body,{childList:true,subtree:true}); };
+  if(document.body) start(); else document.addEventListener('DOMContentLoaded',start);
+})();
+
 async function entrar(){
   gErr(''); if(!SB && !initSB()) return;
   const email=document.getElementById('gEmail').value.trim(), pass=document.getElementById('gPass').value;
@@ -329,7 +361,7 @@ function verFicha(pid){
   let d='';
   if(p.descripcion_general&&p.descripcion_general.trim()){ d+='<div class="fm-sec"><div class="fm-sec-t">≡ Descripción general</div><div style="font-size:.92rem;line-height:1.65">'+esc(p.descripcion_general)+'</div></div>'; }
   let _fotosF=[]; try{ _fotosF=JSON.parse(p.fotos_json||'[]')||[]; }catch(e){}
-  if(_fotosF.length){ d+='<div class="fm-sec"><div class="fm-sec-t">📷 Fotografías</div><div style="display:flex;flex-wrap:wrap;gap:8px">'+_fotosF.slice(0,3).map(function(u){return '<img src="'+u+'" style="width:31%;aspect-ratio:1.35;object-fit:cover;border-radius:8px;border:1px solid #ddd">';}).join('')+'</div></div>'; }
+  if(_fotosF.length){ d+='<div class="fm-sec"><div class="fm-sec-t">📷 Fotografías</div><div style="display:flex;flex-wrap:wrap;gap:8px">'+_fotosF.slice(0,3).map(function(u){return '<img data-firmar="'+u+'" style="width:31%;aspect-ratio:1.35;object-fit:cover;border-radius:8px;border:1px solid #ddd">';}).join('')+'</div></div>'; }
   // Maquinaria / Flota (columna derecha, ancho completo dentro de ella)
   let _flota=[]; try{ _flota=JSON.parse(p.flota_json||'[]')||[]; }catch(e){ _flota=[]; }
   if(_flota.length){
@@ -397,7 +429,7 @@ async function exportarFichaPDF(pid){
     // ── Fotografías ──
     let _fpdf=[]; try{ _fpdf=JSON.parse(p.fotos_json||'[]')||[]; }catch(e){}
     if(_fpdf.length){
-      const _b64s=await Promise.all(_fpdf.slice(0,3).map(function(u){ return new Promise(function(res){ fetch(u).then(function(r){return r.blob();}).then(function(b){ const rd=new FileReader(); rd.onload=function(){res(rd.result);}; rd.onerror=function(){res(null);}; rd.readAsDataURL(b); }).catch(function(){res(null);}); }); }));
+      const _b64s=await Promise.all(_fpdf.slice(0,3).map(function(u){ return resolverUrlFirmadaFaena(u).then(function(firmada){ return new Promise(function(res){ fetch(firmada||u).then(function(r){return r.blob();}).then(function(b){ const rd=new FileReader(); rd.onload=function(){res(rd.result);}; rd.onerror=function(){res(null);}; rd.readAsDataURL(b); }).catch(function(){res(null);}); }); }); }));
       const _vld=_b64s.filter(Boolean);
       if(_vld.length){
         if(y>240){doc.addPage();y=20;}

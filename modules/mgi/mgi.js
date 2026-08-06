@@ -370,7 +370,7 @@ async function cargarVisitasMGI(pid){
       <div style="flex:1"><b>${esc(v.fecha||'')}</b> · ${esc(v.titulo||'')} ${badgeOrigenVisitaMGI(v)}<br><span style="font-size:.74rem;color:var(--text-muted)">👤 ${esc(v.responsable_nombre||'')}</span>${v.resumen&&v.resumen.trim()?`<div style="margin-top:5px;font-size:.78rem;color:var(--text);background:#FFF9E8;border-left:3px solid #F2A900;border-radius:0 6px 6px 0;padding:5px 9px;white-space:pre-wrap">📝 ${esc(v.resumen)}</div>`:''}</div>
       <div style="display:flex;gap:5px">
         <button class="mini" onclick="descargarMinutaMGI('${v.visita_id}')" title="Descargar PDF">📄</button>
-        ${v.minuta_pdf_url?`<a class="mini" href="${v.minuta_pdf_url}" target="_blank" title="PDF guardado">☁️</a>`:''}
+        ${v.minuta_pdf_url?`<a class="mini" href="javascript:void(0)" data-firmar-link="${v.minuta_pdf_url}" onclick="return abrirFirmadoMGI(this)" title="PDF guardado">☁️</a>`:''}
       </div>
     </div>`).join('');
   }catch(e){ cont.innerHTML='<div style="font-size:.78rem;color:#c0311b">Error: '+esc(e.message)+'</div>'; }
@@ -604,9 +604,52 @@ async function subirArchivoMGI(file, carpeta){
   const {data}=SB.storage.from('documentos').getPublicUrl(path);
   return data.publicUrl;
 }
-function _urlToBase64MGI(url){
+
+// ── URLs firmadas (P-1b) ────────────────────────────────────────────────
+// Mismo mecanismo que en proveedores.js: el bucket puede volverse privado,
+// asi que las URLs guardadas se firman al momento de usarlas.
+function _rutaDocumentoMGI(url){
+  if(!url) return null;
+  const m=String(url).match(/\/object\/public\/documentos\/(.+)$/);
+  return m ? decodeURIComponent(m[1]) : url;
+}
+async function resolverUrlFirmadaMGI(url, ttlSeg){
+  if(!url) return null;
+  if(!SB) return url;
+  try{
+    const {data,error}=await SB.storage.from('documentos').createSignedUrl(_rutaDocumentoMGI(url), ttlSeg||3600);
+    if(error||!data) return null;
+    return data.signedUrl;
+  }catch(e){ return null; }
+}
+async function abrirFirmadoMGI(el){
+  const raw=el.getAttribute('data-firmar-link');
+  const u=await resolverUrlFirmadaMGI(raw);
+  window.open(u||raw,'_blank');
+  return false;
+}
+function _hidratarImgsFirmadasMGI(root){
+  const imgs=[];
+  if(root.nodeType===1 && root.matches && root.matches('img[data-firmar]')) imgs.push(root);
+  if(root.querySelectorAll) imgs.push(...root.querySelectorAll('img[data-firmar]'));
+  imgs.forEach(async img=>{
+    const raw=img.getAttribute('data-firmar'); if(!raw) return;
+    img.removeAttribute('data-firmar');
+    const u=await resolverUrlFirmadaMGI(raw);
+    if(u) img.src=u;
+  });
+}
+(function _iniciarHidratacionImagenesMGI(){
+  const start=()=>new MutationObserver(muts=>{
+    muts.forEach(m=>m.addedNodes.forEach(n=>{ if(n.nodeType===1) _hidratarImgsFirmadasMGI(n); }));
+  }).observe(document.body,{childList:true,subtree:true});
+  if(document.body) start(); else document.addEventListener('DOMContentLoaded',start);
+})();
+
+async function _urlToBase64MGI(url){
+  const firmada=await resolverUrlFirmadaMGI(url);
   return new Promise((resolve,reject)=>{
-    fetch(url).then(r=>r.blob()).then(blob=>{
+    fetch(firmada||url).then(r=>r.blob()).then(blob=>{
       const reader=new FileReader();
       reader.onload=()=>resolve(reader.result);
       reader.onerror=()=>reject(new Error('No se pudo leer la imagen'));
@@ -679,7 +722,7 @@ function minutaHTMLMGI(v){
     <div style="margin-top:12px"><div style="font-weight:800;color:#4338ca;font-size:.8rem;text-transform:uppercase">Participantes</div>
       ${(v.participantes||[]).map(pt=>`<div style="font-size:.82rem">• ${esc(pt.nombre)} — ${esc(pt.empresa)}</div>`).join('')||'—'}</div>
     ${(v.fotos&&v.fotos.filter(Boolean).length)?`<div style="margin-top:12px"><div style="font-weight:800;color:#4338ca;font-size:.8rem;text-transform:uppercase">Fotografías de la visita</div>
-      <div style="display:flex;gap:8px;margin-top:6px">${v.fotos.filter(Boolean).slice(0,3).map(u=>`<img src="${u}" style="width:31%;aspect-ratio:1.4;object-fit:cover;border-radius:6px;border:1px solid #ddd"/>`).join('')}</div></div>`:''}
+      <div style="display:flex;gap:8px;margin-top:6px">${v.fotos.filter(Boolean).slice(0,3).map(u=>`<img data-firmar="${u}" style="width:31%;aspect-ratio:1.4;object-fit:cover;border-radius:6px;border:1px solid #ddd"/>`).join('')}</div></div>`:''}
     <div style="margin-top:12px"><div style="font-weight:800;color:#4338ca;font-size:.8rem;text-transform:uppercase">Compromisos</div>
       ${(v.compromisos||[]).map((c,i)=>`<div style="font-size:.82rem;margin-top:5px"><b>${i+1}.</b> ${esc(c.descripcion)}${(c.responsables||[]).map(r=>`<div style="margin-left:14px;color:#5F6973">↳ ${esc(r.nombre)} ${r.fecha_limite?'· vence '+esc(r.fecha_limite):''}</div>`).join('')}</div>`).join('')||'—'}</div>
   </div>`;
