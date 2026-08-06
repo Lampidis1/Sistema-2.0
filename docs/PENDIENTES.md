@@ -318,11 +318,43 @@ cualquiera con el slug `'principal'`, no solo entre ellos dos — es
 comportamiento real en producción, no documentado en `CLAUDE.md` §5. Se
 preservó tal cual (no se "corrigió"); solo se deja anotado acá.
 
-**Fases siguientes, sin hacer:** grupo B (`mgi` + faenas) y `proveedores.js`
-(entrelazado con P-7, mayor riesgo).
+**Grupo B (investigado 2026-08-06, sin tocar código):** se comparó
+`mgi.js` contra `faena-consulta.js` función por función con `diff` directo,
+aplicando el mismo criterio que en la fase 1 — extraer solo lo verificado
+idéntico. El resultado: **casi nada calificó.**
 
-⚠️ Al hacerlo, cargar con `<script src>` clásico. **Nunca `type="module"`**:
-hay 457 `onclick=` en el HTML que dependen de que las funciones sean globales.
+| Función | ¿Idéntica de verdad? |
+|---|---|
+| `salir()` | Sí, byte a byte — la única 100% segura |
+| `initSB()` | Casi: llama a `gateErr`/`gErr` — nombre de función **y** de `id` del DOM distintos entre grupos |
+| `entrar()` | **No.** IDs de DOM distintos (`lgEmail` vs `gEmail`); el email se pasa a minúsculas en un lado y no en el otro; texto del botón distinto ("Ingresando…" vs "Verificando..."); el chequeo de credenciales inválidas es `includes('Invalid')` en un grupo vs comparación exacta `==='Invalid login credentials'` en el otro |
+| `guardarPerfilPub()` | Casi: un mensaje de error trae `'Error: '+e.message`, el otro solo `e.message` |
+| `trasLogin()` / `registrarse()` | **No.** Ver más abajo — flujo estructuralmente distinto |
+
+Además, el flujo de "acceso denegado" **no es una variación de texto, es otro
+flujo**: el grupo A (fase 1) muestra un panel estático de "pendiente" y
+mantiene la sesión abierta; `mgi`/faenas hacen `signOut()` activo y muestran
+un mensaje dinámico (con distinta granularidad entre sí: `mgi.js` distingue
+2 casos, `faena-consulta.js` distingue 3, incluyendo el nombre de la faena).
+`mgi.js` además hace un paso extra — vuelve a pedir la sesión y decodifica el
+JWT a mano — que `faena-consulta.js` no tiene, probablemente corrigiendo un
+bug puntual pasado. Y los nombres de función están invertidos entre los dos:
+`mgi.js` usa `registrarse()`/`verReg()`, las 3 faenas usan
+`registrarsePub()`/`verRegistro()`.
+
+**Conclusión:** compartir solo `salir()` requeriría separar `SB`/`USER` de
+una declaración `let` combinada con 6-8 variables propias en cada archivo, y
+editar los 4 `index.html` para agregar las etiquetas `<script>` — demasiado
+movimiento para una función de una línea que casi nunca cambia. **Se decide
+no tocar el grupo B.** Si en el futuro se quiere revisitar, esta tabla ya
+tiene el trabajo de comparación hecho — no hace falta rehacerlo.
+
+**`proveedores.js` sigue sin tocar:** entrelazado con P-7 (el panel de
+administración vive ahí adentro), mayor riesgo que el grupo B.
+
+⚠️ Al tocar `shared/js/auth-guard.js`, cargar con `<script src>` clásico.
+**Nunca `type="module"`**: hay 457 `onclick=` en el HTML que dependen de que
+las funciones sean globales.
 Ver `CLAUDE.md` §6.
 
 ---
