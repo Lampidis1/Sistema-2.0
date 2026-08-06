@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proveedores · Antofagasta Minerals</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--teal:#00A399;--teal-dk:#006973;--teal-lt:#E4F6F5;--gold:#F2A900;--dark:#1C2632;--gray:#5F6973;--gray-lt:#D7DEE4;--bg:#F4F7F8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--dark)}
+#gate{position:fixed;inset:0;background:linear-gradient(135deg,#006973,#00A399);z-index:2000;display:flex;align-items:center;justify-content:center}
+.gate-card{background:#fff;border-radius:14px;padding:38px 34px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.gate-card h2{font-family:'Barlow Condensed';font-size:1.5rem;color:var(--teal-dk);font-weight:800;text-transform:uppercase}
+.gate-card p{color:var(--gray);font-size:.8rem;margin:4px 0 20px}
+input{width:100%;padding:9px 10px;border:1px solid var(--gray-lt);border-radius:6px;margin-bottom:12px;font-family:'Barlow'}
+.gate-card button{background:var(--teal);color:#fff;width:100%;padding:11px;border:none;border-radius:6px;font-family:'Barlow Condensed';font-weight:700;text-transform:uppercase;font-size:1rem;cursor:pointer}
+.err{color:#D0311B;font-size:.78rem;height:16px}
+.header{background:var(--teal-dk);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.hdr-logo{font-family:'Barlow Condensed';font-weight:800;color:#fff;font-size:1.15rem}
+.hdr-logo small{display:block;font-size:.55rem;color:rgba(255,255,255,.6);letter-spacing:.12em;text-transform:uppercase}
+a.link{color:rgba(255,255,255,.75);text-decoration:none;font-family:'Barlow Condensed';font-weight:700;text-transform:uppercase;font-size:.72rem}
+.wrap{max-width:900px;margin:40px auto;padding:0 24px}
+.card{background:#fff;border:1px solid var(--gray-lt);border-radius:12px;padding:26px;margin-bottom:18px}
+.card h3{font-family:'Barlow Condensed';color:var(--teal-dk);text-transform:uppercase;font-size:1.15rem;margin-bottom:10px}
+.note{background:var(--teal-lt);border-left:3px solid var(--teal);padding:14px 16px;border-radius:8px;color:var(--teal-dk);font-size:.88rem;line-height:1.5}
+ul{margin:10px 0 0 20px;font-size:.9rem;color:var(--gray);line-height:1.7}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div id="gate">
+  <div class="gate-card">
+    <h2>Proveedores</h2><p>Antofagasta Minerals</p>
+    <div class="err" id="err"></div>
+    <input type="password" id="pass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')go()">
+    <button onclick="go()">Ingresar</button>
+    <p style="margin-top:14px;font-size:.68rem">Demo: <b>proveedores2026</b></p>
+  </div>
+</div>
+<div id="app" class="hidden">
+  <div class="header"><div class="hdr-logo">PROVEEDORES<small>Antofagasta Minerals</small></div><div style="display:flex;gap:16px"><a class="link" href="hoteles.html">Hoteles MGI</a><a class="link" href="index.html">Inicio</a></div></div>
+  <div class="wrap">
+    <div class="card">
+      <h3>Área de Proveedores (sistema actual)</h3>
+      <div class="note">Esta es la <b>reubicación del <code>index</code> actual</b> como <code>proveedores.html</code>. Aquí se mantiene el sistema existente: directorio de proveedores, gestión de usuarios (aceptar / rechazar / permisos) y revisión de logs, además del módulo <b>Kanban</b>.
+      <br><br>Para integrar tu sistema real, reemplaza el contenido de este archivo por tu <code>index</code> actual — la estructura de acceso (índice + gate) ya queda lista.</div>
+    </div>
+    <div class="card">
+      <h3>Kanban (módulo compartido)</h3>
+      <p style="color:var(--gray);font-size:.9rem">El Kanban es compartido con Empleabilidad. Cualquier cambio futuro se aplica una sola vez y se refleja en ambas áreas. Recomendación técnica: extraerlo a <code>kanban.js</code> e incluirlo en ambas páginas.</p>
+    </div>
+    <div class="card">
+      <h3>Gestión de usuarios (admin)</h3>
+      <p style="color:var(--gray);font-size:.9rem">El administrador de Proveedores gobierna a los usuarios de todo el sistema, incluida Empleabilidad y Móvil:</p>
+      <ul><li>Aceptar / rechazar nuevos usuarios</li><li>Asignar niveles de acceso y permisos por tipo</li><li>Revisar logs de actividad y trazabilidad</li></ul>
+    </div>
+  </div>
+</div>
+<script>
+function go(){if(document.getElementById('pass').value==='proveedores2026'){sessionStorage.setItem('prov_ok','1');show()}else{document.getElementById('err').textContent='Contraseña incorrecta'}}
+function show(){document.getElementById('gate').classList.add('hidden');document.getElementById('app').classList.remove('hidden')}
+if(sessionStorage.getItem('prov_ok')==='1')show();
+</script>
+</body>
+</html>

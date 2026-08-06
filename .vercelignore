@@ -8,5 +8,10 @@ docs/
 CLAUDE.md
 README.md
 
+# Respaldo de la estructura monolitica anterior (Sistema-2.0).
+# Codigo inerte, HTML+CSS+JS mezclado sin las politicas de seguridad
+# actuales. No debe quedar accesible por URL directa.
+_legado-sistema-2.0/
+
 # Basura del sistema
 .DS_Store

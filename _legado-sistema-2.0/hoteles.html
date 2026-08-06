@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoteles MGI · Antofagasta Minerals</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--teal:#00A399;--teal-dk:#006973;--teal-lt:#E4F6F5;--gold:#F2A900;--dark:#1C2632;--gray:#5F6973;--gray-lt:#D7DEE4;--white:#fff;--bg:#F4F7F8;--radius:10px;--shadow:0 1px 4px rgba(0,0,0,.08);--shadow-h:0 6px 20px rgba(0,0,0,.12);--red:#D0311B}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--dark);font-size:14px}
+h1,h2,h3,.cond{font-family:'Barlow Condensed',sans-serif}
+button{font-family:'Barlow Condensed',sans-serif;cursor:pointer;border:none;border-radius:6px;font-weight:700;letter-spacing:.03em}
+input,select,textarea{font-family:'Barlow',sans-serif;font-size:14px;padding:8px 10px;border:1px solid var(--gray-lt);border-radius:6px;width:100%;background:#fff}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--teal-lt);border-color:var(--teal)}
+.hidden{display:none!important}
+#gate{position:fixed;inset:0;background:linear-gradient(135deg,#006973,#00A399);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px}
+.gate-card{background:#fff;border-radius:14px;padding:38px 34px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.gate-card h2{font-family:'Barlow Condensed';font-size:1.5rem;color:var(--teal-dk);font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.gate-card p{color:var(--gray);font-size:.8rem;margin:4px 0 20px}
+.gate-card input{margin-bottom:12px}
+.gate-card button{background:var(--teal);color:#fff;width:100%;padding:11px;font-size:1rem;text-transform:uppercase}
+.gate-err{color:var(--red);font-size:.78rem;height:16px;margin-bottom:6px}
+.header{background:var(--teal-dk);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:400;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+.hdr-logo{font-family:'Barlow Condensed';font-weight:800;color:#fff;font-size:1.15rem}
+.hdr-logo small{display:block;font-size:.55rem;color:rgba(255,255,255,.6);letter-spacing:.12em;text-transform:uppercase;font-weight:600}
+.hdr-r{display:flex;align-items:center;gap:12px}
+.role-sel{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);width:auto;font-size:.72rem;padding:5px 8px}
+.role-sel option{color:#000}
+.hdr-link{color:rgba(255,255,255,.75);text-decoration:none;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-family:'Barlow Condensed'}
+.hdr-link:hover{color:#fff}
+.nav{background:var(--teal-dk);border-top:1px solid rgba(255,255,255,.12);display:flex;padding:0 16px;position:sticky;top:60px;z-index:390}
+.nav-tab{background:none;color:rgba(255,255,255,.6);padding:11px 18px;font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:3px solid transparent;border-radius:0}
+.nav-tab.active{color:#fff;border-bottom-color:var(--gold)}
+.wrap{display:flex;max-width:1500px;margin:0 auto}
+.sidebar{width:250px;background:#fff;border-right:1px solid var(--gray-lt);padding:18px 16px;position:sticky;top:104px;height:calc(100vh - 104px);overflow-y:auto;flex-shrink:0}
+.sb-group{margin-bottom:18px}
+.sb-label{font-family:'Barlow Condensed';font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gray);display:block;margin-bottom:6px}
+.sb-group select,.sb-group input{font-size:.82rem;padding:6px 8px}
+.rangeval{font-size:.75rem;color:var(--teal-dk);font-weight:600;float:right}
+.btn-clear{background:var(--teal-lt);color:var(--teal-dk);width:100%;padding:8px;font-size:.78rem;text-transform:uppercase;margin-top:4px}
+.kpis{display:flex;gap:8px;flex-direction:column;margin-bottom:16px}
+.kpi{background:var(--teal-lt);border-radius:8px;padding:10px 12px}
+.kpi b{font-family:'Barlow Condensed';font-size:1.4rem;color:var(--teal-dk);display:block;line-height:1}
+.kpi span{font-size:.66rem;color:var(--gray);text-transform:uppercase;letter-spacing:.06em}
+.content{flex:1;padding:20px 24px;min-width:0}
+.page{display:none}.page.active{display:block}
+.pg-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.pg-title{font-size:1.5rem;font-weight:800;color:var(--teal-dk);text-transform:uppercase}
+.pg-title small{font-size:.85rem;color:var(--gray);font-weight:600;text-transform:none;margin-left:8px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.btn{padding:8px 14px;font-size:.8rem;text-transform:uppercase}
+.btn-teal{background:var(--teal);color:#fff}.btn-teal:hover{background:var(--teal-dk)}
+.btn-gold{background:var(--gold);color:var(--dark)}
+.btn-out{background:#fff;color:var(--teal-dk);border:1px solid var(--gray-lt)}.btn-out:hover{border-color:var(--teal)}
+.btn-red{background:#fff;color:var(--red);border:1px solid #f0c4bd}
+.btn-sm{padding:5px 10px;font-size:.72rem}
+.search{max-width:260px}
+.tbl-wrap{background:#fff;border:1px solid var(--gray-lt);border-radius:var(--radius);overflow:auto}
+table{width:100%;border-collapse:collapse}
+th{background:var(--teal-lt);color:var(--teal-dk);font-family:'Barlow Condensed';font-weight:700;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;text-align:left;padding:10px 12px;border-bottom:1px solid var(--gray-lt);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid #eef2f4;font-size:.85rem;vertical-align:middle}
+tr:hover td{background:#fafcfc}
+.nm{font-weight:600;color:var(--dark)}
+.mini{font-size:.72rem;color:var(--gray)}
+.bar{height:16px;background:#eef2f4;border-radius:8px;overflow:hidden;position:relative;min-width:80px}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--teal-dk));border-radius:8px}
+.bar-txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.66rem;font-weight:700;color:var(--dark)}
+.bar.full .bar-fill{background:linear-gradient(90deg,var(--gold),#d9930a)}
+.chip{display:inline-block;font-family:'Barlow Condensed';font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em}
+.c-pend{background:#fdeceb;color:var(--red)}
+.c-ok{background:var(--teal-lt);color:var(--teal-dk)}
+.c-nr{background:#fff4de;color:#9a6b00}
+.c-vig{background:var(--teal);color:#fff}
+.c-fin{background:var(--gray-lt);color:var(--dark)}
+.empty{padding:40px;text-align:center;color:var(--gray);font-size:.9rem}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:#fff;border-radius:12px;max-width:820px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-head{background:var(--teal-dk);color:#fff;padding:16px 22px;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2}
+.modal-head h2{font-size:1.2rem;font-weight:800;text-transform:uppercase}
+.modal-head .sub{font-size:.7rem;color:rgba(255,255,255,.7)}
+.x{background:rgba(255,255,255,.15);color:#fff;width:30px;height:30px;border-radius:50%;font-size:1rem}
+.modal-body{padding:20px 22px}
+.sect{margin-bottom:22px}
+.sect-t{font-family:'Barlow Condensed';font-size:.95rem;font-weight:700;color:var(--teal-dk);text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid var(--teal-lt);padding-bottom:5px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.fld label{font-family:'Barlow Condensed';font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);display:block;margin-bottom:3px}
+.item-card{background:var(--bg);border:1px solid var(--gray-lt);border-radius:8px;padding:12px;margin-bottom:10px;position:relative}
+.item-card .del{position:absolute;top:8px;right:8px}
+.room-row{display:grid;grid-template-columns:1.4fr 70px 70px 30px;gap:8px;align-items:center;margin-bottom:8px}
+.room-row.head,.emp-head{font-family:'Barlow Condensed';font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);font-weight:700}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--gray-lt);display:flex;justify-content:space-between;gap:8px;position:sticky;bottom:0;background:#fff}
+.note{background:var(--teal-lt);border-left:3px solid var(--teal);padding:10px 12px;border-radius:6px;font-size:.78rem;color:var(--teal-dk);margin-bottom:14px}
+.agenda-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}
+.ag-card{background:#fff;border:1px solid var(--gray-lt);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:8px}
+.ag-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.ag-name{font-family:'Barlow Condensed';font-weight:700;font-size:1.02rem;color:var(--dark);line-height:1.1}
+.call-btn{background:var(--teal);color:#fff;text-decoration:none;padding:9px 12px;border-radius:8px;font-family:'Barlow Condensed';font-weight:700;text-transform:uppercase;font-size:.76rem;display:flex;align-items:center;gap:6px;justify-content:center;flex:1}
+.call-btn:hover{background:var(--teal-dk)}
+.call-btn.due{background:#fff;color:var(--teal-dk);border:1px solid var(--gray-lt)}
+.call-row{display:flex;gap:8px}
+.ag-meta{font-size:.72rem;color:var(--gray);display:flex;justify-content:space-between;border-top:1px solid #eef2f4;padding-top:8px}
+.quick{display:flex;gap:6px;flex-wrap:wrap}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;padding:12px 22px;border-radius:8px;font-size:.85rem;z-index:900;opacity:0;transition:.3s;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+#toast.show{opacity:1}
+#printArea{display:none}
+@media print{body *{visibility:hidden}#printArea,#printArea *{visibility:visible}#printArea{display:block;position:absolute;left:0;top:0;width:100%}}
+@media(max-width:820px){.sidebar{display:none}.grid2,.grid3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="gate-card">
+    <h2>Hoteles MGI</h2>
+    <p>Programa MGI · Antofagasta Minerals</p>
+    <div class="gate-err" id="gateErr"></div>
+    <input type="password" id="gatePass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')tryGate()">
+    <button onclick="tryGate()">Ingresar</button>
+    <p style="margin-top:14px;font-size:.68rem">Demo: <b>hoteles2026</b></p>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <div class="header">
+    <div class="hdr-logo">HOTELES · MGI<small>Antofagasta Minerals</small></div>
+    <div class="hdr-r">
+      <select class="role-sel" id="roleSel" onchange="setRole(this.value)">
+        <option value="admin">Administrador</option>
+        <option value="gestor">Gestor</option>
+        <option value="consulta">Consulta</option>
+      </select>
+      <a class="hdr-link" href="proveedores.html">Proveedores</a>
+      <a class="hdr-link" href="index.html">Inicio</a>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="nav-tab active" data-pg="directorio" onclick="nav('directorio')">Directorio</button>
+    <button class="nav-tab" data-pg="agenda" onclick="nav('agenda')">Agenda telefónica</button>
+  </div>
+
+  <div class="wrap">
+    <aside class="sidebar" id="sidebar">
+      <div class="kpis" id="kpis"></div>
+      <div class="sb-group"><span class="sb-label">Encargado / Dueño</span><select id="fEnc" onchange="renderDir()"></select></div>
+      <div class="sb-group"><span class="sb-label">Estado de contacto</span><select id="fEstado" onchange="renderDir()">
+        <option value="">Todos</option><option>Pendiente</option><option>Actualizado</option><option>No contesta</option><option>Sin respuesta</option></select></div>
+      <div class="sb-group"><span class="sb-label">Empresa alojada</span><select id="fEmpresa" onchange="renderDir()"></select></div>
+      <div class="sb-group"><span class="sb-label">Datos de habitaciones</span><select id="fRooms" onchange="renderDir()">
+        <option value="">Todos</option><option value="con">Con habitaciones</option><option value="sin">Sin registrar</option></select></div>
+      <button class="btn-clear" onclick="clearFilters()">Limpiar filtros</button>
+    </aside>
+
+    <main class="content">
+      <section class="page active" id="pg-directorio">
+        <div class="pg-head"><div class="pg-title">Directorio de Hoteles <small id="dirCount"></small></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-teal" onclick="openFicha()">＋ Nuevo hotel</button>
+            <button class="btn btn-out btn-sm" onclick="exportExcel()">Exportar Excel</button>
+          </div>
+        </div>
+        <div class="toolbar"><input class="search" id="q" placeholder="Buscar hotel, encargado o RUT…" oninput="renderDir()"></div>
+        <div class="tbl-wrap">
+          <table><thead><tr>
+            <th>Establecimiento</th><th>Encargado</th><th>Teléfono</th><th>Habs</th><th>Camas</th>
+            <th style="width:150px">Ocupación</th><th>Empresas</th><th>Contacto</th><th></th>
+          </tr></thead><tbody id="dirBody"></tbody></table>
+          <div class="empty hidden" id="dirEmpty">Sin resultados.</div>
+        </div>
+      </section>
+
+      <section class="page" id="pg-agenda">
+        <div class="pg-head"><div class="pg-title">Agenda telefónica <small>llama y actualiza uno por uno</small></div></div>
+        <div class="toolbar">
+          <input class="search" id="qAg" placeholder="Buscar…" oninput="renderAgenda()">
+          <select id="agEstado" style="width:auto" onchange="renderAgenda()">
+            <option value="pend">Pendientes por llamar</option>
+            <option value="">Todos</option>
+            <option value="Actualizado">Actualizados</option>
+            <option value="No contesta">No contesta</option>
+            <option value="Sin respuesta">Sin respuesta</option>
+          </select>
+          <span class="mini" id="agCount"></span>
+        </div>
+        <div class="agenda-list" id="agendaList"></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="modalRoot"></div>
+<div id="printArea"></div>
+
+<script id="seed">const SEED_HOTELS = [{"codigo": "04", "nombre": "Casa Alberto Briones - Santa Maria #100", "nombreFull": "04. Casa Alberto Briones - Santa Maria #100", "rut": "15274150-2", "encargado": "Alberto Briones", "emailEnc": "alberto.briones1010@gmail.com", "telEnc": "56983589817", "dueno": "Angela Arenas P.", "emailDue": "angelapatriciaarenas1010@gmail.com", "telDue": "56945508184", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "11", "nombre": "Hospedaje A:A:C - Jaime Guzman #29", "nombreFull": "11. Hospedaje A:A:C - Jaime Guzman #29", "rut": "77964947-4", "encargado": "Aracely Apeña", "emailEnc": "hospedaje.propiedades@gmail.com", "telEnc": "56962111373", "dueno": "Aracely Apeña", "emailDue": "hospedaje.propiedades@gmail.com", "telDue": "56962111373", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "55", "nombre": "Hospedaje A: A: C  - 2 - Eduardo Frei #107", "nombreFull": "55.- Hospedaje A: A: C  - 2 - Eduardo Frei #107", "rut": "77964947-4", "encargado": "Aracely Apeña", "emailEnc": "hospedaje.propiedades@gmail.com", "telEnc": "56962111373", "dueno": "Aracely Apeña", "emailDue": "hospedaje.propiedades@gmail.com", "telDue": "56962111373", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "58", "nombre": "Hostal AAC 3 - Prat # 609", "nombreFull": "58.- Hostal AAC 3 - Prat # 609", "rut": "77964947-4", "encargado": "Aracely Apeña", "emailEnc": "hospedaje.propiedades@gmail.com", "telEnc": "56962111373", "dueno": "Aracely Apeña", "emailDue": "hospedaje.propiedades@gmail.com", "telDue": "56962111373", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "21", "nombre": "Hospedaje Laboral 1 - Diego Portales #102", "nombreFull": "21. Hospedaje Laboral 1 - Diego Portales #102", "rut": "78158165-8", "encargado": "Armando Chipana", "emailEnc": "archiemal@gmail.com", "telEnc": "56936168982", "dueno": "Armando Chipana", "emailDue": "archiemal@gmail.com", "telDue": "56936168982", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "22", "nombre": "Hospedaje Laboral 2 - Diego portales #103", "nombreFull": "22. Hospedaje Laboral 2 - Diego portales #103", "rut": "14576115-8", "encargado": "Armando Chipana", "emailEnc": "archiemal@gmail.com", "telEnc": "56936168982", "dueno": "Armando Chipana", "emailDue": "archiemal@gmail.com", "telDue": "56936168982", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "65", "nombre": "Hospedaje Laboral 3 (Santa Maria 106)", "nombreFull": "65.- Hospedaje Laboral 3 (Santa Maria 106)", "rut": "22895594-9", "encargado": "Armando Chipana", "emailEnc": "archiemal@gmail.com", "telEnc": "56936168982", "dueno": "Armando Chipana", "emailDue": "archiemal@gmail.com", "telDue": "56936168982", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "06", "nombre": "Hospedaje Maricela - Av Salvador Allende  #403", "nombreFull": "06. Hospedaje Maricela - Av Salvador Allende  #403", "rut": "76626247-3", "encargado": "Kassandra Godoy L.", "emailEnc": "kassandragodoy17@gmail.com", "telEnc": "56931275780", "dueno": "Benedicto Lazo", "emailDue": "benedictolazo@gmail.com", "telDue": "56989446802", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "23", "nombre": "Hospedaje Marfeli - Jose Santos Ossa #104", "nombreFull": "23. Hospedaje Marfeli - Jose Santos Ossa #104", "rut": "77208455-2", "encargado": "Kassandra Godoy L.", "emailEnc": "kassandragodoy17@gmail.com", "telEnc": "56931275780", "dueno": "Benedicto Lazo", "emailDue": "benedictolazo@gmail.com", "telDue": "56989446802", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "01", "nombre": "Aris Alojamiento - Colon #34", "nombreFull": "01. Aris Alojamiento - Colon #34", "rut": "76459458-9", "encargado": "Ronald Castro Vega", "emailEnc": "ronald.castro@alojamientosierragorda.cl", "telEnc": "56962447427", "dueno": "Boris Inarejo", "emailDue": "ronald.castro@alojamientosierragorda.cl", "telDue": "56990783548", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "35", "nombre": "Hostal Aris 2 - Jose Santos Ossa  #115", "nombreFull": "35. Hostal Aris 2 - Jose Santos Ossa  #115", "rut": "76459458-9", "encargado": "Ronald Castro Vega", "emailEnc": "ronald.castro@alojamientosierragorda.cl", "telEnc": "56962447427", "dueno": "Boris Inarejo", "emailDue": "ronald.castro@alojamientosierragorda.cl", "telDue": "56990783548", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "07", "nombre": "Casa Hospedaje Carlos Alarcon - Jose Santos Ossa #209", "nombreFull": "07. Casa Hospedaje Carlos Alarcon - Jose Santos Ossa #209", "rut": "77353018-1", "encargado": "Carlos Alarcón.", "emailEnc": "calarcon_79@gmail.com", "telEnc": "56981795950", "dueno": "Carlos Alarcón", "emailDue": "calarcon_79@gmail.com", "telDue": "56981795950", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "56", "nombre": "Hospedaje Victoria - Diego Portales #208", "nombreFull": "56.- Hospedaje Victoria - Diego Portales #208", "rut": "23615454-8", "encargado": "Celia taquichiri", "emailEnc": "taquichiricelia1960@gmail.com", "telEnc": "56952132011", "dueno": "Celia taquichiri", "emailDue": "taquichiricelia1960@gmail.com", "telDue": "56952132011", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "66", "nombre": "Hospedaje Helifos Casa Blanca (Eduardo Frei # 518)", "nombreFull": "66.- Hospedaje Helifos Casa Blanca (Eduardo Frei # 518)", "rut": "77942891-5", "encargado": "Cristian Silva", "emailEnc": "helifospa@gmail.com", "telEnc": "56963681568", "dueno": "Cristian Silva", "emailDue": "helifospa@gmail.com", "telDue": "56963681568", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "17", "nombre": "Hospedaje Ines - Diego Portales #108", "nombreFull": "17. Hospedaje Ines - Diego Portales #108", "rut": "8292502-3", "encargado": "Doris Martínez Perira", "emailEnc": "hospedajeines.sg@gmail.com", "telEnc": "56995492069", "dueno": "Doris Martínez P.", "emailDue": "hospedajeines.sg@gmail.com", "telDue": "56995492069", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "59", "nombre": "Servicios Integrales E&A SPA - Diego Portales # 206", "nombreFull": "59.- Servicios Integrales E&A SPA - Diego Portales # 206", "rut": "77374361-K", "encargado": "Ana Zurita", "emailEnc": "servicosturasana@gmail.com", "telEnc": "56984436529", "dueno": "Edgar Iquise Mamani", "emailDue": "servicosturasana@gmail.com", "telDue": "56973350688", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "09", "nombre": "Casa Hospedaje Eduardo Salas - Santa Maria #32", "nombreFull": "09. Casa Hospedaje Eduardo Salas - Santa Maria #32", "rut": "76774023-9", "encargado": "Zulma Melendres F.", "emailEnc": "zmelendresf@gmail.com", "telEnc": "56954745603", "dueno": "Eduardo Salas", "emailDue": "", "telDue": "", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "80", "nombre": "Hospedaje Calicanto - Diaz Gana 239", "nombreFull": "80.- Hospedaje Calicanto - Diaz Gana 239", "rut": "78189010-7", "encargado": "Erika Baptista Romero", "emailEnc": "baptistaerika2@gmail.com", "telEnc": "56942489641", "dueno": "Erika Baptista", "emailDue": "baptistaerika2@gmail.com", "telDue": "56942489641", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "27", "nombre": "Hospedaje Yaritza - Diego Portales #220", "nombreFull": "27. Hospedaje Yaritza - Diego Portales #220", "rut": "14475418-2", "encargado": "Erika Trigo A.", "emailEnc": "erikatrigo2502@gmail.com", "telEnc": "56931997608", "dueno": "ErikaTrigo A.", "emailDue": "erikatrigo2502@gmail.com", "telDue": "56931997608", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "14", "nombre": "Hospedaje Casa Besalco 2 - Jose Santos Ossa #107", "nombreFull": "14. Hospedaje Casa Besalco 2 - Jose Santos Ossa #107", "rut": "96727830-0", "encargado": "Anelis Gallegos", "emailEnc": "anelis.gallegos@besalco.cl", "telEnc": "56942218987", "dueno": "Héctor Rivera", "emailDue": "anelis.gallegos@besalco.cl", "telDue": "56942218987", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "15", "nombre": "Hospedaje Casa Besalco 3 - Jose Santos Ossa #223", "nombreFull": "15. Hospedaje Casa Besalco 3 - Jose Santos Ossa #223", "rut": "96727830-0", "encargado": "Anelis Gallegos", "emailEnc": "anelis.gallegos@besalco.cl", "telEnc": "56942218987", "dueno": "Héctor Rivera", "emailDue": "anelis.gallegos@besalco.cl", "telDue": "56942218987", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "16", "nombre": "Hospedaje Casa Besalco 4 (azul) - Diego Portales #101", "nombreFull": "16. Hospedaje Casa Besalco 4 (azul) - Diego Portales #101", "rut": "96727830-0", "encargado": "Anelis Gallegos", "emailEnc": "anelis.gallegos@besalco.cl", "telEnc": "56942218987", "dueno": "Héctor Rivera", "emailDue": "anelis.gallegos@besalco.cl", "telDue": "5642218987", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "30", "nombre": "Hostal El Castillo -  Av. Salvador Allende #609", "nombreFull": "30. Hostal El Castillo -  Av. Salvador Allende #609", "rut": "17831015-1", "encargado": "Hector Rivera", "emailEnc": "hr.servicio.alimentacion@gmail.com", "telEnc": "56993106857", "dueno": "Héctor Rivera", "emailDue": "hr.servicio.alimentacion@gmail.com", "telDue": "56993106857", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "03", "nombre": "Casa  Claudio Roca 2 - Av. Jaime Guzman #107", "nombreFull": "03. Casa  Claudio Roca 2 - Av. Jaime Guzman #107", "rut": "78292277-7", "encargado": "Javier Rivera", "emailEnc": "wackichayservice@gmail.com", "telEnc": "56959725546", "dueno": "Javier Rivera", "emailDue": "wackichayservice@gmail.com", "telDue": "56959725546", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "08", "nombre": "Casa Hospedaje Claudio Roca - Jose Santos Ossa #227", "nombreFull": "08. Casa Hospedaje Claudio Roca - Jose Santos Ossa #227", "rut": "78292277", "encargado": "Javier Rivera", "emailEnc": "wackichayservice@gmail.com", "telEnc": "56959725546", "dueno": "Javier Rivera", "emailDue": "wackichayservice@gmail.com", "telDue": "56959725546", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "71", "nombre": "Hospedaje Cistanthe, José Díaz Gana # 202", "nombreFull": "71.- Hospedaje Cistanthe, José Díaz Gana # 202", "rut": "77639681-8", "encargado": "Jessica Lazo", "emailEnc": "cistanthe.sierragorda@gmail.com", "telEnc": "56952270509", "dueno": "Jessica Lazo", "emailDue": "cistanthe.sierragorda@gmail.com", "telDue": "56952270509", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "81", "nombre": "Cistasthe 2 - Eduardo Frei 304", "nombreFull": "81.- Cistasthe 2 - Eduardo Frei 304", "rut": "77639681-8", "encargado": "Jessica Lazo", "emailEnc": "cistanthe.sierragorda@gmail.com", "telEnc": "56952270509", "dueno": "Jessica Lazo", "emailDue": "cistanthe.sierragorda@gmail.com", "telDue": "56952270509", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "82", "nombre": "Hospedaje Jormar - Caracoles # 30", "nombreFull": "82.- Hospedaje Jormar - Caracoles # 30", "rut": "77842719-2", "encargado": "Marcos Aguirre", "emailEnc": "jormarehijos@gmail.com", "telEnc": "56940103001", "dueno": "Jorgue Aguirre", "emailDue": "jormarehijos@gmail.com", "telDue": "56940103001", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "29", "nombre": "Hospedajes Jose Trigo - Jose Santos Ossa #201", "nombreFull": "29. Hospedajes Jose Trigo - Jose Santos Ossa #201", "rut": "77580375-4", "encargado": "Jose Trigo A.", "emailEnc": "jtrigo_@gmail.com", "telEnc": "56958299564", "dueno": "José Trigo A.", "emailDue": "jtrigo_@hotmail.com", "telDue": "56958299564", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "69", "nombre": "Hostal San Juan - Santa Maria #16", "nombreFull": "69- Hostal San Juan - Santa Maria #16", "rut": "78061313-0", "encargado": "Medali", "emailEnc": "jm.mi.cm.28@gmail.com", "telEnc": "56976043482", "dueno": "Juan Guerrero", "emailDue": "jm.mi.cm.28@gmail.com", "telDue": "PENDIENTE", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "72", "nombre": "Hospedaje Isaleen, Diaz Gana 235", "nombreFull": "72.- Hospedaje Isaleen, Diaz Gana 235", "rut": "77990023-1", "encargado": "Kassandra Godoy", "emailEnc": "kassandragodoy17@gmail.com", "telEnc": "56931275780", "dueno": "Kassandra Godoy", "emailDue": "kassandragodoy17@gmail.com", "telDue": "56931275780", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "70", "nombre": "Hospedaje La Previa - José Santos Ossa 210", "nombreFull": "70. Hospedaje La Previa - José Santos Ossa 210", "rut": "78015094-7", "encargado": "Katherine Lillo", "emailEnc": "kathalillocarvajal@gmail.com", "telEnc": "56954451582", "dueno": "Katherine Lillo", "emailDue": "kathalillocarvajal@gmail.com", "telDue": "56954451582", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "78", "nombre": "La Previa 2 - José Santos Ossa #216", "nombreFull": "78.- La Previa 2 - José Santos Ossa #216", "rut": "78015094-7", "encargado": "Katherine Lillo", "emailEnc": "kathalillocarvajal@gmail.com", "telEnc": "56954451582", "dueno": "Katherine Lillo", "emailDue": "kathalillocarvajal@gmail.com", "telDue": "56954451582", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "67", "nombre": "Hospedaje Magaly, Díaz Gana #200", "nombreFull": "67.- Hospedaje Magaly, Díaz Gana #200", "rut": "78197094-8", "encargado": "Magaly Sanca Jailla", "emailEnc": "magalysanca90@gmail.com", "telEnc": "56946292082", "dueno": "Magaly Sanca J", "emailDue": "magalysanca90@gmail.com", "telDue": "56946292082", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "47", "nombre": "Hostal Talinay 1 - Av. Salvador Allende #511", "nombreFull": "47. Hostal Talinay 1 - Av. Salvador Allende #511", "rut": "76030040-3", "encargado": "Marcela Michea", "emailEnc": "mlml_2012@me.com", "telEnc": "56934498720", "dueno": "Magarita liquitay", "emailDue": "mlml2012@gmail.com", "telDue": "56976204705", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "37", "nombre": "Hostal Minero 1 -  Av. Salvador Allende #108", "nombreFull": "37. Hostal Minero 1 -  Av. Salvador Allende #108", "rut": "4570211-1", "encargado": "Super: Marcia Marquez", "emailEnc": "marciacmarquez@gmail.com", "telEnc": "56990181261", "dueno": "Manuel Marquez", "emailDue": "marciacmarquez@gmail.com", "telDue": "56995410091", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "38", "nombre": "Hostal Minero 2 - Jose Santos Ossa #101", "nombreFull": "38. Hostal Minero 2 - Jose Santos Ossa #101", "rut": "4570211-1", "encargado": "Super:Marcia Marquez", "emailEnc": "marciacmarquez@gmail.com", "telEnc": "56990181261", "dueno": "Manuel Marquez", "emailDue": "marciacmarquez@gmail.com", "telDue": "56995410091", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "39", "nombre": "Hostal Minero 3 - Diego Portales #224", "nombreFull": "39. Hostal Minero 3 - Diego Portales #224", "rut": "4570211-1", "encargado": "Super:Marcia Marquez", "emailEnc": "marciacmarquez@gmail.com", "telEnc": "56990181261", "dueno": "Manuel Marquez", "emailDue": "marciacmarquez@gmail.com", "telDue": "56995410091", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "40", "nombre": "Hostal Minero 4 - Diego Portales #232", "nombreFull": "40. Hostal Minero 4 - Diego Portales #232", "rut": "4570211-1", "encargado": "Super: Maragarita Labarca", "emailEnc": "marciacmarquez@gmail.com", "telEnc": "56990181261", "dueno": "Manuel Marquez", "emailDue": "marciacmarquez@gmail.com", "telDue": "56995410091", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "41", "nombre": "Hostal Minero 5 - Jaime Guzman #33", "nombreFull": "41. Hostal Minero 5 - Jaime Guzman #33", "rut": "4570211-1", "encargado": "Super: Maragarita Labarca", "emailEnc": "marciacmarquez@gmail.com", "telEnc": "56990181261", "dueno": "Manuel Marquez", "emailDue": "marciacmarquez@gmail.com", "telDue": "56995410091", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "02", "nombre": "Campamento Melipal - Colon #50", "nombreFull": "02. Campamento Melipal - Colon #50", "rut": "99542240-9", "encargado": "Jalil Biaggini A.", "emailEnc": "campamento@tcgroup.cl", "telEnc": "56990791729", "dueno": "Manuel Matras", "emailDue": "mmatras@tcgroup.cl", "telDue": "56979773376", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "48", "nombre": "Hostal Talinay 2 - Diego Portales #104", "nombreFull": "48. Hostal Talinay 2 - Diego Portales #104", "rut": "76030040-3", "encargado": "Marcela Michea", "emailEnc": "mlml_2012@me.com", "telEnc": "56934498720", "dueno": "Margarita Liquitay", "emailDue": "mlml2012@gmail.com", "telDue": "56976204705", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "28", "nombre": "Hospedajes Vista Verde - Jose Santos Ossa #221", "nombreFull": "28. Hospedajes Vista Verde - Jose Santos Ossa #221", "rut": "76009541-9", "encargado": "Matías Muñoz", "emailEnc": "matias.munoz@gmail.com", "telEnc": "56954148360", "dueno": "mpm", "emailDue": "matias.munoz@gmail.com", "telDue": "56954148360", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "20", "nombre": "Hospedaje Fera - Diaz Gana #225", "nombreFull": "20. Hospedaje Fera - Diaz Gana #225", "rut": "77570568-K", "encargado": "Nancy Echeverria", "emailEnc": "ferahostal.sg@gmail.com", "telEnc": "56975792514", "dueno": "Nancy Echeverria", "emailDue": "ferahostal.sg@gmail.com", "telDue": "56975792514", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "77", "nombre": "Hospedaje Fera 3 -", "nombreFull": "77.- Hospedaje Fera 3 -", "rut": "12595596-7", "encargado": "Yubitza Fredes", "emailEnc": "ferahostal.sg@gmail.com", "telEnc": "56961684692", "dueno": "Nancy Echeverria", "emailDue": "ferahostal.sg@gmail.com", "telDue": "56975792514", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "79", "nombre": "Hospedaje Fera 2 - Diaz Gana 201", "nombreFull": "79.- Hospedaje Fera 2 - Diaz Gana 201", "rut": "125955596-7", "encargado": "Yubitza Fredes", "emailEnc": "ferahostal.sg@gmail.com", "telEnc": "56961684692", "dueno": "Nancy Echeverria", "emailDue": "ferahostal.sg@gmail.com", "telDue": "56975792514", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "19", "nombre": "Hospedaje Jimenez - Eduardo Frei #109", "nombreFull": "19. Hospedaje Jimenez - Eduardo Frei #109", "rut": "17734765-5", "encargado": "María José Jiménez", "emailEnc": "mjimenezv10@gmail.com", "telEnc": "56963526244", "dueno": "Nelsón Jiménez T", "emailDue": "mjimenezv10@gmail.com", "telDue": "56985923284", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "18", "nombre": "Hospedaje Flor del Desierto - Eduardo Frei #600", "nombreFull": "18. Hospedaje Flor del Desierto - Eduardo Frei #600", "rut": "NO", "encargado": "NO", "emailEnc": "NO", "telEnc": "NO", "dueno": "NO", "emailDue": "NO", "telDue": "NO", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "60", "nombre": "Casa Solenis", "nombreFull": "60.- Casa Solenis", "rut": "77268187-9", "encargado": "Osvaldo Portilla Muñoz", "emailEnc": "osvaldo.portilla@serviciosylogistica.cl", "telEnc": "56998727531", "dueno": "Osvaldo Portilla Muñoz", "emailDue": "osvaldo.portilla@serviciosylogistica.cl", "telDue": "56998727531", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "32", "nombre": "Hostal HAI 1 - Prat #611", "nombreFull": "32. Hostal HAI 1 - Prat #611", "rut": "76556166-3", "encargado": "Sergio Aldunate", "emailEnc": "saldunate@alojamientoindustrial.cl", "telEnc": "56977996590", "dueno": "Patricio Carracedo", "emailDue": "saldunate@alojamientoindustrial.cl", "telDue": "56977996590", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "33", "nombre": "Hostal HAI 2 - Santa Maria #30", "nombreFull": "33. Hostal HAI 2 - Santa Maria #30", "rut": "76556166-3", "encargado": "Sergio Aldunate", "emailEnc": "saldunate@alojamientoindustrial.cl", "telEnc": "56977996590", "dueno": "Patricio Carracedo", "emailDue": "saldunate@alojamientoindustrial.cl", "telDue": "56977996590", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "34", "nombre": "Hostal HAI 3 - Colon #38", "nombreFull": "34. Hostal HAI 3 - Colon #38", "rut": "76556166-3", "encargado": "Sergio Aldunate", "emailEnc": "saldunate@alojamientoindustrial.cl", "telEnc": "56977996590", "dueno": "Patricio Carracedo", "emailDue": "saldunate@alojamientoindustrial.cl", "telDue": "56977996590", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "52", "nombre": "Hostal d´Nano - Eduardo Freí  # 503", "nombreFull": "52. Hostal d´Nano - Eduardo Freí  # 503", "rut": "76921365-1", "encargado": "Cintia Loaisa", "emailEnc": "hostal.dnano@gmail.com", "telEnc": "56999948739", "dueno": "Paulina Prat", "emailDue": "hostal.dnano@gmail.com", "telDue": "56997331424", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "64", "nombre": "Casa hospedaje Virgen del Carmen José Dias Gana #237", "nombreFull": "64.- Casa hospedaje Virgen del Carmen José Dias Gana #237", "rut": "21754068-2", "encargado": "Peggbeth Rodríguez", "emailEnc": "rodriguezpegrup@gmail.com", "telEnc": "56990808857", "dueno": "Peggbeth Rodríguez", "emailDue": "rodriguezpegrup@gmail.com", "telDue": "56990808857", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "45", "nombre": "Hostal Araya & Araya - Jaime Guzman #315", "nombreFull": "45.- Hostal Araya & Araya - Jaime Guzman #315", "rut": "PENDIENTE", "encargado": "PENDIENTE", "emailEnc": "PENDIENTE", "telEnc": "PENDIENTE", "dueno": "PENDIENTE", "emailDue": "PENDIENTE", "telDue": "PENDIENTE", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "51", "nombre": "Hostal Hector Rivera - Av Salvador Allende  # 109", "nombreFull": "51.-Hostal Hector Rivera - Av Salvador Allende  # 109", "rut": "PENDIENTE", "encargado": "Hector  Rivera Hernandez", "emailEnc": "hr.servicio.alimentacion@gmail.com", "telEnc": "56957295522", "dueno": "PENDIENTE", "emailDue": "PENDIENTE", "telDue": "PENDIENTE", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "53", "nombre": "Hostal Talinay 3 - Eduardo Frei #612", "nombreFull": "53.- Hostal Talinay 3 - Eduardo Frei #612", "rut": "EN REPARACIÓN", "encargado": "PENDIENTE", "emailEnc": "PENDIENTE", "telEnc": "PENDIENTE", "dueno": "PENDIENTE", "emailDue": "PENDIENTE", "telDue": "", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "63", "nombre": "Hostal Rolui SpA - José Santos Ossa # 238", "nombreFull": "63.- Hostal Rolui SpA - José Santos Ossa # 238", "rut": "77635777-4", "encargado": "Reyna Ccama Condori.", "emailEnc": "reynaccama@gmail.com", "telEnc": "56975448475", "dueno": "Reyna Ccama Condori.", "emailDue": "reynaccama@gmail.com", "telDue": "56975448475", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "73", "nombre": "Hospedaje C19 - Jose Diaz Gana 231", "nombreFull": "73.- Hospedaje C19 - Jose Diaz Gana 231", "rut": "77453082-7", "encargado": "Reyna Ccama Condori.", "emailEnc": "comercial19.spa@gmail.com", "telEnc": "56975448475", "dueno": "Reyna Ccama Condori.", "emailDue": "comercial19.spa@gmail.com", "telDue": "56975448475", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "83", "nombre": "Hospedaje Camila- Eduardo Frei # 102", "nombreFull": "83.- Hospedaje Camila- Eduardo Frei # 102", "rut": "77278366-3", "encargado": "Ronald Castro Vega", "emailEnc": "ronald.castro@alojamientosierragorda.cl", "telEnc": "56962447427", "dueno": "Ronald Castro", "emailDue": "ronald.castro@alojamientosierragorda.cl", "telDue": "56962447427", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "25", "nombre": "Hospedaje Rosenda - Av. Salvador Allende #101", "nombreFull": "25. Hospedaje Rosenda - Av. Salvador Allende #101", "rut": "77580375-4", "encargado": "José Trigo A.", "emailEnc": "jtrigo_@gmail.com", "telEnc": "56958299564", "dueno": "Rosenda Astorga.", "emailDue": "jtrigo_@hotmail.com", "telDue": "56958299564", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "75", "nombre": "Hospedaje Faenas Mineras - José Santos Ossa #207", "nombreFull": "75.- Hospedaje Faenas Mineras - José Santos Ossa #207", "rut": "12202046-0", "encargado": "Sandra Vargas A", "emailEnc": "sandravaguilar.72@gmail.com", "telEnc": "56951993431", "dueno": "Sandra Vargas A", "emailDue": "sandravaguilar.72@gmail.com", "telDue": "56951993431", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "13", "nombre": "Hospedaje Rayencura - Av. Salvador Allende #111", "nombreFull": "13. Hospedaje Rayencura - Av. Salvador Allende #111", "rut": "76052235-K", "encargado": "William Poblete", "emailEnc": "w.poblete@rayancura.com", "telEnc": "56939002516", "dueno": "Soledad Marínez P.", "emailDue": "s.martinez@rayancura.com", "telDue": "56974319163", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "49", "nombre": "Hostal Tronar - Jose Santos Ossa #233", "nombreFull": "49. Hostal Tronar - Jose Santos Ossa #233", "rut": "77964250-K", "encargado": "Ingrid Guerrero", "emailEnc": "iguerrero.tronarltda@gmail.com", "telEnc": "56983951354", "dueno": "Tronar Ltda.", "emailDue": "iguerrero.tronarltda@gmail.com", "telDue": "56983951354", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "50", "nombre": "Hostal Tronar 2 - Colon #32", "nombreFull": "50. Hostal Tronar 2 - Colon #32", "rut": "77964250-K", "encargado": "Ingrid Guerrero", "emailEnc": "iguerrero.tronarltda@gmail.com", "telEnc": "56983951354", "dueno": "Tronar Ltda.", "emailDue": "iguerrero.tronarltda@gmail.com", "telDue": "56983951354", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "57", "nombre": "Hostal Tronar 3 - José Diaz Gana #221", "nombreFull": "57.- Hostal Tronar 3 - José Diaz Gana #221", "rut": "77964250-K", "encargado": "Ingrid Guerrero", "emailEnc": "iguerrero.tronarltda@gmail.com", "telEnc": "56983951354", "dueno": "Tronar Ltda.", "emailDue": "iguerrero.tronarltda@gmail.com", "telDue": "56983951354", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "68", "nombre": "hospedaje Tronar 4 - Jose Santos Ossa #219", "nombreFull": "68. hospedaje Tronar 4 - Jose Santos Ossa #219", "rut": "77964250-K", "encargado": "Ingrid Guerrero", "emailEnc": "iguerrero.tronarltda@gmail.com", "telEnc": "56983951354", "dueno": "Tronar Ltda.", "emailDue": "iguerrero.tronarltda@gmail.com", "telDue": "56983951354", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "74", "nombre": "Hospedaje Tronar 5 - Jaime Guzmán # 101", "nombreFull": "74.- Hospedaje Tronar 5 - Jaime Guzmán # 101", "rut": "77964250-K", "encargado": "Ingrid Guerrero", "emailEnc": "iguerrero.tronarltda@gmail.com", "telEnc": "56983951354", "dueno": "Tronar Ltda.", "emailDue": "iguerrero.tronarltda@gmail.com", "telDue": "56983951354", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "10", "nombre": "Hospedaje Vifredes - Eduardo Frei #509", "nombreFull": "10. Hospedaje Vifredes - Eduardo Frei #509", "rut": "12595596-7", "encargado": "Violeta Fredes D.", "emailEnc": "violetafredes.vf@gmail.com", "telEnc": "56954069499", "dueno": "Violeta Fredes", "emailDue": "violetafredes.vf@gmail.com", "telDue": "56954069499", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "76", "nombre": "Hospedaje Viofredes 2 - José Santos Ossa # 100", "nombreFull": "76.- Hospedaje Viofredes 2 - José Santos Ossa # 100", "rut": "12595596-7", "encargado": "Violeta Fredes D.", "emailEnc": "violetafredes.vf@gmail.com", "telEnc": "56954069499", "dueno": "Violeta Fredes", "emailDue": "violetafredes.vf@gmail.com", "telDue": "56954069499", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}, {"codigo": "42", "nombre": "Hostal Santa Maria - Santa Maria #34", "nombreFull": "42. Hostal Santa Maria - Santa Maria #34", "rut": "76109727-K", "encargado": "Natalia López", "emailEnc": "adm.santamaria01@gmail.com", "telEnc": "941494971", "dueno": "", "emailDue": "adm.santamaria01@gmail.com", "telDue": "941494971", "hSimple": null, "hDoble": null, "hBano": null, "hAire": null, "camas": null, "empresaAlojada": "", "ligadaA": "", "huespedes": null}];</script>
+<script>
+/* ===== STORE (localStorage; producción → Supabase) ===== */
+const K={hotels:'mgi_hotels',logs:'mgi_logs'};
+const Store={get:(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+function seedInit(){
+  if(!localStorage.getItem(K.hotels)){
+    SEED_HOTELS.forEach((h,i)=>{h.id='h'+(i+1);h.habitaciones=h.habitaciones||[];h.contratos=h.contratos||[];
+      h.contacto=h.contacto||{estado:'Pendiente',ultimo:'',notas:''};});
+    Store.set(K.hotels,SEED_HOTELS);
+  }
+  if(!localStorage.getItem(K.logs))Store.set(K.logs,[]);
+}
+/* ===== UTIL ===== */
+const $=s=>document.querySelector(s);
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
+function log(a,d){const l=Store.get(K.logs,[]);l.unshift({ts:new Date().toISOString(),role:ROLE,action:a,detail:d});Store.set(K.logs,l.slice(0,2000))}
+let ROLE='admin';
+function setRole(r){ROLE=r;renderDir();toast('Rol: '+r)}
+function can(a){if(ROLE==='admin')return true;if(ROLE==='gestor')return a!=='delete';return false}
+const today=()=>new Date().toISOString().slice(0,10);
+/* ===== CALC ===== */
+function totalHabs(h){return (h.habitaciones||[]).reduce((a,r)=>a+(+r.cantidad||0),0)}
+function totalCamas(h){const c=(h.habitaciones||[]).reduce((a,r)=>a+((+r.cantidad||0)*(+r.camas||0)),0);return c||h.camasBase||0}
+function ocupados(h){return (h.contratos||[]).filter(c=>c.estado==='Vigente').reduce((a,c)=>a+(+c.huespedes||0),0)}
+function vigentes(h){return (h.contratos||[]).filter(c=>c.estado==='Vigente')}
+function ocupPct(h){const cam=totalCamas(h);return cam?Math.min(100,Math.round(ocupados(h)/cam*100)):0}
+function estadoClass(e){return e==='Actualizado'?'c-ok':e==='No contesta'?'c-nr':e==='Sin respuesta'?'c-nr':'c-pend'}
+/* ===== GATE / NAV ===== */
+function tryGate(){if($('#gatePass').value==='hoteles2026'){sessionStorage.setItem('mgi_ok','1');showApp()}else $('#gateErr').textContent='Contraseña incorrecta'}
+function showApp(){$('#gate').classList.add('hidden');$('#app').classList.remove('hidden');boot()}
+function nav(pg){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.pg===pg));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$('#pg-'+pg).classList.add('active');
+  $('#sidebar').style.display=pg==='directorio'?'':'none';if(pg==='agenda')renderAgenda()}
+/* ===== FILTERS ===== */
+function fillFilters(){
+  const hs=Store.get(K.hotels,[]);
+  const encs=[...new Set(hs.flatMap(h=>[h.encargado,h.dueno]).filter(Boolean))].sort();
+  const emps=[...new Set(hs.flatMap(h=>(h.contratos||[]).map(c=>c.empresa)).filter(Boolean))].sort();
+  $('#fEnc').innerHTML='<option value="">Todos</option>'+encs.map(e=>`<option>${esc(e)}</option>`).join('');
+  $('#fEmpresa').innerHTML='<option value="">Todas</option>'+emps.map(e=>`<option>${esc(e)}</option>`).join('');
+}
+function clearFilters(){['fEnc','fEstado','fEmpresa','fRooms'].forEach(id=>$('#'+id).value='');$('#q').value='';renderDir()}
+/* ===== DIRECTORIO ===== */
+function renderDir(){
+  const hs=Store.get(K.hotels,[]);
+  const q=norm($('#q').value),fe=$('#fEnc').value,fs=$('#fEstado').value,fm=$('#fEmpresa').value,fr=$('#fRooms').value;
+  let rows=hs.filter(h=>{
+    if(q&&!norm(h.nombre+' '+h.nombreFull+' '+h.encargado+' '+h.dueno+' '+h.rut).includes(q))return false;
+    if(fe&&h.encargado!==fe&&h.dueno!==fe)return false;
+    if(fs&&(h.contacto?.estado||'Pendiente')!==fs)return false;
+    if(fm&&!(h.contratos||[]).some(c=>c.empresa===fm))return false;
+    if(fr==='con'&&totalHabs(h)===0)return false;
+    if(fr==='sin'&&totalHabs(h)>0)return false;
+    return true;
+  });
+  $('#dirBody').innerHTML=rows.map(h=>{
+    const est=h.contacto?.estado||'Pendiente';const pct=ocupPct(h);
+    return `<tr>
+      <td><div class="nm">${esc(h.nombre)}</div><div class="mini">${h.codigo?'#'+esc(h.codigo)+' · ':''}${esc(h.rut||'')}</div></td>
+      <td>${esc(h.encargado)||'<span class=mini>—</span>'}</td>
+      <td>${h.telEnc?`<a href="tel:+${esc(h.telEnc)}" style="color:var(--teal-dk);font-weight:600">${esc(h.telEnc)}</a>`:'<span class=mini>—</span>'}</td>
+      <td>${totalHabs(h)||'<span class=mini>—</span>'}</td>
+      <td>${totalCamas(h)||'<span class=mini>—</span>'}</td>
+      <td>${totalCamas(h)?`<div class="bar ${pct>=90?'full':''}"><div class="bar-fill" style="width:${pct}%"></div><div class="bar-txt">${ocupados(h)}/${totalCamas(h)}</div></div>`:'<span class=mini>—</span>'}</td>
+      <td>${vigentes(h).length?`<span class="chip c-vig">${vigentes(h).length} vig.</span>`:'<span class=mini>—</span>'}</td>
+      <td><span class="chip ${estadoClass(est)}">${esc(est)}</span></td>
+      <td><button class="btn btn-out btn-sm" onclick="openFicha('${h.id}')">Editar</button></td>
+    </tr>`;
+  }).join('');
+  $('#dirEmpty').classList.toggle('hidden',rows.length>0);
+  $('#dirCount').textContent=rows.length+' de '+hs.length+' hoteles';
+  renderKpis(hs);
+}
+function renderKpis(hs){
+  const camas=hs.reduce((a,h)=>a+totalCamas(h),0);
+  const pend=hs.filter(h=>(h.contacto?.estado||'Pendiente')==='Pendiente').length;
+  const vig=hs.reduce((a,h)=>a+vigentes(h).length,0);
+  $('#kpis').innerHTML=`
+    <div class="kpi"><b>${hs.length}</b><span>Hoteles MGI</span></div>
+    <div class="kpi"><b>${camas}</b><span>Camas registradas</span></div>
+    <div class="kpi"><b>${vig}</b><span>Contratos vigentes</span></div>
+    <div class="kpi"><b>${pend}</b><span>Pendientes por llamar</span></div>`;
+}
+/* ===== FICHA ===== */
+let F=null;
+const TIPOS=['Simple','Doble','Con baño','Con aire','Matrimonial','Compartida','Otra'];
+function openFicha(id){
+  const hs=Store.get(K.hotels,[]);
+  F=id?JSON.parse(JSON.stringify(hs.find(h=>h.id===id))):{id:'h'+Date.now(),nombre:'',codigo:'',rut:'',encargado:'',emailEnc:'',telEnc:'',dueno:'',emailDue:'',telDue:'',ligadaA:'',camasBase:0,habitaciones:[],contratos:[],contacto:{estado:'Pendiente',ultimo:'',notas:''}};
+  F.contacto=F.contacto||{estado:'Pendiente',ultimo:'',notas:''};
+  const ro=!can('edit')?'disabled':'';
+  const isNew=!id;
+  modal(`
+   <div class="modal-head"><div><h2>${isNew?'Nuevo hotel':esc(F.nombre)}</h2><div class="sub">${esc(F.rut||'')} ${F.codigo?'· #'+esc(F.codigo):''}</div></div><button class="x" onclick="closeModal()">✕</button></div>
+   <div class="modal-body">
+     <div class="sect"><div class="sect-t">Datos del establecimiento</div>
+       <div class="grid3">
+         <div class="fld" style="grid-column:span 2"><label>Nombre</label><input id="f_nombre" value="${esc(F.nombre)}" ${ro}></div>
+         <div class="fld"><label>Código</label><input id="f_codigo" value="${esc(F.codigo)}" ${ro}></div>
+         <div class="fld"><label>RUT empresa</label><input id="f_rut" value="${esc(F.rut)}" ${ro}></div>
+         <div class="fld" style="grid-column:span 2"><label>Reporta estar ligada a</label><input id="f_ligadaA" value="${esc(F.ligadaA)}" ${ro}></div>
+       </div>
+     </div>
+     <div class="sect"><div class="sect-t">Contactos</div>
+       <div class="grid3">
+         <div class="fld"><label>Encargado</label><input id="f_encargado" value="${esc(F.encargado)}" ${ro}></div>
+         <div class="fld"><label>Correo encargado</label><input id="f_emailEnc" value="${esc(F.emailEnc)}" ${ro}></div>
+         <div class="fld"><label>Teléfono encargado</label><input id="f_telEnc" value="${esc(F.telEnc)}" ${ro}></div>
+         <div class="fld"><label>Dueño</label><input id="f_dueno" value="${esc(F.dueno)}" ${ro}></div>
+         <div class="fld"><label>Correo dueño</label><input id="f_emailDue" value="${esc(F.emailDue)}" ${ro}></div>
+         <div class="fld"><label>Teléfono dueño</label><input id="f_telDue" value="${esc(F.telDue)}" ${ro}></div>
+       </div>
+     </div>
+     <div class="sect"><div class="sect-t">Habitaciones <button class="btn btn-teal btn-sm" onclick="addRoom()" ${ro}>＋ Agregar</button></div>
+       <div class="room-row head"><span>Tipo</span><span>Cantidad</span><span>Camas c/u</span><span></span></div>
+       <div id="roomList"></div>
+       <div class="mini" id="roomTot" style="margin-top:6px"></div>
+     </div>
+     <div class="sect"><div class="sect-t">Empresas contratadas <button class="btn btn-teal btn-sm" onclick="addCon()" ${ro}>＋ Agregar</button></div>
+       <div id="conList"></div>
+     </div>
+     <div class="sect"><div class="sect-t">Seguimiento de contacto</div>
+       <div class="grid3">
+         <div class="fld"><label>Estado</label><select id="f_estado" ${ro}>${['Pendiente','Actualizado','No contesta','Sin respuesta'].map(s=>`<option ${F.contacto.estado===s?'selected':''}>${s}</option>`).join('')}</select></div>
+         <div class="fld"><label>Último llamado</label><input id="f_ultimo" type="date" value="${esc(F.contacto.ultimo)}" ${ro}></div>
+         <div class="fld" style="display:flex;align-items:flex-end"><button class="btn btn-out btn-sm" onclick="document.getElementById('f_ultimo').value='${today()}';document.getElementById('f_estado').value='Actualizado'" ${ro}>Marcar llamado hoy</button></div>
+       </div>
+       <div class="fld" style="margin-top:10px"><label>Notas de la llamada</label><textarea id="f_notas" rows="2" ${ro}>${esc(F.contacto.notas)}</textarea></div>
+     </div>
+   </div>
+   <div class="modal-foot"><div>${(!isNew&&can('delete'))?`<button class="btn btn-red" onclick="delHotel('${F.id}')">Eliminar</button>`:''}</div>
+     <div style="display:flex;gap:8px"><button class="btn btn-out" onclick="exportFichaPDF()">Exportar PDF</button>
+       ${can('edit')?`<button class="btn btn-teal" onclick="saveFicha()">Guardar</button>`:''}</div></div>`);
+  renderRooms();renderCons();
+}
+function renderRooms(){
+  const ro=!can('edit')?'disabled':'';
+  $('#roomList').innerHTML=(F.habitaciones||[]).map((r,i)=>`
+    <div class="room-row">
+      <select onchange="F.habitaciones[${i}].tipo=this.value" ${ro}>${TIPOS.map(t=>`<option ${r.tipo===t?'selected':''}>${t}</option>`).join('')}</select>
+      <input type="number" min="0" value="${r.cantidad||0}" oninput="F.habitaciones[${i}].cantidad=+this.value;roomTot()" ${ro}>
+      <input type="number" min="0" value="${r.camas||0}" oninput="F.habitaciones[${i}].camas=+this.value;roomTot()" ${ro}>
+      ${can('edit')?`<button class="btn btn-red btn-sm" onclick="F.habitaciones.splice(${i},1);renderRooms()">✕</button>`:'<span></span>'}
+    </div>`).join('')||'<div class="mini">Sin habitaciones registradas. Agrégalas al llamar al hotel.</div>';
+  roomTot();
+}
+function roomTot(){const el=$('#roomTot');if(el)el.innerHTML=`Total: <b>${totalHabs(F)}</b> habitaciones · <b>${totalCamas(F)}</b> camas`}
+function addRoom(){F.habitaciones=F.habitaciones||[];F.habitaciones.push({tipo:'Simple',cantidad:0,camas:1});renderRooms()}
+function renderCons(){
+  const ro=!can('edit')?'disabled':'';
+  $('#conList').innerHTML=(F.contratos||[]).map((c,i)=>`
+    <div class="item-card">
+      ${can('edit')?`<button class="x del" onclick="F.contratos.splice(${i},1);renderCons()">✕</button>`:''}
+      <div class="grid3">
+        <div class="fld" style="grid-column:span 2"><label>Empresa contratante</label><input value="${esc(c.empresa)}" oninput="F.contratos[${i}].empresa=this.value" ${ro}></div>
+        <div class="fld"><label>Estado</label><select onchange="F.contratos[${i}].estado=this.value" ${ro}>${['Vigente','Reservado','Finalizado'].map(s=>`<option ${c.estado===s?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="fld"><label>Habitaciones</label><input type="number" min="0" value="${c.habitaciones||0}" oninput="F.contratos[${i}].habitaciones=+this.value" ${ro}></div>
+        <div class="fld"><label>Huéspedes</label><input type="number" min="0" value="${c.huespedes||0}" oninput="F.contratos[${i}].huespedes=+this.value" ${ro}></div>
+        <div class="fld"><label>Contacto empresa</label><input value="${esc(c.contacto)}" oninput="F.contratos[${i}].contacto=this.value" ${ro}></div>
+        <div class="fld"><label>Fecha inicio</label><input type="date" value="${esc(c.fechaInicio)}" oninput="F.contratos[${i}].fechaInicio=this.value" ${ro}></div>
+        <div class="fld"><label>Fecha término</label><input type="date" value="${esc(c.fechaFin)}" oninput="F.contratos[${i}].fechaFin=this.value" ${ro}></div>
+      </div>
+      <div class="fld" style="margin-top:8px"><label>Comentario</label><input value="${esc(c.comentario)}" oninput="F.contratos[${i}].comentario=this.value" ${ro}></div>
+    </div>`).join('')||'<div class="mini">Sin empresas contratadas registradas.</div>';
+}
+function addCon(){F.contratos=F.contratos||[];F.contratos.push({empresa:'',estado:'Vigente',habitaciones:0,huespedes:0,contacto:'',fechaInicio:today(),fechaFin:'',comentario:''});renderCons()}
+function saveFicha(){
+  ['nombre','codigo','rut','ligadaA','encargado','emailEnc','telEnc','dueno','emailDue','telDue'].forEach(f=>F[f]=$('#f_'+f).value.trim());
+  F.telEnc=F.telEnc.replace(/[^\d]/g,'');F.telDue=F.telDue.replace(/[^\d]/g,'');
+  F.nombreFull=F.nombre;
+  F.contacto={estado:$('#f_estado').value,ultimo:$('#f_ultimo').value,notas:$('#f_notas').value.trim()};
+  if(!F.nombre){toast('Indica el nombre del hotel');return}
+  const hs=Store.get(K.hotels,[]);const idx=hs.findIndex(h=>h.id===F.id);
+  if(idx>=0)hs[idx]=F;else hs.push(F);
+  Store.set(K.hotels,hs);log('save_hotel',F.nombre);
+  closeModal();fillFilters();renderDir();toast('Ficha guardada');
+}
+function delHotel(id){if(!can('delete')){toast('Sin permisos');return}if(!confirm('¿Eliminar este hotel?'))return;
+  Store.set(K.hotels,Store.get(K.hotels,[]).filter(h=>h.id!==id));log('del_hotel',id);closeModal();fillFilters();renderDir();toast('Hotel eliminado')}
+/* ===== AGENDA ===== */
+function renderAgenda(){
+  const hs=Store.get(K.hotels,[]);const q=norm($('#qAg').value);const f=$('#agEstado').value;
+  let list=hs.filter(h=>!q||norm(h.nombre+' '+h.encargado+' '+h.dueno).includes(q));
+  if(f==='pend')list=list.filter(h=>(h.contacto?.estado||'Pendiente')==='Pendiente');
+  else if(f)list=list.filter(h=>(h.contacto?.estado||'Pendiente')===f);
+  $('#agCount').textContent=list.length+' hoteles';
+  $('#agendaList').innerHTML=list.map(h=>{
+    const est=h.contacto?.estado||'Pendiente';
+    return `<div class="ag-card">
+      <div class="ag-top"><div class="ag-name">${esc(h.nombre)}</div><span class="chip ${estadoClass(est)}">${esc(est)}</span></div>
+      <div class="mini">${esc(h.encargado||h.dueno||'—')}${h.contacto?.ultimo?' · último: '+esc(h.contacto.ultimo):''}</div>
+      <div class="call-row">
+        ${h.telEnc?`<a class="call-btn" href="tel:+${esc(h.telEnc)}">📞 ${esc(h.telEnc)}</a>`:''}
+        ${h.telDue&&h.telDue!==h.telEnc?`<a class="call-btn due" href="tel:+${esc(h.telDue)}">Dueño</a>`:''}
+        ${(!h.telEnc&&!h.telDue)?'<span class="mini">Sin teléfono</span>':''}
+      </div>
+      <div class="quick">
+        <button class="btn btn-teal btn-sm" onclick="openFicha('${h.id}')">Actualizar ficha</button>
+        <button class="btn btn-out btn-sm" onclick="quickEstado('${h.id}','Actualizado')">✓ Actualizado</button>
+        <button class="btn btn-out btn-sm" onclick="quickEstado('${h.id}','No contesta')">No contesta</button>
+      </div>
+      <div class="ag-meta"><span>${totalCamas(h)?totalCamas(h)+' camas':'sin datos'}</span><span>${vigentes(h).length} contrato(s) vig.</span></div>
+    </div>`;
+  }).join('')||'<div class="empty">Sin hoteles en este filtro.</div>';
+}
+function quickEstado(id,estado){
+  const hs=Store.get(K.hotels,[]);const h=hs.find(x=>x.id===id);
+  h.contacto=h.contacto||{};h.contacto.estado=estado;h.contacto.ultimo=today();
+  Store.set(K.hotels,hs);log('quick_estado',h.nombre+':'+estado);renderAgenda();renderDir();toast(h.nombre+' → '+estado);
+}
+/* ===== EXPORT ===== */
+function exportExcel(){
+  const hs=Store.get(K.hotels,[]);
+  const rows=hs.map(h=>({Codigo:h.codigo,Hotel:h.nombre,RUT:h.rut,Encargado:h.encargado,Tel_Encargado:h.telEnc,Email_Encargado:h.emailEnc,
+    Dueno:h.dueno,Tel_Dueno:h.telDue,Habitaciones:totalHabs(h),Camas:totalCamas(h),Ocupados:ocupados(h),
+    Empresas_Vigentes:vigentes(h).map(c=>c.empresa).join(' | '),
+    Contratos:(h.contratos||[]).map(c=>`${c.empresa} [${c.estado}] ${c.fechaInicio||''}→${c.fechaFin||''} (${c.huespedes||0} húesp.)`).join(' | '),
+    Estado_Contacto:h.contacto?.estado||'',Ultimo_Llamado:h.contacto?.ultimo||'',Notas:h.contacto?.notas||''}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Hoteles MGI');
+  XLSX.writeFile(wb,'Hoteles_MGI_2026.xlsx');log('export_excel',hs.length+' hoteles');toast('Exportado a Excel');
+}
+function exportFichaPDF(){
+  const h=F;const rooms=(h.habitaciones||[]).map(r=>`<tr><td>${esc(r.tipo)}</td><td>${r.cantidad||0}</td><td>${r.camas||0}</td></tr>`).join('');
+  const cons=(h.contratos||[]).map(c=>`<tr><td>${esc(c.empresa)}</td><td>${esc(c.estado)}</td><td>${esc(c.fechaInicio||'')} – ${esc(c.fechaFin||'')}</td><td>${c.huespedes||0}</td></tr>`).join('');
+  $('#printArea').innerHTML=`<div style="font-family:Barlow,Arial;color:#1C2632;max-width:720px;margin:0 auto;padding:26px;font-size:13px">
+    <div style="border-bottom:3px solid #00A399;padding-bottom:8px;margin-bottom:14px">
+      <div style="font-family:'Barlow Condensed';font-size:22px;font-weight:800;color:#006973;text-transform:uppercase">${esc(h.nombre)}</div>
+      <div style="font-size:12px;color:#5F6973">${h.codigo?'#'+esc(h.codigo)+' · ':''}${esc(h.rut||'')} · Programa MGI · Antofagasta Minerals</div></div>
+    <p><b style="color:#006973">Encargado:</b> ${esc(h.encargado)} · ${esc(h.telEnc)} · ${esc(h.emailEnc)}</p>
+    <p><b style="color:#006973">Dueño:</b> ${esc(h.dueno)} · ${esc(h.telDue)} · ${esc(h.emailDue)}</p>
+    ${h.ligadaA?`<p><b style="color:#006973">Ligada a:</b> ${esc(h.ligadaA)}</p>`:''}
+    <h3 style="font-family:'Barlow Condensed';color:#006973;text-transform:uppercase;border-bottom:1px solid #D7DEE4;margin-top:14px">Habitaciones (${totalHabs(h)} / ${totalCamas(h)} camas)</h3>
+    <table style="width:100%;border-collapse:collapse"><tr style="text-align:left;color:#006973"><th>Tipo</th><th>Cantidad</th><th>Camas c/u</th></tr>${rooms||'<tr><td colspan=3>Sin registrar</td></tr>'}</table>
+    <h3 style="font-family:'Barlow Condensed';color:#006973;text-transform:uppercase;border-bottom:1px solid #D7DEE4;margin-top:14px">Empresas contratadas</h3>
+    <table style="width:100%;border-collapse:collapse"><tr style="text-align:left;color:#006973"><th>Empresa</th><th>Estado</th><th>Fechas</th><th>Húesp.</th></tr>${cons||'<tr><td colspan=4>Sin registrar</td></tr>'}</table>
+    <div style="margin-top:20px;text-align:right;font-size:9px;color:#5F6973">Hoteles MGI · Antofagasta Minerals</div></div>`;
+  window.print();
+}
+/* ===== MODAL ===== */
+function modal(html){$('#modalRoot').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`}
+function closeModal(){$('#modalRoot').innerHTML=''}
+/* ===== BOOT ===== */
+function boot(){seedInit();fillFilters();renderDir();log('login','sesión Hoteles MGI')}
+if(sessionStorage.getItem('mgi_ok')==='1')showApp();
+</script>
+</body>
+</html>
