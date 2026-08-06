@@ -84,25 +84,19 @@ Dos cosas que muerden a todo el mundo la primera vez:
 | Librerías | las 7 fijadas a versión exacta |
 | Deuda técnica | ver [docs/PENDIENTES.md](docs/PENDIENTES.md) |
 
-## ⚠️ Acción pendiente para el administrador
+## Seguridad del bucket de documentos — resuelto (2026-08-05)
 
-**P-1a quedó aplicado el 2026-08-05.** Ya no se puede listar el bucket de
-documentos sin cuenta: la política `doc_public_read` fue reemplazada por
-`doc_auth_read`, que exige sesión iniciada **y** usuario aprobado. Verificado
-contra la base real: antes devolvía `fichas`, `minutas` y `visitas`; ahora
-devuelve vacío. No rompió nada — subir archivos y abrir documentos guardados
-sigue funcionando igual.
+**P-1a y P-1b quedaron aplicados el 2026-08-05.** El bucket `documentos` ya
+no se puede enumerar ni descargar sin sesión:
 
-`database/setup_database.sql` ya trae la política corregida, así que
-reinstalar desde cero no reabre el agujero.
+- `doc_public_read` fue reemplazada por `doc_auth_read` (sesión + usuario
+  aprobado) — cierra la enumeración anónima.
+- El bucket pasó a `public = false` — cierra la descarga por URL conocida.
+  Antes de este paso se desplegó y verificó en producción el frontend
+  (`proveedores.js`, `mgi.js`, `shared/js/faena-consulta.js`) firmando cada
+  URL con `createSignedUrl()` al momento de usarla, no al guardarla.
 
-**Lo que sigue abierto es P-1b:** quien ya tenga la URL de un documento puede
-abrirla sin iniciar sesión, porque el bucket sigue siendo público y las URLs
-de `getPublicUrl()` no caducan.
-
-**→ `database/migraciones/2026-07-21_p1b_bucket_privado.sql`**
-
-⚠️ **Ese script NO se ejecuta solo.** Rompe 5 módulos si se aplica antes de
-desplegar los cambios de frontend que firman las URLs. El alcance completo y
-las dos trampas (los `<img>` no llevan el JWT; varios `fetch()` de exportación
-fallan en silencio) están en `docs/PENDIENTES.md` → P-1.
+Verificado contra la base real, antes y después, con un archivo real: la
+descarga directa pasó de `200` a `400`, y `createSignedUrl()` con la `anon
+key` sin sesión se rechaza. `database/setup_database.sql` ya trae la política
+corregida. Detalle completo en `docs/PENDIENTES.md` → P-1.

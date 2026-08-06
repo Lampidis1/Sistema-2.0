@@ -1,7 +1,10 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- P-1b · Hacer privado el bucket 'documentos'
 --
--- ⛔ NO EJECUTAR TODAVÍA.
+-- ✅ EJECUTADO EN PRODUCCIÓN el 2026-08-05, en el orden que este archivo
+--    exige: P-1a primero, frontend con createSignedUrl() desplegado y
+--    verificado en sistema-2-0.vercel.app (commit 3d0e0cd), y recién
+--    entonces este script. Detalle y verificación en docs/PENDIENTES.md → P-1.
 --
 --    Este script rompe TODAS las URLs de documentos guardadas en la base
 --    (pdf_url, foto1_url, foto2_url, foto3_url, minuta_pdf_url, v.fotos[])

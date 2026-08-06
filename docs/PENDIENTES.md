@@ -13,7 +13,7 @@ Estado: 🔴 sin decidir · 🟡 aprobado, sin hacer · 🟢 resuelto
 
 ## Seguridad y privacidad
 
-### P-1 · 🟡 PARCIAL — P-1a aplicado (2026-08-05); falta P-1b
+### P-1 · 🟢 RESUELTO — P-1a y P-1b aplicados (2026-08-05)
 
 > **P-1a EJECUTADO EN PRODUCCIÓN el 2026-08-05.** La enumeración anónima quedó
 > cerrada: `doc_public_read` fue reemplazada por `doc_auth_read`, restringida a
@@ -26,17 +26,27 @@ Estado: 🔴 sin decidir · 🟡 aprobado, sin hacer · 🟢 resuelto
 > | `list()` en la raíz del bucket | `fichas`, `minutas`, `visitas` | `[]` |
 > | `list()` sobre `fichas` y sobre `minutas` | devolvía contenido | `[]` |
 >
-> No rompió nada: el bucket sigue `public = true`, así que las URLs ya
-> guardadas (`pdf_url`, `minuta_pdf_url`, `foto1_url`) siguen resolviendo, y
-> `doc_auth_insert` quedó intacta, así que subir archivos sigue funcionando.
->
 > Reversión: `backups/2026-08-05/01-politicas-storage-ANTES-de-P1.sql`.
 >
-> **Sigue abierto el agujero (b):** quien ya tenga la URL de un documento la
-> abre sin sesión. Eso es P-1b y requiere tocar el frontend — ver el alcance
-> real más abajo, son 5 módulos.
+> **P-1b EJECUTADO EN PRODUCCIÓN el 2026-08-05, después de desplegar el
+> frontend con URLs firmadas** (commit `3d0e0cd`, verificado en
+> `sistema-2-0.vercel.app` antes de tocar la base — ver §"Alcance real de
+> P-1b" abajo). El bucket `documentos` quedó `public = false`.
+>
+> **Verificado contra la base real con un archivo real (no inventado):**
+>
+> | Prueba | Antes | Después |
+> |---|---|---|
+> | `GET /object/public/documentos/fichas/re_/mr53cyk6_cpt4r3.jpg` (sin sesión) | 200, descargaba el archivo | `400` |
+> | `createSignedUrl()` con la `anon key`, sin sesión | — | `404 Object not found` (RLS enmascara como no-encontrado; es el comportamiento esperado de Supabase Storage) |
+>
+> No rompió nada: `subirArchivo()`/`subirArchivoMGI()` siguen usando
+> `getPublicUrl()` para construir la ruta (el formato de URL guardado no
+> cambió, no hubo backfill), y cada punto de lectura/exportación firma esa
+> URL al momento de usarla con `createSignedUrl()`. Reversión de P-1b:
+> `update storage.buckets set public = true where id = 'documentos';`.
 
-**Dónde:** `database/setup_database.sql:566` y `:571`
+**Dónde (histórico, ya corregido):** `database/setup_database.sql:566` y `:571`
 
 ```sql
 values ('documentos','documentos', true)          -- ← bucket público
@@ -76,33 +86,35 @@ abierto. Una cuenta recién creada tiene JWT con rol `authenticated` aunque
 quede pendiente de aprobación, y sin ese filtro bastaría con registrarse para
 descargar todo el bucket.
 
-#### Alcance real de P-1b — son 5 módulos, no 2
+#### Alcance real de P-1b — corregido: 3 archivos, no 4 módulos
 
-Una auditoría corrigió el alcance. Consumen URLs de storage:
+Una primera auditoría incluía `empleabilidad` por error. Se verificó a mano:
+su único `fetch()` es a `api.qrserver.com` (API externa de códigos QR para el
+PDF del CV), no toca el bucket `documentos` en absoluto. `empleabilidad.js`
+no tiene ningún `upload()`, `getPublicUrl()` ni columna `_url` de storage.
 
-| Módulo | Dónde | Cómo falla con bucket privado |
+Los que sí consumen URLs de storage, y el fix aplicado en cada uno:
+
+| Archivo | Dónde | Fix |
 |---|---|---|
-| `proveedores` | `_urlToBase64`, fotos de fichas y visitas, PDFs | Imágenes rotas + PDF sin fotos |
-| `mgi` | `_urlToBase64MGI`, minutas | Igual |
-| `centinela` / `antucoya` / `zaldivar` | `<img>` de `fotos_json` y `fetch()` de exportación | Igual |
-| `empleabilidad` | `fetch(url)` + `blob()` | Igual |
+| `modules/proveedores/proveedores.js` | `_urlToBase64`, `openLightbox`, miniatura de visita, fotos de licitación, links de PDF/minuta (8 sitios) | `resolverUrlFirmada()` + `abrirFirmado()` |
+| `modules/mgi/mgi.js` | `_urlToBase64MGI`, link de minuta, galería de fotos (5 sitios) | `resolverUrlFirmadaMGI()` + `abrirFirmadoMGI()` |
+| `shared/js/faena-consulta.js` (Centinela/Antucoya/Zaldívar, solo lectura) | galería `<img>` + `fetch()` de exportación PDF (2 sitios) | `resolverUrlFirmadaFaena()` |
 
-Dos trampas que hay que tener presentes:
+Las dos trampas que se tuvieron presentes al implementar:
 
-1. **Un `<img src="...">` no lleva el JWT.** El navegador no adjunta la sesión
-   a una etiqueta `<img>`, así que hay que firmar cada URL **antes** de
-   pintarla, no solo al abrir un documento.
-2. **Varios `fetch()` de exportación están envueltos en `.catch(()=>null)`**,
-   así que fallarían **en silencio**: el PDF o el PPT sale sin fotos y nadie
-   ve un error. La verificación tiene que incluir *exportar una ficha a PDF y
-   a PPT* desde proveedores, MGI y una faena — no basta con abrir un documento.
+1. **Un `<img src="...">` no lleva el JWT.** Se resolvió con `data-firmar="<url>"`
+   + un `MutationObserver` que hidrata cada `<img>` insertada en el DOM,
+   firmando la URL antes de asignar `src`.
+2. **Los `fetch()` de exportación estaban envueltos en `.catch(()=>null)`**,
+   así que fallarían en silencio. Se mantiene ese comportamiento (una foto
+   que no carga no debe romper el PDF completo), pero ahora `fetch()` recibe
+   la URL ya firmada, así que no debería fallar en el camino normal.
 
-Además, hoy se guarda en la base la URL absoluta devuelta por
-`getPublicUrl()`. Bajo P-1b hay que **guardar solo la ruta**, o las filas
-nuevas quedarán con URLs muertas. Para las filas viejas, el helper debe
-extraer la ruta de la URL guardada.
-
-> Prioridad más alta de esta lista.
+**No se guardó solo la ruta ni se hizo backfill.** Se evaluó y se descartó:
+las URLs guardadas en la base siguen con el mismo formato de siempre
+(`getPublicUrl()`); cada punto de lectura extrae la ruta por regex y la firma
+al momento de usarla. Cero riesgo de dejar filas con URLs muertas.
 
 ---
 
