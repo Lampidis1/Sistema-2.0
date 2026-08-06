@@ -23,6 +23,10 @@
 //   };</script>
 //   <script src="../../shared/js/auth-guard.js"></script>
 //
+// Para un módulo que solo el admin puede usar (ningún slug de acceso lo
+// abre, es_admin() ya bypasea todo en la base): AUTH_CFG.adminOnly = true,
+// y se puede omitir slug/altSlugs/origen/rolSolicitado/faenaSolicitada.
+//
 // Cargar con <script src> clásico. NUNCA type="module": los onclick del HTML
 // necesitan que estas funciones sean globales. Ver CLAUDE.md §6.
 //
@@ -31,7 +35,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 const AG_CFG = window.AUTH_CFG || {};
-if(!AG_CFG.slug || !AG_CFG.storageKey || typeof AG_CFG.onAcceso!=='function'){
+if(!AG_CFG.storageKey || typeof AG_CFG.onAcceso!=='function' || (!AG_CFG.adminOnly && !AG_CFG.slug)){
   document.addEventListener('DOMContentLoaded', ()=>{
     document.body.innerHTML = '<div style="font:16px system-ui;padding:40px;text-align:center">'
       + 'Error de configuración: falta <code>window.AUTH_CFG</code>.<br>'
@@ -86,9 +90,14 @@ async function salir(){ try{ await SB.auth.signOut(); }catch(e){} location.reloa
 async function _agTrasLogin(user){
   USER=user; const md=(user&&user.app_metadata)||{};
   ES_ADMIN=(md.rol==='admin');
-  const accesos=Array.isArray(md.accesos)?md.accesos:[];
-  const slugs=[AG_CFG.slug].concat(AG_CFG.altSlugs||[]);
-  const ok = ES_ADMIN || (md.estado==='aprobado' && slugs.some(s=>accesos.includes(s)));
+  let ok;
+  if(AG_CFG.adminOnly){
+    ok = ES_ADMIN;
+  }else{
+    const accesos=Array.isArray(md.accesos)?md.accesos:[];
+    const slugs=[AG_CFG.slug].concat(AG_CFG.altSlugs||[]);
+    ok = ES_ADMIN || (md.estado==='aprobado' && slugs.some(s=>accesos.includes(s)));
+  }
   if(!ok){
     document.getElementById('loginStep').style.display='none';
     document.getElementById('regStep').style.display='none';

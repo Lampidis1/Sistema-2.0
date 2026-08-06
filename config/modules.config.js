@@ -105,6 +105,17 @@ window.AM_MODULES = [
     visibleEnHome: false,
     doc: 'docs/modulos/faenas.md',
   },
+  {
+    id: 'admin',
+    nombre: 'Gestión de usuarios',
+    descripcion: 'Aprobar o rechazar solicitudes de acceso al sistema.',
+    icono: '👤',
+    ruta: 'modules/admin/',
+    acceso: null,             // sin slug: solo entra rol === 'admin' (bypasea tiene_acceso())
+    estado: 'activo',
+    visibleEnHome: false,     // igual que movil/mgi/faenas: se llega por URL directa
+    doc: 'docs/modulos/admin.md',
+  },
 
   // ─────────────────────────────────────────────────────────────────────────
   // PLANTILLA PARA UN MÓDULO NUEVO — copiar, descomentar y completar.

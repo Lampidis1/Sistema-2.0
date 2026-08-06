@@ -104,9 +104,6 @@
   <button class="nav-tab" onclick="switchPage('kanban',this)" data-page="kanban">
     &#128203; Kanban
   </button>
-  <button class="nav-tab" onclick="switchPage('usuarios',this)" data-page="usuarios" id="navUsuarios" style="display:none">
-    &#128100; Usuarios <span class="tab-badge" id="badgeUsuarios" style="display:none">0</span>
-  </button>
 </nav>
 <!-- PAGE DIRECTORIO -->
 <div class="page active" id="page-directorio">
@@ -123,6 +120,7 @@
     <span id="userEmail"></span>
   </span>
   <button class="btn-gsync secondary" onclick="syncAhora()" id="btnSyncNow" style="display:none">&#8635; Sync</button>
+  <a class="btn-gsync secondary" href="../admin/" id="linkAdminUsuarios" style="display:none;text-decoration:none">&#128100; Usuarios</a>
   <button class="btn-gsync secondary" onclick="cerrarSesion()" id="btnLogout" style="display:none;border-color:#D0311B;color:#D0311B">&#128274; Cerrar sesión</button>
   <button onclick="resetearDatos()" style="background:none;border:1.5px solid #D0311B;border-radius:5px;padding:3px 10px;font-size:.72rem;cursor:pointer;color:#D0311B;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.04em" title="Limpiar datos locales del navegador">🗑 Resetear local</button>
   <span id="gsyncLastSync" style="color:var(--text-muted);font-size:.72rem"></span>
@@ -341,18 +339,6 @@
       <button class="kb-nav" data-board="dashboard"     onclick="kbSelect('dashboard',this)">📈 Dashboard Kanban</button>
     </div>
     <div class="kanban-content" id="kanbanContent"></div>
-  </div>
-</div>
-
-<!-- PAGE USUARIOS -->
-<div class="page" id="page-usuarios">
-  <div style="background:#fff;border-radius:14px;border:1px solid var(--border);padding:20px;max-width:980px;margin:0 auto">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:10px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;color:var(--primary);text-transform:uppercase">👤 Gestión de usuarios</div>
-      <button class="kb-add" onclick="renderUsuarios()">↻ Actualizar</button>
-    </div>
-    <div style="font-size:.83rem;color:var(--text-muted);margin-bottom:16px">Aprueba o rechaza las solicitudes de acceso. Los pendientes no ven ningún dato hasta que los apruebes.</div>
-    <div id="usuariosContent"><div class="kb-empty">Cargando…</div></div>
   </div>
 </div>
 
@@ -850,7 +836,6 @@
     <div class="mobile-nav-item" onclick="mobileGo('compromisos')">Compromisos</div>
     <div class="mobile-nav-item" onclick="mobileGo('programas_dash')">Programas</div>
     <div class="mobile-nav-item" onclick="mobileGo('kanban')">Kanban</div>
-    <div class="mobile-nav-item" id="mobileNavUsuarios" style="display:none" onclick="mobileGo('usuarios')">Usuarios</div>
   </div>
 </div>
 <!-- Botón flotante de filtros (solo móvil, en directorio) -->

@@ -359,17 +359,47 @@ Ver `CLAUDE.md` §6.
 
 ---
 
-### P-7 · 🔴 El panel de administración vive dentro de Proveedores
+### P-7 · 🟢 RESUELTO (2026-08-06) — panel de admin movido a `modules/admin/`
 
-`aprobar_usuario_v2`, la lista de pendientes y los rechazos están dentro de
-`modules/proveedores/index.html`, un archivo de 8.215 líneas dedicado a otra
-cosa.
+`aprobar_usuario_v2`, la lista de pendientes y los rechazos vivían dentro de
+`modules/proveedores/index.html`, un archivo de miles de líneas dedicado a
+otra cosa. Para administrar accesos, el maestro tenía que entrar a
+Proveedores.
 
-Para administrar accesos, el maestro tiene que entrar a Proveedores.
-
-**Arreglo:** sacarlo a `modules/admin/`, visible en el Home solo si
-`rol === 'admin'`. Ya estaba aprobado en conversación, pero es un cambio de
-comportamiento y quedó fuera de la Fase 1.
+> **Se movió `renderUsuarios()`, `urolChange()`, `_initUrolVis()`,
+> `aprobarUsuario()`, `rechazarUsuario()`, `actualizarBadgeUsuarios()` y su
+> HTML a `modules/admin/`** (index.html + admin.css + admin.js). Código
+> copiado tal cual, sin reescribir — solo se adaptó `SUPA.client`/
+> `ES_ADMIN_ACTUAL` a `SB`/`ES_ADMIN` (la convención de
+> `shared/js/auth-guard.js`).
+>
+> **Detalle encontrado al implementar:** el enunciado original decía
+> "visible en el Home solo si `rol === 'admin'`", pero **el Home no tiene
+> ninguna lógica de sesión** (P-3, sin resolver) — lee
+> `config/modules.config.js` y pinta botones a cualquiera, sin mirar quién
+> es. Condicionar el Home por rol hubiera requerido resolver P-3 primero,
+> fuera de alcance de este cambio. Se usó en su lugar el mismo patrón que ya
+> tienen `movil`/`mgi`/las 3 faenas: `visibleEnHome: false` en
+> `modules.config.js`, se llega por URL directa. Dentro de Proveedores
+> aparece un link "👤 Usuarios" en la barra superior, visible solo cuando
+> `ES_ADMIN_ACTUAL` es `true` (ese chequeo ya existía).
+>
+> **`auth-guard.js` ganó un modo nuevo, `adminOnly: true`** (aditivo, no
+> afecta a `movil`/`empleabilidad`): sin slug de acceso, entra solo si
+> `rol === 'admin'`. Verificado con un usuario simulado que tenía
+> `principal`+`mgi`+`empleabilidad` pero no admin — quedó correctamente
+> rechazado.
+>
+> **Limpieza de paso:** un poller (`setInterval` cada 1.5s) que sincronizaba
+> la visibilidad del tab "Usuarios" al menú móvil quedó muerto al sacar el
+> tab — se eliminó junto con el HTML del ítem móvil y la línea de
+> `switchPage()` que llamaba a la función ya movida.
+>
+> Verificado en local (inyección aislada, sin credenciales reales: login
+> admin exitoso invoca `listar_solicitudes` y renderiza igual que antes;
+> login no-admin queda bloqueado) y visualmente en el navegador: Proveedores
+> sin errores de consola, Home sin el módulo nuevo, `modules/admin/` con el
+> mismo estilo del resto del sistema.
 
 ---
 
