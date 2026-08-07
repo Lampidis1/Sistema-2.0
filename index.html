@@ -8,29 +8,50 @@
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#006973 0%,#00A399 60%,#00857a 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-  .box{background:#fff;border-radius:20px;box-shadow:0 24px 70px rgba(0,0,0,.35);width:100%;max-width:520px;padding:44px 40px;text-align:center}
-  .logo{height:66px;margin-bottom:8px}
-  h1{font-family:'Barlow Condensed',sans-serif;font-size:1.9rem;font-weight:800;color:#006973;letter-spacing:.03em;text-transform:uppercase;line-height:1;margin-top:14px}
-  .sub{color:#5F6973;font-size:.82rem;margin:6px 0 32px;letter-spacing:.06em;text-transform:uppercase}
-  .cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  @media(max-width:520px){.cards{grid-template-columns:1fr}h1{font-size:1.6rem}}
-  .card{background:#f7fafa;border:2px solid #e4eef0;border-radius:14px;padding:26px 18px;text-decoration:none;color:inherit;transition:.16s;display:block}
+  .box{background:#fff;border-radius:20px;box-shadow:0 24px 70px rgba(0,0,0,.35);width:100%;max-width:720px;padding:40px 36px}
+  .head{text-align:center;margin-bottom:8px}
+  .logo{height:60px;margin-bottom:8px}
+  h1{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:800;color:#006973;letter-spacing:.03em;text-transform:uppercase;line-height:1;margin-top:12px}
+  .sub{color:#5F6973;font-size:.8rem;margin:6px 0 30px;letter-spacing:.06em;text-transform:uppercase}
+
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:560px){.cards{grid-template-columns:repeat(2,1fr)}}
+  .card{background:#f7fafa;border:2px solid #e4eef0;border-radius:14px;padding:20px 12px;text-decoration:none;color:inherit;transition:.16s;display:block;text-align:center}
   .card:hover{transform:translateY(-4px);border-color:#F2A900;box-shadow:0 14px 34px rgba(0,0,0,.14)}
-  .ic{font-size:2.6rem;margin-bottom:10px}
-  .ct{font-family:'Barlow Condensed',sans-serif;font-size:1.35rem;font-weight:800;color:#006973;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
-  .cd{font-size:.8rem;color:#5F6973;line-height:1.45}
-  .foot{margin-top:28px;color:#98a4ac;font-size:.72rem;letter-spacing:.04em}
-  .badge{display:inline-block;background:#E4F6F5;color:#006973;border-radius:20px;padding:4px 14px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-top:18px}
+  .ic{font-size:2.2rem;margin-bottom:8px}
+  .ct{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800;color:#006973;text-transform:uppercase;letter-spacing:.02em;margin-bottom:3px}
+  .cd{font-size:.72rem;color:#5F6973;line-height:1.4}
+
+  .divider{display:flex;align-items:center;gap:10px;margin:28px 0 16px;color:#98a4ac;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:#e4eef0}
+
+  .cards-sec{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  @media(max-width:560px){.cards-sec{grid-template-columns:repeat(3,1fr)}}
+  .card-sec{background:#fff;border:1.5px solid #e4eef0;border-radius:11px;padding:12px 8px;text-decoration:none;color:inherit;transition:.16s;display:block;text-align:center}
+  .card-sec:hover{border-color:#F2A900;background:#fffaf0}
+  .card-sec .ic{font-size:1.5rem;margin-bottom:4px}
+  .card-sec .ct{font-size:.68rem;font-weight:700;letter-spacing:0}
+
+  .foot-row{display:flex;justify-content:center;align-items:center;gap:14px;margin-top:30px;flex-wrap:wrap}
+  .badge{display:inline-block;background:#E4F6F5;color:#006973;border-radius:20px;padding:4px 14px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+  .foot{color:#98a4ac;font-size:.72rem;letter-spacing:.04em;text-align:center;margin-top:10px}
+  .empty{grid-column:1/-1;color:#98a4ac;font-size:.8rem;text-align:center;padding:10px;font-style:italic}
 </style>
 </head>
 <body>
   <div class="box">
-    <img src="shared/assets/logo-amsa-600.png" alt="Antofagasta Minerals" class="logo">
-    <h1>Sistema AM</h1>
-    <div class="sub">Relaciones Comunitarias</div>
+    <div class="head">
+      <img src="shared/assets/logo-amsa-600.png" alt="Antofagasta Minerals" class="logo">
+      <h1>Sistema AM</h1>
+      <div class="sub">Relaciones Comunitarias</div>
+    </div>
     <!-- Las tarjetas las genera config/modules.config.js. No editar acá. -->
     <div class="cards" id="cards"></div>
-    <div class="badge">🔒 Acceso restringido</div>
+    <div class="divider" id="divSec" style="display:none">Más módulos</div>
+    <div class="cards-sec" id="cardsSec"></div>
+    <div class="foot-row">
+      <div class="badge">🔒 Acceso restringido</div>
+    </div>
     <div class="foot">Cada plataforma solicita inicio de sesión · v2.0</div>
   </div>
 <script src="config/modules.config.js"></script>
@@ -38,6 +59,7 @@
 // El Home no conoce ningun modulo: solo pinta lo que declara modules.config.js.
 (function () {
   var cont = document.getElementById('cards');
+  var contSec = document.getElementById('cardsSec');
   var mods = (window.AM_MODULES || []).filter(function (m) { return m.visibleEnHome; });
 
   // ── P-3 (docs/PENDIENTES.md) ────────────────────────────────────────────
@@ -51,7 +73,7 @@
   // que se leen directo y se decodifica el JWT a mano, igual que ya hacen
   // los modulos entre si.
   var STORAGE_KEYS = ['am_v2_auth', 'am_emp_auth', 'am_mov_auth', 'am_mgi',
-    'am_pub_centinela', 'am_pub_antucoya', 'am_pub_zaldivar', 'am_admin_auth'];
+    'am_pub_centinela', 'am_pub_antucoya', 'am_pub_zaldivar', 'am_admin_auth', 'am_planer_auth'];
 
   function decodeJwt(token) {
     try {
@@ -96,7 +118,11 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
     });
   }
-  cont.innerHTML = mods.map(function (m) {
+
+  var destacados = mods.filter(function (m) { return m.destacado; });
+  var resto = mods.filter(function (m) { return !m.destacado; });
+
+  cont.innerHTML = destacados.map(function (m) {
     var prox = m.estado === 'proximamente';
     return '<a class="card" href="' + (prox ? '#' : esc(m.ruta)) + '"' +
            (prox ? ' style="opacity:.55;cursor:default" onclick="return false"' : '') + '>' +
@@ -104,7 +130,19 @@
            '<div class="ct">' + esc(m.nombre) + (prox ? ' · Próximamente' : '') + '</div>' +
            '<div class="cd">' + esc(m.descripcion) + '</div>' +
            '</a>';
-  }).join('');
+  }).join('') || '<div class="empty">Sin accesos destacados para esta sesión.</div>';
+
+  if (resto.length) {
+    document.getElementById('divSec').style.display = 'flex';
+    contSec.innerHTML = resto.map(function (m) {
+      var prox = m.estado === 'proximamente';
+      return '<a class="card-sec" href="' + (prox ? '#' : esc(m.ruta)) + '"' +
+             (prox ? ' style="opacity:.55;cursor:default" onclick="return false"' : '') + '>' +
+             '<div class="ic">' + esc(m.icono) + '</div>' +
+             '<div class="ct">' + esc(m.nombre) + '</div>' +
+             '</a>';
+    }).join('');
+  }
 })();
 </script>
 </body>

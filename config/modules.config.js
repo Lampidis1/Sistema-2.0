@@ -23,6 +23,10 @@
 //
 // El valor 'lector' que puede aparecer en accesos NO es un módulo: es un flag
 // que marca al usuario como solo-lectura. Nunca debe registrarse acá.
+//
+// CAMPO `destacado` — controla el tamaño del ícono en el Home, nada más.
+// true  → ícono grande, arriba (uso diario: faenas, terreno, Planer)
+// false u omitido → ícono chico, abajo ("el resto")
 // ═══════════════════════════════════════════════════════════════════════════
 
 window.AM_MODULES = [
@@ -36,6 +40,7 @@ window.AM_MODULES = [
     estado: 'activo',
     visibleEnHome: true,
     doc: 'docs/modulos/proveedores.md',
+    // sin 'destacado': va en el bloque chico de abajo
   },
   {
     id: 'empleabilidad',
@@ -61,7 +66,8 @@ window.AM_MODULES = [
     acceso: 'movil',
     accesoAlterno: 'empleabilidad',
     estado: 'activo',
-    visibleEnHome: false,         // hoy se entra por URL directa, no desde el Home
+    visibleEnHome: true,
+    destacado: true,
     doc: 'docs/modulos/movil.md',
   },
   {
@@ -72,7 +78,7 @@ window.AM_MODULES = [
     ruta: 'modules/mgi/',
     acceso: 'mgi',
     estado: 'activo',
-    visibleEnHome: false,
+    visibleEnHome: true,
     doc: 'docs/modulos/mgi.md',
   },
   {
@@ -83,7 +89,8 @@ window.AM_MODULES = [
     ruta: 'modules/centinela/',
     acceso: 'centinela',
     estado: 'activo',
-    visibleEnHome: false,
+    visibleEnHome: true,
+    destacado: true,
     doc: 'docs/modulos/faenas.md',
   },
   {
@@ -94,7 +101,8 @@ window.AM_MODULES = [
     ruta: 'modules/antucoya/',
     acceso: 'antucoya',
     estado: 'activo',
-    visibleEnHome: false,
+    visibleEnHome: true,
+    destacado: true,
     doc: 'docs/modulos/faenas.md',
   },
   {
@@ -105,7 +113,8 @@ window.AM_MODULES = [
     ruta: 'modules/zaldivar/',
     acceso: 'zaldivar',
     estado: 'activo',
-    visibleEnHome: false,
+    visibleEnHome: true,
+    destacado: true,
     doc: 'docs/modulos/faenas.md',
   },
   {
@@ -116,7 +125,8 @@ window.AM_MODULES = [
     ruta: 'modules/planer/',
     acceso: 'planer',
     estado: 'activo',
-    visibleEnHome: false,     // se llega por URL directa, igual que movil/mgi/faenas
+    visibleEnHome: true,
+    destacado: true,
     doc: 'docs/modulos/planer.md',
   },
   {
@@ -127,7 +137,7 @@ window.AM_MODULES = [
     ruta: 'modules/admin/',
     acceso: null,             // sin slug: solo entra rol === 'admin' (bypasea tiene_acceso())
     estado: 'activo',
-    visibleEnHome: false,     // igual que movil/mgi/faenas: se llega por URL directa
+    visibleEnHome: true,
     doc: 'docs/modulos/admin.md',
   },
 
