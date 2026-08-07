@@ -109,6 +109,17 @@ window.AM_MODULES = [
     doc: 'docs/modulos/faenas.md',
   },
   {
+    id: 'planer',
+    nombre: 'Planer',
+    descripcion: 'Pendientes y acciones por especialista de Proveedores, vista conjunta con filtro por autor.',
+    icono: '📋',
+    ruta: 'modules/planer/',
+    acceso: 'planer',
+    estado: 'activo',
+    visibleEnHome: false,     // se llega por URL directa, igual que movil/mgi/faenas
+    doc: 'docs/modulos/planer.md',
+  },
+  {
     id: 'admin',
     nombre: 'Gestión de usuarios',
     descripcion: 'Aprobar o rechazar solicitudes de acceso al sistema.',

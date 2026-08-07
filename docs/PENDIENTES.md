@@ -715,6 +715,31 @@ resolverlos juntos.
 
 ---
 
+### P-16 · 🟡 Módulo Planer creado (2026-08-07); integración con PlanIA-Personal pendiente
+
+Se creó `modules/planer/` — pendientes y acciones por especialista de
+Proveedores, vista conjunta (todos ven todo) con filtro por autor en el
+frontend. Detalle técnico completo en `docs/modulos/planer.md`.
+
+Es la **primera tabla del sistema con RLS "por autor de fila"**
+(`autor_id = auth.uid()`) — hasta ahora todas las políticas eran por
+rol/acceso. `planer_select` deja ver todo con el slug `planer`;
+`planer_insert`/`planer_update` restringen a la fila propia (o admin).
+Verificado con la `anon key` sin sesión: `[]`.
+
+**Pendiente real:** conectar la generación por IA (**PlanIA-Personal**,
+proyecto en desarrollo en paralelo). Falta decidir dónde vive la llamada al
+modelo — una key de proveedor de IA no puede quedar expuesta en el
+navegador. Candidato natural: una Supabase Edge Function. No se ha
+construido nada de esto todavía; la tabla ya trae la columna `origen`
+(`'manual'`/`'ia'`) lista para cuando se conecte.
+
+**El maestro debe asignar el slug `planer`** a los especialistas de
+Proveedores que correspondan (`aprobar_usuario_v2`, vía `modules/admin/`).
+Un módulo nuevo nace invisible — nadie lo tiene todavía.
+
+---
+
 ## Orden sugerido
 
 | # | Pendiente | Estado | Por qué en esa posición |

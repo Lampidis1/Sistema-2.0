@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Planer · Sistema AM</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
+<script src="../../config/supabase.config.js"></script>
+<link rel="stylesheet" href="planer.css">
+</head>
+<body>
+<!-- GATE -->
+<div id="gate">
+  <div class="gate-card">
+    <img src="../../shared/assets/logo-amsa-873.png" alt="AM">
+    <div class="gate-t">Planer</div>
+    <div class="gate-s">Pendientes y acciones · Proveedores</div>
+    <div id="gateErr" class="gate-err"></div>
+    <div id="loginStep">
+      <label>Correo</label>
+      <input id="lgEmail" type="email" inputmode="email" placeholder="usuario@aminerals.cl" autocomplete="username">
+      <label>Contraseña</label>
+      <input id="lgPass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrar()">
+      <button class="gate-btn" id="lgBtn" onclick="entrar()">Ingresar</button>
+      <div style="margin-top:14px;font-size:.82rem">¿Sin cuenta? <span class="gate-link" onclick="verRegistro()">Solicitar acceso</span></div>
+    </div>
+    <div id="regStep" style="display:none">
+      <div class="g2"><div><label>Nombre</label><input id="rgNombre"></div><div><label>Apellido</label><input id="rgApellido"></div></div>
+      <label>Correo</label><input id="rgEmail" type="email" inputmode="email">
+      <label>Contraseña (mín. 6)</label><input id="rgPass" type="password">
+      <button class="gate-btn" id="rgBtn" onclick="registrarse()">Solicitar acceso</button>
+      <div style="margin-top:12px;font-size:.82rem"><span class="gate-link" onclick="verLogin()">← Volver</span></div>
+    </div>
+    <div id="pendStep" style="display:none">
+      <div style="font-size:2.2rem">⏳</div>
+      <div style="font-weight:700;margin:6px 0">Cuenta pendiente</div>
+      <div style="font-size:.82rem;color:var(--text-muted)">Un administrador debe habilitar tu acceso a Planer.</div>
+      <button class="gate-btn" style="margin-top:14px" onclick="salir()">Cerrar sesión</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <header>
+    <div>
+      <div class="ht">Planer</div>
+      <div class="hs">Pendientes y acciones</div>
+    </div>
+    <div class="sp">
+      <span id="hUser" style="font-size:.72rem;opacity:.9"></span>
+      <a href="../../index.html">⌂</a>
+      <button onclick="salir()">Salir</button>
+    </div>
+  </header>
+  <main>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+        <div class="panel-t" style="margin-bottom:0">📋 Pendientes del equipo</div>
+        <button class="kb-add" onclick="abrirNuevo()">➕ Nuevo pendiente</button>
+      </div>
+      <div style="font-size:.83rem;color:var(--text-muted);margin-bottom:14px">Vista conjunta: se ven los pendientes de todos los especialistas. Cada quien solo puede crear o editar los suyos.</div>
+      <div class="filtros">
+        <select id="fAutor" onchange="setFiltroAutor(this.value)"><option value="">Todos los autores</option></select>
+        <select id="fEstado" onchange="setFiltroEstado(this.value)">
+          <option value="">Todos los estados</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="en_progreso">En progreso</option>
+          <option value="hecho">Hecho</option>
+        </select>
+        <span id="count" style="font-size:.8rem;color:var(--text-muted);margin-left:auto"></span>
+      </div>
+      <div id="lista"><div class="kb-empty">Cargando…</div></div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL NUEVO/EDITAR -->
+<div id="formModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10010;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:480px;width:100%;padding:24px">
+    <div class="panel-t" id="formTitle">Nuevo pendiente</div>
+    <div class="fld"><label>Título *</label><input id="fTitulo" placeholder="Ej: Confirmar visita a proveedor X"></div>
+    <div class="fld"><label>Descripción</label><textarea id="fDescripcion" placeholder="Detalle, contexto, próximos pasos..."></textarea></div>
+    <div class="g2">
+      <div class="fld"><label>Estado</label>
+        <select id="fEstado">
+          <option value="pendiente">Pendiente</option>
+          <option value="en_progreso">En progreso</option>
+          <option value="hecho">Hecho</option>
+        </select>
+      </div>
+      <div class="fld"><label>Prioridad</label>
+        <select id="fPrioridad">
+          <option value="baja">Baja</option>
+          <option value="media" selected>Media</option>
+          <option value="alta">Alta</option>
+        </select>
+      </div>
+    </div>
+    <div class="fld"><label>Fecha límite</label><input id="fFecha" type="date"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="kb-add" style="flex:1" onclick="guardarItem()">Guardar</button>
+      <button class="mini-btn" onclick="cerrarForm()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>window.AUTH_CFG = {
+  storageKey: 'am_planer_auth',
+  slug: 'planer',
+  altSlugs: [],
+  origen: 'planer',
+  rolSolicitado: 'usuario',
+  faenaSolicitada: null,
+  msgPassCorta: 'La contraseña debe tener al menos 6 caracteres',
+  onAcceso: function(user){ return _planerOnAcceso(user); }
+};</script>
+<script src="../../shared/js/auth-guard.js"></script>
+<script src="planer.js"></script>
+</body>
+</html>
