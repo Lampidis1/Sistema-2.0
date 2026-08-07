@@ -428,12 +428,12 @@ Proveedores.
 
 ---
 
-### P-8 · 🔴 `proveedores.js` tiene 6.451 líneas
+### P-8 · 🟡 PARCIAL — primer corte hecho (2026-08-06): Catálogo de Programas
 
 El módulo ya está separado (`index.html` 876 · `.css` 904 · `.js` 6.451), pero
 el `.js` sigue concentrando directorio, hotelería, visitas, compromisos,
-licitaciones, programas, estandarización, kanban, contratistas, compras **y**
-el panel de administración. Toca 24 tablas.
+licitaciones, programas, estandarización, kanban, contratistas, compras.
+Toca 24 tablas.
 
 **Arreglo:** partirlo por secciones, de a una, empezando por las más
 independientes. Nunca de golpe.
@@ -441,6 +441,42 @@ independientes. Nunca de golpe.
 Al partirlo, los archivos resultantes se cargan como `<script src>` sucesivos
 en el mismo orden. Las funciones tienen que seguir siendo globales por los
 257 `onclick=` de este módulo.
+
+> **Mapa completo del archivo, hecho con los propios banners de comentario**
+> (no adivinado) antes de tocar nada — 17 secciones lógicas, de 57 a 1.482
+> líneas cada una. Las de mayor riesgo (capa de datos Supabase, directorio,
+> licitaciones, estandarización — esta última **compartida con MGI**) se
+> dejan para el final, si es que se tocan.
+>
+> **Primer corte: Catálogo de Programas** (101 líneas, la más chica y más
+> aislada de las candidatas) → `modules/proveedores/proveedores-programas.js`,
+> cargado con `<script src>` justo después de `proveedores.js`. Código
+> movido tal cual, sin reescribir.
+>
+> Verificado antes de mover: qué funciones se llaman desde fuera de la
+> sección (`cargarProgramasCatalogo`, `PROGRAMAS_CAT`, ambas desde
+> `renderProgramasDash()` y desde el flujo de sesión) y qué globals de
+> `proveedores.js` usa la sección (`SUPA`, `showToast`, `registrarLog`,
+> `miNombre`, `esc`, `DB`, `PROGRAMAS_LIST`) — ninguna es ejecución
+> inmediata a nivel superior, así que el orden de carga entre archivos no
+> importa mientras ambos carguen antes de que alguien haga clic.
+>
+> Verificado después: inyección aislada confirma que las 7 funciones
+> quedan globales sin errores, y que `renderProgramasDash()` (que se queda
+> en `proveedores.js`) puede llamar a `catalogoProgramasHTML()` (que se fue
+> al archivo nuevo) sin problema — la dependencia cruzada real funciona.
+> Visualmente sin cambios ni errores de consola.
+>
+> **Detalle encontrado de paso, sin tocar:** el banner de la sección
+> "GESTIÓN DE USUARIOS v5.0" (línea ~5597) quedó desactualizado tras P-7 —
+> las funciones de aprobar/rechazar ya no están ahí, solo queda el estado
+> de auth (`ES_ADMIN_ACTUAL`) y el registro público. Se arregla en la
+> próxima ronda que toque esa zona.
+>
+> **Quedan 16 secciones.** Siguiente candidata natural: alguna de las otras
+> chicas y aisladas (MOLI, Trabajadores de Hotelería, Dashboard de
+> Compromisos, Agenda telefónica) — se decide en la próxima ronda, no de
+> una sola vez.
 
 ---
 
