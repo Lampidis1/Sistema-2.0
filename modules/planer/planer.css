@@ -32,7 +32,7 @@
   .panel-t{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:800;color:var(--primary);text-transform:uppercase;margin-bottom:14px}
   .fld{margin-bottom:12px}
   .fld label{font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:4px}
-  .fld input,.fld select,.fld textarea{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:10px;font-size:.92rem;font-family:inherit}
+  .fld input,.fld select,.fld textarea{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:10px;font-size:16px;font-family:inherit}
   .fld textarea{min-height:64px;resize:vertical}
   .kb-add{background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.9rem;letter-spacing:.04em;cursor:pointer}
   .kb-add:hover{opacity:.9}
@@ -40,7 +40,7 @@
   .mini-btn{border:1.5px solid var(--border);background:#fff;border-radius:6px;padding:5px 10px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;text-decoration:none;font-size:.8rem;color:var(--text)}
 
   .filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
-  .filtros select{border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:.85rem}
+  .filtros select{border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:16px}
 
   .item-card{border:1px solid var(--border);border-radius:11px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
   .item-card.hecho{opacity:.6}
