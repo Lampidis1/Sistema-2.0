@@ -24,9 +24,12 @@
 // El valor 'lector' que puede aparecer en accesos NO es un módulo: es un flag
 // que marca al usuario como solo-lectura. Nunca debe registrarse acá.
 //
-// CAMPO `destacado` — controla el tamaño del ícono en el Home, nada más.
-// true  → ícono grande, arriba (uso diario: faenas, terreno, Planer)
-// false u omitido → ícono chico, abajo ("el resto")
+// CAMPO `homeTier` — controla dónde y de qué tamaño aparece en el Home.
+//   'principal' → arriba, en el par grande (hoy: Proveedores + Empleabilidad)
+//   'medio'     → fila del medio, tamaño normal, EN EL ORDEN DEL ARRAY
+//                 (hoy: Móvil, Planer, MGI, Centinela, Antucoya, Zaldívar)
+//   omitido     → ícono chico, al final de la página ("el resto")
+// El orden dentro de cada nivel es el orden en que aparecen en este array.
 // ═══════════════════════════════════════════════════════════════════════════
 
 window.AM_MODULES = [
@@ -39,8 +42,8 @@ window.AM_MODULES = [
     acceso: 'principal',          // ⚠ NO es 'proveedores'
     estado: 'activo',
     visibleEnHome: true,
+    homeTier: 'principal',
     doc: 'docs/modulos/proveedores.md',
-    // sin 'destacado': va en el bloque chico de abajo
   },
   {
     id: 'empleabilidad',
@@ -55,6 +58,7 @@ window.AM_MODULES = [
     accesoAlterno: ['movil', 'principal'],
     estado: 'activo',
     visibleEnHome: true,
+    homeTier: 'principal',
     doc: 'docs/modulos/empleabilidad.md',
   },
   {
@@ -67,8 +71,20 @@ window.AM_MODULES = [
     accesoAlterno: 'empleabilidad',
     estado: 'activo',
     visibleEnHome: true,
-    destacado: true,
+    homeTier: 'medio',
     doc: 'docs/modulos/movil.md',
+  },
+  {
+    id: 'planer',
+    nombre: 'Planer',
+    descripcion: 'Pendientes y acciones por especialista de Proveedores, vista conjunta con filtro por autor.',
+    icono: '📋',
+    ruta: 'modules/planer/',
+    acceso: 'planer',
+    estado: 'activo',
+    visibleEnHome: true,
+    homeTier: 'medio',
+    doc: 'docs/modulos/planer.md',
   },
   {
     id: 'mgi',
@@ -79,6 +95,7 @@ window.AM_MODULES = [
     acceso: 'mgi',
     estado: 'activo',
     visibleEnHome: true,
+    homeTier: 'medio',
     doc: 'docs/modulos/mgi.md',
   },
   {
@@ -90,7 +107,7 @@ window.AM_MODULES = [
     acceso: 'centinela',
     estado: 'activo',
     visibleEnHome: true,
-    destacado: true,
+    homeTier: 'medio',
     doc: 'docs/modulos/faenas.md',
   },
   {
@@ -102,7 +119,7 @@ window.AM_MODULES = [
     acceso: 'antucoya',
     estado: 'activo',
     visibleEnHome: true,
-    destacado: true,
+    homeTier: 'medio',
     doc: 'docs/modulos/faenas.md',
   },
   {
@@ -114,20 +131,8 @@ window.AM_MODULES = [
     acceso: 'zaldivar',
     estado: 'activo',
     visibleEnHome: true,
-    destacado: true,
+    homeTier: 'medio',
     doc: 'docs/modulos/faenas.md',
-  },
-  {
-    id: 'planer',
-    nombre: 'Planer',
-    descripcion: 'Pendientes y acciones por especialista de Proveedores, vista conjunta con filtro por autor.',
-    icono: '📋',
-    ruta: 'modules/planer/',
-    acceso: 'planer',
-    estado: 'activo',
-    visibleEnHome: true,
-    destacado: true,
-    doc: 'docs/modulos/planer.md',
   },
   {
     id: 'admin',
@@ -139,6 +144,7 @@ window.AM_MODULES = [
     estado: 'activo',
     visibleEnHome: true,
     doc: 'docs/modulos/admin.md',
+    // sin 'homeTier': va en el bloque chico de abajo ("el resto")
   },
 
   // ─────────────────────────────────────────────────────────────────────────

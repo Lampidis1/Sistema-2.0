@@ -14,23 +14,34 @@
   h1{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:800;color:#006973;letter-spacing:.03em;text-transform:uppercase;line-height:1;margin-top:12px}
   .sub{color:#5F6973;font-size:.8rem;margin:6px 0 30px;letter-spacing:.06em;text-transform:uppercase}
 
-  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-  @media(max-width:560px){.cards{grid-template-columns:repeat(2,1fr)}}
-  .card{background:#f7fafa;border:2px solid #e4eef0;border-radius:14px;padding:20px 12px;text-decoration:none;color:inherit;transition:.16s;display:block;text-align:center}
-  .card:hover{transform:translateY(-4px);border-color:#F2A900;box-shadow:0 14px 34px rgba(0,0,0,.14)}
-  .ic{font-size:2.2rem;margin-bottom:8px}
-  .ct{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800;color:#006973;text-transform:uppercase;letter-spacing:.02em;margin-bottom:3px}
-  .cd{font-size:.72rem;color:#5F6973;line-height:1.4}
+  /* Nivel 1 — "principal": el par grande, usa el espacio de forma notoria */
+  .cards-principal{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:480px){.cards-principal{grid-template-columns:1fr}}
+  .card-principal{background:#f7fafa;border:2px solid #e4eef0;border-radius:16px;padding:0;text-decoration:none;color:inherit;transition:.16s;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1/1;text-align:center}
+  .card-principal:hover{transform:translateY(-4px);border-color:#F2A900;box-shadow:0 14px 34px rgba(0,0,0,.14)}
+  .card-principal .ic{font-size:3.4rem;margin-bottom:12px}
+  .card-principal .ct{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;color:#006973;text-transform:uppercase;letter-spacing:.02em;margin-bottom:6px}
+  .card-principal .cd{font-size:.76rem;color:#5F6973;line-height:1.45;padding:0 18px}
+
+  /* Nivel 2 — "medio": tamaño normal, en el orden del config */
+  .cards-medio{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:560px){.cards-medio{grid-template-columns:repeat(2,1fr)}}
+  .card-medio{background:#f7fafa;border:2px solid #e4eef0;border-radius:14px;padding:20px 12px;text-decoration:none;color:inherit;transition:.16s;display:block;text-align:center}
+  .card-medio:hover{transform:translateY(-4px);border-color:#F2A900;box-shadow:0 14px 34px rgba(0,0,0,.14)}
+  .card-medio .ic{font-size:2.2rem;margin-bottom:8px}
+  .card-medio .ct{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800;color:#006973;text-transform:uppercase;letter-spacing:.02em;margin-bottom:3px}
+  .card-medio .cd{font-size:.72rem;color:#5F6973;line-height:1.4}
 
   .divider{display:flex;align-items:center;gap:10px;margin:28px 0 16px;color:#98a4ac;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
   .divider::before,.divider::after{content:'';flex:1;height:1px;background:#e4eef0}
 
-  .cards-sec{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-  @media(max-width:560px){.cards-sec{grid-template-columns:repeat(3,1fr)}}
-  .card-sec{background:#fff;border:1.5px solid #e4eef0;border-radius:11px;padding:12px 8px;text-decoration:none;color:inherit;transition:.16s;display:block;text-align:center}
-  .card-sec:hover{border-color:#F2A900;background:#fffaf0}
-  .card-sec .ic{font-size:1.5rem;margin-bottom:4px}
-  .card-sec .ct{font-size:.68rem;font-weight:700;letter-spacing:0}
+  /* Nivel 3 — "el resto": chico, al final */
+  .cards-chico{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  @media(max-width:560px){.cards-chico{grid-template-columns:repeat(3,1fr)}}
+  .card-chico{background:#fff;border:1.5px solid #e4eef0;border-radius:11px;padding:12px 8px;text-decoration:none;color:inherit;transition:.16s;display:block;text-align:center}
+  .card-chico:hover{border-color:#F2A900;background:#fffaf0}
+  .card-chico .ic{font-size:1.5rem;margin-bottom:4px}
+  .card-chico .ct{font-size:.68rem;font-weight:700;letter-spacing:0}
 
   .foot-row{display:flex;justify-content:center;align-items:center;gap:14px;margin-top:30px;flex-wrap:wrap}
   .badge{display:inline-block;background:#E4F6F5;color:#006973;border-radius:20px;padding:4px 14px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
@@ -46,9 +57,11 @@
       <div class="sub">Relaciones Comunitarias</div>
     </div>
     <!-- Las tarjetas las genera config/modules.config.js. No editar acá. -->
-    <div class="cards" id="cards"></div>
-    <div class="divider" id="divSec" style="display:none">Más módulos</div>
-    <div class="cards-sec" id="cardsSec"></div>
+    <div class="cards-principal" id="cardsPrincipal"></div>
+    <div class="divider" id="divMedio" style="display:none">Módulos</div>
+    <div class="cards-medio" id="cardsMedio"></div>
+    <div class="divider" id="divChico" style="display:none">Más módulos</div>
+    <div class="cards-chico" id="cardsChico"></div>
     <div class="foot-row">
       <div class="badge">🔒 Acceso restringido</div>
     </div>
@@ -58,8 +71,9 @@
 <script>
 // El Home no conoce ningun modulo: solo pinta lo que declara modules.config.js.
 (function () {
-  var cont = document.getElementById('cards');
-  var contSec = document.getElementById('cardsSec');
+  var contPrincipal = document.getElementById('cardsPrincipal');
+  var contMedio = document.getElementById('cardsMedio');
+  var contChico = document.getElementById('cardsChico');
   var mods = (window.AM_MODULES || []).filter(function (m) { return m.visibleEnHome; });
 
   // ── P-3 (docs/PENDIENTES.md) ────────────────────────────────────────────
@@ -119,29 +133,33 @@
     });
   }
 
-  var destacados = mods.filter(function (m) { return m.destacado; });
-  var resto = mods.filter(function (m) { return !m.destacado; });
-
-  cont.innerHTML = destacados.map(function (m) {
+  function tarjeta(m, clase, conDescripcion) {
     var prox = m.estado === 'proximamente';
-    return '<a class="card" href="' + (prox ? '#' : esc(m.ruta)) + '"' +
+    return '<a class="' + clase + '" href="' + (prox ? '#' : esc(m.ruta)) + '"' +
            (prox ? ' style="opacity:.55;cursor:default" onclick="return false"' : '') + '>' +
            '<div class="ic">' + esc(m.icono) + '</div>' +
            '<div class="ct">' + esc(m.nombre) + (prox ? ' · Próximamente' : '') + '</div>' +
-           '<div class="cd">' + esc(m.descripcion) + '</div>' +
+           (conDescripcion ? '<div class="cd">' + esc(m.descripcion) + '</div>' : '') +
            '</a>';
-  }).join('') || '<div class="empty">Sin accesos destacados para esta sesión.</div>';
+  }
 
-  if (resto.length) {
-    document.getElementById('divSec').style.display = 'flex';
-    contSec.innerHTML = resto.map(function (m) {
-      var prox = m.estado === 'proximamente';
-      return '<a class="card-sec" href="' + (prox ? '#' : esc(m.ruta)) + '"' +
-             (prox ? ' style="opacity:.55;cursor:default" onclick="return false"' : '') + '>' +
-             '<div class="ic">' + esc(m.icono) + '</div>' +
-             '<div class="ct">' + esc(m.nombre) + '</div>' +
-             '</a>';
-    }).join('');
+  // Tres niveles, en el orden en que aparecen en modules.config.js dentro de
+  // cada nivel (ver comentario `homeTier` ahí).
+  var principal = mods.filter(function (m) { return m.homeTier === 'principal'; });
+  var medio     = mods.filter(function (m) { return m.homeTier === 'medio'; });
+  var chico     = mods.filter(function (m) { return !m.homeTier; });
+
+  contPrincipal.innerHTML = principal.map(function (m) { return tarjeta(m, 'card-principal', true); }).join('')
+    || '<div class="empty">Sin accesos para esta sesión.</div>';
+
+  if (medio.length) {
+    document.getElementById('divMedio').style.display = 'flex';
+    contMedio.innerHTML = medio.map(function (m) { return tarjeta(m, 'card-medio', true); }).join('');
+  }
+
+  if (chico.length) {
+    document.getElementById('divChico').style.display = 'flex';
+    contChico.innerHTML = chico.map(function (m) { return tarjeta(m, 'card-chico', false); }).join('');
   }
 })();
 </script>
