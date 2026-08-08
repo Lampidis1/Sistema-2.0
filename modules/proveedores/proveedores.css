@@ -98,6 +98,7 @@
   .tab{padding:6px 17px;font-family:'Barlow Condensed',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s}
   .tab.active{color:var(--primary);border-bottom-color:var(--primary)}
   .tab:hover:not(.active){color:var(--text)}
+  .btn-add-prov-mobile{display:none}
   .results-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
   .results-count{font-size:.83rem;color:var(--text-light)}
   .results-count strong{color:var(--text)}
@@ -824,6 +825,10 @@ body.is-user .solo-admin{ display:none !important; }
   .results-count{display:none !important}
   .view-toggle{order:0;width:100%;justify-content:center}
   .view-btn{flex:1}
+  /* "Nuevo proveedor" se saca de la barra de resultados (oculta en iPhone)
+     y se pone junto a la pestaña Estadísticas, siempre a mano. */
+  .tabs{align-items:center}
+  .btn-add-prov-mobile{display:inline-flex;align-items:center;gap:4px;margin-left:auto;margin-bottom:8px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:7px;padding:6px 12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.78rem;letter-spacing:.03em;white-space:nowrap;cursor:pointer}
 }
 /* Buscador móvil oculto en escritorio */
 .mobile-search-bar{display:none}
@@ -889,6 +894,31 @@ body.is-user .solo-admin{ display:none !important; }
 .dcf-flota-tbl th{text-align:left;font-family:'Barlow Condensed',sans-serif;font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted,#6b7780);padding:8px 14px;background:#f7fbfc;border-bottom:1px solid var(--border)}
 .dcf-flota-tbl td{padding:8px 14px;border-bottom:1px solid rgba(0,0,0,.05);color:var(--text,#1c2632)}
 @media(max-width:768px){.dcf-layout{grid-template-columns:1fr}.dcf-left{border-right:none;border-bottom:1.5px solid var(--border);padding-right:4px}.dcf-right{padding-left:4px}}
+
+/* ═══ FICHA (ventana emergente) responsive en iPhone/Android ═══
+   La ficha trae 5 botones de acción + hasta 6 pestañas + una tabla de
+   maquinaria: en desktop caben en una fila, en teléfono se desbordaban.
+   Se pasa a hoja de pantalla completa y los botones/pestañas pasan a
+   scroll horizontal en vez de comprimirse o cortarse. */
+@media(max-width:768px){
+  .modal-overlay{padding:0}
+  .modal{border-radius:0;max-width:100%;width:100%;max-height:100vh;height:100vh}
+  .modal-header{padding:14px 46px 10px 16px;flex-wrap:wrap;border-radius:0}
+  .modal-title{font-size:1.12rem}
+  .modal-header-right{width:100%;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;justify-content:flex-start}
+  .modal-header-right::-webkit-scrollbar{display:none}
+  .btn-edit-modal{flex-shrink:0;padding:7px 11px;font-size:.74rem;white-space:nowrap}
+  .modal-close{position:absolute;top:12px;right:12px;background:#f4f7f7;width:30px;height:30px;border-radius:50%;font-size:20px;line-height:1;z-index:32}
+  .modal-body{padding:14px 16px}
+  .modal-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;margin:0 -16px 14px;padding:0 16px}
+  .modal-tabs::-webkit-scrollbar{display:none}
+  .modal-tab-btn{flex-shrink:0;padding:9px 12px;font-size:.74rem}
+  /* tabla de maquinaria: scroll horizontal propio en vez de cortarse */
+  .dcf-flota-box{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .dcf-flota-tbl{min-width:520px}
+  /* las 3 casillas de fotos no caben en 320-375px de ancho a tamaño desktop */
+  #fotoUploadArea label{width:31% !important;height:76px !important}
+}
 
 
 /* ═══ v14 Chips de faena en edición ═══ */
