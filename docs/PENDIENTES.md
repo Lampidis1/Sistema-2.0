@@ -464,7 +464,7 @@ Proveedores.
 
 ---
 
-### P-8 · 🟡 PARCIAL — tercer corte hecho (2026-08-07): Agenda telefónica
+### P-8 · 🟡 PARCIAL — cuarto corte hecho (2026-08-08): Exportar PDF + Subir minuta
 
 El módulo ya está separado (`index.html` 876 · `.css` 904 · `.js` 6.451), pero
 el `.js` sigue concentrando directorio, hotelería, visitas, compromisos,
@@ -576,9 +576,49 @@ en el mismo orden. Las funciones tienen que seguir siendo globales por los
 > **Quedan 14 secciones.** De las 4 candidatas "chicas" originales, ya se
 > usaron las 2 viables (Compromisos, Agenda); MOLI y Trabajadores de
 > Hotelería siguen descartadas (código del sistema de visitas activo
-> mezclado). La próxima ronda necesita elegir entre las secciones medianas
-> (Hotelería+Acuerdos, Visitas/Hotelería/Dashboard v6, Storage+Licitaciones
-> v3, Kanban) con el mismo nivel de disección quirúrgica.
+> mezclado).
+>
+> **Cuarto corte (2026-08-08): Exportar ficha a PDF + Subir minuta manual.**
+> Se tomó del bloque final del archivo ("Menú móvil v11" → "Exportar PDF
+> v12" → "v14 Edición: maquinaria" → "Subir minuta manual"). Otro caso de
+> extracción no contigua: el bloque de maquinaria (`CAT_MAQ`, `_efFlota`,
+> `efRubrosChange`, `efRenderMaq`, `efAddMaq`, `efDelMaq`) quedó **en medio**
+> de los dos clusters que sí se movieron — pertenece al modal de edición de
+> ficha (usado desde ~987-1107), no a exportar/subir PDFs. Tampoco se
+> movieron los 4 toggles del menú móvil (`toggleMobileNav`, `mobileGo`,
+> `toggleMobileSidebar` — este último ya estaba antes del corte —, más
+> `toggleMnavCargar`, que sí se movió por estar pegado al cluster de
+> exportar): son de una línea cada uno, no valía la pena separarlos.
+>
+> Se movieron 8 funciones/variables (`LOGO_AMSA_PDF`, `LOGOS_FAENA`,
+> `_urlToBase64`, `exportarFichaPDF`, `toggleMnavCargar`, `_smPid`,
+> `abrirSubirMinutaManual`, `cerrarSubirMinutaManual`,
+> `confirmarSubirMinutaManual`) a `modules/proveedores/proveedores-pdf.js`.
+>
+> **Un error real durante la extracción, detectado por la propia
+> verificación:** `LOGO_AMSA_PDF` es un string base64 de una sola línea
+> pero enorme (una imagen PNG completa) — imposible de pegar entero en una
+> herramienta de edición de texto. Se usó `sed` por número de línea en su
+> lugar, y en el primer intento el rango quedó desalineado: a
+> `toggleMnavCargar()` le faltó la llave de cierre, dejando
+> `proveedores-pdf.js` con un `SyntaxError: Unexpected end of input`. Se
+> detectó con `node --check` (el mismo paso de verificación de siempre, no
+> uno nuevo) antes de llegar a probarlo en el navegador, y se corrigió
+> agregando la llave faltante. Verificación extra que se sumó por este
+> susto: contar `{`/`}` en el archivo completo antes y después del corte —
+> la diferencia (60 en cada lado) coincidió exactamente con el conteo de
+> llaves del archivo nuevo, confirmando que no se perdió ni se duplicó nada.
+>
+> Verificado después: sintaxis de ambos archivos; inyección aislada
+> confirma las 4 funciones movidas como globales sin errores, y que las 7
+> que debían quedarse (mobile nav + maquinaria) siguen en `proveedores.js`;
+> HTML balanceado.
+>
+> `proveedores.js` bajó a **5.829 líneas** (de 6.451 al empezar P-8 — ya se
+> movieron 622 líneas en 4 rondas). Quedan **13 secciones**. La próxima
+> ronda sigue necesitando el mismo nivel de disección quirúrgica —
+> candidatas medianas: Hotelería+Acuerdos, Visitas/Hotelería/Dashboard v6,
+> Storage+Licitaciones v3, Kanban.
 
 ---
 
