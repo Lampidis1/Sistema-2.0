@@ -117,3 +117,10 @@ body.is-user .solo-admin{ display:none !important; }
   .card-compact{padding:11px 13px}
 }
 
+/* Acciones dentro de cada pestaña de la ficha. En la cabecera los botones
+   scrollean en el teléfono y los últimos quedaban fuera de vista; cada
+   pestaña lleva ahora su propia acción, siempre visible. */
+.fm-pane-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;padding-bottom:6px;border-bottom:1.5px solid var(--fm-accent-lt)}
+.fm-accion{background:var(--fm-primary);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.86rem;letter-spacing:.03em;cursor:pointer;white-space:nowrap}
+.fm-accion:hover{opacity:.9}
+@media(max-width:768px){.fm-accion{width:100%}}

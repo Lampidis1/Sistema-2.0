@@ -500,8 +500,13 @@ function faenaPorComunaMGI(comuna){
 }
 function miNombreMGI(){ return document.getElementById('uName')?.textContent || (USER&&USER.email)||''; }
 
-function nuevaVisitaMGI(){
-  const pid=EDIT; const p=DATA.find(x=>x.proveedor_id===pid); if(!p){ alert('Guarda el hotel primero'); return; }
+// pidArg permite abrirla desde la ficha emergente. Sin argumento usa EDIT,
+// que es como la llama el botón del formulario de edición (comportamiento
+// anterior). Antes solo miraba EDIT: llamarla desde la ficha no abría nada
+// porque EDIT todavía estaba vacío.
+function nuevaVisitaMGI(pidArg){
+  const pid=pidArg||EDIT; const p=DATA.find(x=>x.proveedor_id===pid); if(!p){ alert('Guarda el hotel primero'); return; }
+  EDIT=pid;   // deja el contexto listo para lo que venga después (trabajadores, etc.)
   VACT={ visita_id:'vis_'+Date.now().toString(36), proveedor_id:pid,
     fecha:new Date().toISOString().slice(0,10), titulo:'',
     responsable_nombre:miNombreMGI(), responsable_email:(USER&&USER.email)||'',
@@ -1026,9 +1031,9 @@ function verFichaMGI(pid){
       </div>
       <div class="modal-header-right">
         <button class="btn-edit-modal" onclick="exportarFichaPDF('${pid}')" style="background:var(--fm-primary);color:#fff;border-color:var(--fm-primary)">📄 Exportar Ficha</button>
+        <button class="btn-edit-modal" onclick="cerrarFichaMGI();nuevaVisitaMGI('${pid}')" style="background:var(--fm-accent-dk);color:#fff;border-color:var(--fm-accent-dk)">📅 Nueva visita</button>
         <button class="btn-edit-modal" onclick="cerrarFichaMGI();abrirEdit('${pid}')">✏ Editar</button>
         <button class="btn-edit-modal" onclick="abrirEstandarizacionMGI('${pid}')">📏 Estandarización</button>
-        <button class="btn-edit-modal" onclick="cerrarFichaMGI();nuevaVisitaMGI('${pid}')">📅 Nueva visita</button>
         <button class="modal-close" onclick="cerrarFichaMGI()">×</button>
       </div>
     </div>
@@ -1068,6 +1073,10 @@ function verFichaMGI(pid){
       </div>
 
       <div class="modal-tab-pane" data-tab="hoteleria">
+        <div class="fm-pane-head">
+          <div class="dcf-sec-t" style="margin:0;border:none;flex:1">🏨 Capacidad y contratos</div>
+          <button class="fm-accion" onclick="cerrarFichaMGI();abrirEdit('${pid}')">✏ Editar habitaciones y camas</button>
+        </div>
         <div class="dcf-layout">
           <div class="dcf-left">
             <div class="dcf-sec-t">Capacidad</div>
@@ -1096,12 +1105,19 @@ function verFichaMGI(pid){
       </div>
 
       <div class="modal-tab-pane" data-tab="visitas">
-        <div class="dcf-sec-t">📅 Visitas registradas</div>
+        <div class="fm-pane-head">
+          <div class="dcf-sec-t" style="margin:0;border:none;flex:1">📅 Visitas registradas</div>
+          <button class="fm-accion" onclick="cerrarFichaMGI();nuevaVisitaMGI('${pid}')">➕ Nueva visita</button>
+        </div>
+        <div style="font-size:.76rem;color:var(--text-muted);margin-bottom:10px">Incluye participantes, compromisos y firmas. Las visitas hechas desde Proveedores aparecen acá con la sigla de la faena, y las de acá se ven allá marcadas como MGI.</div>
         <div id="fmVisitas"><div style="font-size:.78rem;color:var(--text-muted)">Cargando…</div></div>
       </div>
 
       <div class="modal-tab-pane" data-tab="trabajadores">
-        <div class="dcf-sec-t">👷 Trabajadores <span id="fmTrabResumen" style="font-weight:600;color:var(--text-muted);font-size:.78rem;letter-spacing:0;text-transform:none"></span></div>
+        <div class="fm-pane-head">
+          <div class="dcf-sec-t" style="margin:0;border:none;flex:1">👷 Trabajadores <span id="fmTrabResumen" style="font-weight:600;color:var(--text-muted);font-size:.78rem;letter-spacing:0;text-transform:none"></span></div>
+          <button class="fm-accion" onclick="cerrarFichaMGI();abrirEdit('${pid}')">✏ Agregar trabajadores</button>
+        </div>
         <div id="fmTrabList"><div style="font-size:.78rem;color:var(--text-muted)">Cargando…</div></div>
       </div>
 
