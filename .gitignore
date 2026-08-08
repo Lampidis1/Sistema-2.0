@@ -44,5 +44,6 @@ node_modules/
 
 # Preferencias locales de herramientas
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
 .vscode/
 .idea/
