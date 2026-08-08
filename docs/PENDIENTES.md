@@ -308,7 +308,7 @@ el propio dominio. No cambia nada visual.
 
 ## Estructura y mantenibilidad
 
-### P-6 · 🟡 PARCIAL — fase 1 hecha (2026-08-06): movil + empleabilidad
+### P-6 · 🟡 PARCIAL (cerrado en lo razonable) — fase 1 hecha, grupos B y C evaluados y descartados
 
 Cada módulo trae su propia copia del bloque `signInWithPassword` +
 `getSession`. Un bug de autenticación hay que arreglarlo en 7 archivos, y si
@@ -374,8 +374,31 @@ movimiento para una función de una línea que casi nunca cambia. **Se decide
 no tocar el grupo B.** Si en el futuro se quiere revisitar, esta tabla ya
 tiene el trabajo de comparación hecho — no hace falta rehacerlo.
 
-**`proveedores.js` sigue sin tocar:** entrelazado con P-7 (el panel de
-administración vive ahí adentro), mayor riesgo que el grupo B.
+**Grupo C — `proveedores.js` (investigado 2026-08-07, sin tocar código):**
+con el panel de admin ya afuera (P-7) y el archivo más chico (P-8), se
+reinvestigó si ahora calificaba. **No.** Es peor que el grupo B, no mejor:
+
+- Usa un objeto `SUPA = {client, session}` en vez de las variables sueltas
+  `SB`/`USER` que usan los otros 6 módulos — una diferencia de arquitectura
+  que aparece **144 veces** en el archivo (`SUPA.client.from(...)` en cada
+  llamada a Supabase). Migrar eso a un `SB` suelto es una reescritura
+  mecánica de 144 sitios en 6.250 líneas — desproporcionado para compartir
+  el login.
+- `onSesionIniciada()` sigue siendo genuinamente propia: refresca el JWT
+  con manejo de error particular, verifica denegación por **dos** motivos
+  separados (no aprobado / no tiene `'principal'`), y tiene un respaldo vía
+  RPC (`listar_solicitudes`) para confirmar si alguien es admin aunque el
+  JWT local esté desactualizado. Nada de esto existe en los otros módulos.
+
+Hallazgo menor de paso, sin tocar: `onSesionIniciada()` tiene una rama
+`if(false){...}` — código muerto, nunca se ejecuta, duplica un mensaje que
+ya cubren las dos ramas de arriba. Candidato para una futura limpieza tipo
+P-13, no relacionado con esta decisión.
+
+**Con los 3 grupos evaluados, P-6 se da por resuelto en lo que es
+razonable resolver.** No se revisita sin que cambie la arquitectura de
+`proveedores.js` (p. ej. si algún día se migra `SUPA.client` a `SB` suelto
+por otro motivo).
 
 ⚠️ Al tocar `shared/js/auth-guard.js`, cargar con `<script src>` clásico.
 **Nunca `type="module"`**: hay 457 `onclick=` en el HTML que dependen de que
