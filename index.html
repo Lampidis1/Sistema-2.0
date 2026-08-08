@@ -68,7 +68,9 @@
     </div>
     <div class="foot">Cada plataforma solicita inicio de sesión · v2.0</div>
   </div>
-<script src="config/modules.config.js"></script>
+<!-- ?v= : obliga al navegador a bajar el config nuevo tras un despliegue en
+     vez de servir su copia guardada. Subir el número al editar el config. -->
+<script src="config/modules.config.js?v=20260808"></script>
 <script>
 // El Home no conoce ningun modulo: solo pinta lo que declara modules.config.js.
 (function () {

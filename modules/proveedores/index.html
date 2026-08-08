@@ -12,7 +12,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="../../config/supabase.config.js" onerror="console.log('config.js opcional no encontrado')"></script>
 
-<link rel="stylesheet" href="proveedores.css">
+<!-- ?v= : obliga al navegador a bajar el archivo nuevo tras un despliegue en
+     vez de servir su copia guardada. Subir el número al editar el .css/.js. -->
+<link rel="stylesheet" href="proveedores.css?v=20260808">
 </head>
 <body>
 
@@ -372,11 +374,11 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<script src="proveedores.js"></script>
-<script src="proveedores-programas.js"></script>
-<script src="proveedores-compromisos.js"></script>
-<script src="proveedores-agenda.js"></script>
-<script src="proveedores-pdf.js"></script>
+<script src="proveedores.js?v=20260808"></script>
+<script src="proveedores-programas.js?v=20260808"></script>
+<script src="proveedores-compromisos.js?v=20260808"></script>
+<script src="proveedores-agenda.js?v=20260808"></script>
+<script src="proveedores-pdf.js?v=20260808"></script>
 
 <!-- MODAL AYUDA SUPABASE -->
 <div id="syncHelpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center">

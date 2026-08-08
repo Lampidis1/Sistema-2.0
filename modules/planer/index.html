@@ -17,7 +17,11 @@
     .then(m => { window.VanillaCalendar = m.Calendar; })
     .catch(() => { window.VanillaCalendar = null; });
 </script>
-<link rel="stylesheet" href="planer.css">
+<!-- ?v= : el navegador guarda copias de estos archivos y seguía sirviendo la
+     versión anterior tras un despliegue. Al cambiar el número, la URL cambia
+     y el navegador se ve obligado a bajar el archivo nuevo.
+     ⚠️ Subir este número cada vez que se edite planer.css o planer.js. -->
+<link rel="stylesheet" href="planer.css?v=20260808">
 </head>
 <body>
 <!-- GATE -->
@@ -158,6 +162,6 @@
   onAcceso: function(user){ return _planerOnAcceso(user); }
 };</script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="planer.js"></script>
+<script src="planer.js?v=20260808"></script>
 </body>
 </html>
