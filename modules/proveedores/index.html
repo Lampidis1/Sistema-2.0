@@ -122,6 +122,7 @@
   <button class="btn-gsync secondary" onclick="syncAhora()" id="btnSyncNow" style="display:none">&#8635; Sync</button>
   <a class="btn-gsync secondary" href="../admin/" id="linkAdminUsuarios" style="display:none;text-decoration:none">&#128100; Usuarios</a>
   <button class="btn-gsync secondary" onclick="cerrarSesion()" id="btnLogout" style="display:none;border-color:#D0311B;color:#D0311B">&#128274; Cerrar sesión</button>
+  <button onclick="abrirHistoricoLocal()" style="background:none;border:1.5px solid var(--border);border-radius:5px;padding:3px 10px;font-size:.72rem;cursor:pointer;color:var(--text-muted);font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.04em" title="Ver y purgar el histórico de visitas guardado en este navegador antes de Supabase">🗄️ Histórico local</button>
   <button onclick="resetearDatos()" style="background:none;border:1.5px solid #D0311B;border-radius:5px;padding:3px 10px;font-size:.72rem;cursor:pointer;color:#D0311B;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.04em" title="Limpiar datos locales del navegador">🗑 Resetear local</button>
   <span id="gsyncLastSync" style="color:var(--text-muted);font-size:.72rem"></span>
 </div>
@@ -552,6 +553,23 @@
       <div class="kb-fld"><label>Apellido</label><input id="perfApellido" placeholder="Lampidis"></div>
     </div>
     <button onclick="guardarPerfil()" style="width:100%;margin-top:18px;padding:11px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;letter-spacing:.05em;cursor:pointer">Guardar</button>
+  </div>
+</div>
+
+<!-- ░░ MODAL HISTÓRICO LOCAL ANTIGUO (P-2) ░░ -->
+<div id="histLocalModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10001;align-items:center;justify-content:center;padding:18px">
+  <div style="background:#fff;border-radius:14px;max-width:460px;width:100%;padding:26px">
+    <button onclick="cerrarHistoricoLocal()" style="float:right;background:none;border:none;font-size:1.3rem;color:#aaa;cursor:pointer">&#10005;</button>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:800;color:var(--primary);text-transform:uppercase;margin-bottom:6px">🗄️ Histórico local antiguo</div>
+    <div style="font-size:.82rem;color:var(--text-muted);margin-bottom:16px;line-height:1.5">
+      Datos guardados en <b>este navegador</b> antes de migrar a Supabase. Ya no se usan para nada — el sistema actual lee todo de la nube. Solo existe acá: cada persona ve su propio histórico, no el de los demás.
+    </div>
+    <div id="histLocalResumen" style="background:#f7fafa;border-radius:9px;padding:14px;font-size:.85rem;line-height:1.7;margin-bottom:16px">Calculando…</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button id="histLocalDescargarBtn" onclick="descargarHistoricoLocal()" class="kb-add" style="width:100%">📥 Descargar respaldo (JSON)</button>
+      <button id="histLocalBorrarBtn" onclick="borrarHistoricoLocal()" disabled style="width:100%;padding:9px;background:none;border:1.5px solid #D0311B;border-radius:8px;color:#D0311B;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.9rem;cursor:not-allowed;opacity:.5">🗑 Borrar histórico local</button>
+      <div id="histLocalNota" style="font-size:.72rem;color:var(--text-muted);text-align:center"></div>
+    </div>
   </div>
 </div>
 

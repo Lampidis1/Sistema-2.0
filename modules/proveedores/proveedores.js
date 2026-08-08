@@ -3647,9 +3647,74 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 async function resetearDatos(){
   if(!confirm('¿Borrar todos los datos LOCALES del navegador? (No afecta Supabase)')) return;
   try{ localStorage.removeItem(CLAVE_PREFS); }catch(e){}
-  try{ localStorage.removeItem('am_v6_db'); }catch(e){}   // historico legacy: solo se borra aqui, con confirmacion explicita del usuario
+  try{ localStorage.removeItem('am_v6_db'); }catch(e){}   // historico legacy; ver tambien "Historico local" (P-2), que permite descargar antes de borrar
   PROVEEDORES=[]; DB={visitas:{},hoteles:{},acuerdos:{},programas:{},contactos:{},_eliminados:[],tarifas:{simple_clp:50000,doble_clp:80000,tc:950},gsync:{}};
   location.reload();
+}
+
+// ── HISTÓRICO LOCAL ANTIGUO (P-2, docs/PENDIENTES.md) ──────────────────────
+// am_v6_db: volcado del sistema anterior a la migracion a Supabase (V3).
+// Congelado desde 2026-07-21 -- el sistema ya no escribe ahi ni lo lee para
+// nada. Las visitas historicas con fotos en base64 NO tienen copia en
+// ninguna tabla, por eso este panel exige descargar un respaldo antes de
+// habilitar el borrado (salvo que ya este vacio).
+let _histLocalDescargado = false;
+
+function _histLocalLeer(){
+  try{ return JSON.parse(localStorage.getItem('am_v6_db')||'{}'); }catch(e){ return {}; }
+}
+
+function _histLocalResumen(d){
+  const vis = d.visitas||{};
+  const todas = Object.values(vis).flat();
+  return {
+    proveedores: Object.keys(vis).length,
+    total: todas.length,
+    conFotos: todas.filter(v=>v.fotos && v.fotos.length).length,
+    masReciente: todas.map(v=>v.fecha).filter(Boolean).sort().pop() || '—',
+  };
+}
+
+function abrirHistoricoLocal(){
+  _histLocalDescargado = false;
+  const r = _histLocalResumen(_histLocalLeer());
+  document.getElementById('histLocalResumen').innerHTML =
+    `<b>${r.proveedores}</b> proveedores con visitas · <b>${r.total}</b> visitas totales<br>`+
+    `<b>${r.conFotos}</b> con fotos · más reciente: <b>${esc(r.masReciente)}</b>`;
+  const btn=document.getElementById('histLocalBorrarBtn'), nota=document.getElementById('histLocalNota');
+  if(r.total===0){
+    btn.disabled=false; btn.style.opacity=1; btn.style.cursor='pointer';
+    nota.textContent='No hay visitas guardadas — se puede borrar sin descargar nada.';
+  }else{
+    btn.disabled=true; btn.style.opacity=.5; btn.style.cursor='not-allowed';
+    nota.textContent='Descarga el respaldo primero para poder borrar.';
+  }
+  document.getElementById('histLocalModal').style.display='flex';
+}
+function cerrarHistoricoLocal(){ document.getElementById('histLocalModal').style.display='none'; }
+
+function descargarHistoricoLocal(){
+  const d=_histLocalLeer();
+  const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='respaldo-historico-local-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  _histLocalDescargado=true;
+  const btn=document.getElementById('histLocalBorrarBtn');
+  btn.disabled=false; btn.style.opacity=1; btn.style.cursor='pointer';
+  document.getElementById('histLocalNota').textContent='Respaldo descargado. Ya puedes borrar el histórico local.';
+  showToast('📥 Respaldo descargado','success');
+}
+
+function borrarHistoricoLocal(){
+  const r=_histLocalResumen(_histLocalLeer());
+  if(r.total>0 && !_histLocalDescargado){ showToast('Descarga el respaldo primero','err'); return; }
+  if(!confirm('¿Borrar el histórico local antiguo de este navegador?'+(r.total>0?' Ya descargaste el respaldo.':'')+' Esta acción no se puede deshacer.')) return;
+  try{ localStorage.removeItem('am_v6_db'); }catch(e){}
+  showToast('🗑 Histórico local borrado','success');
+  abrirHistoricoLocal();
 }
 
 function descargarPlantilla(){

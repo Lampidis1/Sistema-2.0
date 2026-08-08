@@ -118,7 +118,7 @@ al momento de usarla. Cero riesgo de dejar filas con URLs muertas.
 
 ---
 
-### P-2 · 🟡 PARCIAL — ya no se escriben datos personales, pero el histórico sigue ahí
+### P-2 · 🟡 PARCIAL — panel de autoservicio agregado (2026-08-07)
 
 > **Cambiado el 2026-07-21.** `saveDB()` ahora persiste únicamente preferencias
 > (`tarifas`, `gsync`, `_inclHotel`) bajo la clave nueva `am_v6_prefs`.
@@ -175,23 +175,36 @@ indicadores del dashboard que lo leían **estaban mostrando datos obsoletos**
 
 #### Cómo cerrar P-2 del todo
 
-El dato quedó inerte, pero sigue en disco. Para purgarlo:
+> **2026-08-07 — no se puede cerrar desde acá.** El dato que hay que purgar
+> vive en `localStorage` de equipos de terreno específicos — no está en
+> Supabase, no hay ninguna consulta que lo mida o lo borre en forma remota.
+> Solo quien esté sentado frente a esa máquina puede hacerlo.
+>
+> **Lo que sí se hizo:** un panel de autoservicio dentro de Proveedores
+> (botón **"🗄️ Histórico local"**, junto a "Resetear local" en el header)
+> para que cualquiera pueda hacerlo con un par de clics en vez de pegar
+> código en la consola del navegador. Mide proveedores con visitas, total de
+> visitas, cuántas tienen fotos y la fecha más reciente; ofrece
+> **"📥 Descargar respaldo (JSON)"** (siempre disponible); y solo habilita
+> **"🗑 Borrar histórico local"** después de haber descargado — salvo que ya
+> esté vacío, en cuyo caso se habilita directo. El borrado solo toca
+> `am_v6_db`, no las preferencias actuales (`am_v6_prefs`) ni la sesión.
+>
+> Funciones nuevas en `proveedores.js`: `abrirHistoricoLocal()`,
+> `_histLocalResumen()`, `descargarHistoricoLocal()`,
+> `borrarHistoricoLocal()`. Verificado con datos simulados, en aislamiento
+> (sin tocar ningún dato real): el resumen calcula bien proveedores/
+> visitas/fotos/fecha más reciente; `borrarHistoricoLocal()` se rechaza si
+> hay datos y no se descargó antes; se habilita tras descargar; y el caso
+> "ya está vacío" habilita el borrado sin exigir descarga.
+>
+> **Sigue sin poder cerrarse del todo:** hace falta que alguien lo corra en
+> cada equipo de terreno que tenga el histórico viejo. Eso no es una tarea
+> de código — es coordinación con la gente que usa esas máquinas.
 
-1. **Medir** cuánto hay. En la consola del navegador (solo lectura):
-
-```js
-(()=>{const d=JSON.parse(localStorage.getItem('am_v6_db')||'{}').visitas||{};
-const n=Object.values(d).flat();
-console.log('Proveedores:',Object.keys(d).length,'| Visitas:',n.length,
-            '| Con fotos:',n.filter(v=>v.fotos&&v.fotos.length).length,
-            '| Más reciente:',n.map(v=>v.fecha).sort().pop()||'—');})()
-```
-
-2. Si sale **0**, purgar sin más.
-3. Si hay contenido, **exportarlo** y migrarlo a la tabla `visitas` antes de
-   borrar.
-
-`resetearDatos()` ya lo borra, pero con confirmación explícita del usuario.
+`resetearDatos()` sigue existiendo y también borra `am_v6_db` (entre otras
+cosas), pero sin la opción de descargar antes — para eso está el panel
+nuevo.
 
 **Descripción original del problema:**
 
