@@ -464,7 +464,7 @@ Proveedores.
 
 ---
 
-### P-8 · 🟡 PARCIAL — segundo corte hecho (2026-08-07): Dashboard de Compromisos
+### P-8 · 🟡 PARCIAL — tercer corte hecho (2026-08-07): Agenda telefónica
 
 El módulo ya está separado (`index.html` 876 · `.css` 904 · `.js` 6.451), pero
 el `.js` sigue concentrando directorio, hotelería, visitas, compromisos,
@@ -547,10 +547,38 @@ en el mismo orden. Las funciones tienen que seguir siendo globales por los
 > quedarse siguen en `proveedores.js`; HTML balanceado (`<div>`/`</div>`)
 > tras agregar el `<script src>`.
 >
-> **Quedan 15 secciones**, y de las 4 candidatas "chicas" ya evaluadas
-> ninguna más califica para una extracción limpia — la próxima ronda
-> necesita el mismo nivel de disección quirúrgica que esta, no una
-> selección rápida por tamaño.
+> **Tercer corte (2026-08-07): Agenda telefónica.** De las 4 candidatas
+> "chicas" del primer corte, esta era la que menos código ajeno tenía
+> mezclado — solo una función: `registrarLog()` (19 usos en todo el
+> archivo), físicamente en medio del bloque pero conceptualmente una
+> utilidad compartida, no algo de la agenda.
+>
+> Se movieron 5 funciones (`telLink`, `renderAgenda`, `openNuevoProveedor`,
+> `cerrarNuevoProveedor`, `guardarNuevoProveedor`) a
+> `modules/proveedores/proveedores-agenda.js`, dejando `registrarLog()` en
+> `proveedores.js`. A diferencia del corte de Compromisos, acá la función
+> que se queda estaba **en medio** del bloque, no al final — la extracción
+> no fue de un rango contiguo único: se armó el archivo nuevo con las 5
+> funciones (sin el banner ni `registrarLog`) y se dejó `registrarLog` en su
+> lugar original dentro de `proveedores.js`.
+>
+> Verificado antes de mover: `telLink` se llama también desde la sección
+> de Kanban/contratistas (línea ~4224) y `renderAgenda` desde el flujo
+> principal de filtros (línea ~573) — ambas son llamadas cruzadas normales
+> entre archivos, no bloquean la extracción.
+>
+> Verificado después: sintaxis de ambos archivos; cero residuos de las 5
+> funciones en `proveedores.js`; inyección aislada confirma las 5 globales
+> sin errores y que `registrarLog` sigue disponible; HTML balanceado.
+>
+> `proveedores.js` bajó a 6.039 líneas (de 6.451 al empezar P-8).
+>
+> **Quedan 14 secciones.** De las 4 candidatas "chicas" originales, ya se
+> usaron las 2 viables (Compromisos, Agenda); MOLI y Trabajadores de
+> Hotelería siguen descartadas (código del sistema de visitas activo
+> mezclado). La próxima ronda necesita elegir entre las secciones medianas
+> (Hotelería+Acuerdos, Visitas/Hotelería/Dashboard v6, Storage+Licitaciones
+> v3, Kanban) con el mismo nivel de disección quirúrgica.
 
 ---
 
