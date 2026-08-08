@@ -707,17 +707,32 @@ de esta ronda por decisión del dueño del proyecto (ver más abajo).
 
 ---
 
-### P-13 · 🔴 Detalles menores detectados en la auditoría
+### P-13 · 🟡 PARCIAL — 2 de 3 resueltos (2026-08-07)
 
-- **`gSyncDelete` puede afectar 0 filas sin devolver error.** Calcula el id
-  como `p._proveedorId || ('re_'+rut)`; si no coincide con ninguna fila, el
-  `update` no falla y el proveedor "eliminado" reaparece al recargar. Antes
-  quedaba oculto por `DB._eliminados` en el navegador.
-- **`DB.hoteles` importado por Excel y no empujado a la nube se pierde al
-  recargar.** Caso borde, depende del flujo de trabajo.
-- **`renderVisitas` y `DB.usuarioActual` son código muerto**: la captura de
-  visitas real es `montarVisitasV3`, que lee de la tabla `visitas`. Conviene
-  borrarlos para que nadie los confunda con código vivo.
+- ✅ **`gSyncDelete` ya no puede afectar 0 filas en silencio.** Ahora
+  encadena `.select('proveedor_id')` al `update`, y si no coincide ninguna
+  fila lanza un error explícito en vez de "tener éxito" sin haber borrado
+  nada. `eliminarProveedor()` ya capturaba ese error y mostraba un toast —
+  antes solo nunca se disparaba porque el `update` no fallaba. Ahora, si
+  falla, tampoco se toca el estado local (`PROVEEDORES`, `DB._eliminados`),
+  así que el proveedor no desaparece de la pantalla sin haberse borrado de
+  verdad.
+- ✅ **`renderVisitas` y `DB.usuarioActual` eran código muerto — eliminados.**
+  Verificado antes de borrar: `visitasPane_` (el `div` que `renderVisitas`
+  necesitaba) no existe en `index.html`, así que la función nunca hacía
+  nada. La captura de visitas real es `montarVisitasV3`
+  (`docs/PENDIENTES.md`, ver el propio código). Se eliminó todo el bloque
+  autocontenido: `renderVisitas`, `toggleFormVisita`, `setFotoV`,
+  `guardarVisita`, `borrarVisita`, `_fvTemp`, y `DB.usuarioActual` de sus 3
+  lugares. Verificado con `grep` que ningún nombre queda huérfano fuera de
+  ese bloque, y con inyección aislada que el archivo carga sin errores tras
+  el borrado.
+- 🔴 **`DB.hoteles` importado por Excel y no empujado a la nube se pierde al
+  recargar — sin tocar.** No tiene un arreglo obvio sin decidir un
+  comportamiento nuevo (¿guardado automático a `localStorage` mientras no
+  se empuja? ¿aviso antes de salir con cambios sin guardar?). Caso borde,
+  depende del flujo de trabajo — queda pendiente de decisión, no de
+  ejecución.
 
 ---
 

@@ -57,7 +57,6 @@ let PROVEEDORES = [];
 // ═══ SISTEMA v6 STATE ════════════════════════════════════════════════════════
 let DB = {
   visitas:{}, hoteles:{}, acuerdos:{}, programas:{}, contactos:{}, licitaciones:{}, _eliminados:[],
-  usuarioActual: '',
   tarifas:{ simple_clp:50000, doble_clp:80000, tc:950 },
   gsync:{ sheetId:'', lastSync:null }
 };
@@ -112,7 +111,6 @@ async function loadDB(){
       const d = JSON.parse(viejo);
       DB._eliminados   = d._eliminados || [];
       DB.hoteles       = d.hoteles || {};
-      DB.usuarioActual = d.usuarioActual || '';
     }
   }catch(e){}
 }
@@ -1573,93 +1571,6 @@ function closeLightbox(){
   document.getElementById('lightboxImg').src='';
 }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeLightbox(); });
-
-// ── VISITAS ───────────────────────────────────────────────────────────────
-let _fvTemp={};
-
-function renderVisitas(id){
-  const el=document.getElementById('visitasPane_'+id);
-  if(!el) return;
-  const vs=(DB.visitas[id]||[]).slice().sort((a,b)=>b.fecha.localeCompare(a.fecha));
-  _fvTemp[id]=[];
-  el.innerHTML=`
-    <div style="padding:4px 0 0">
-      <button class="btn-nueva-visita" onclick="toggleFormVisita('${id}')">+ Registrar Nueva Visita</button>
-      <div class="form-visita" id="fv_${id}">
-        <div style="font-size:.8rem;font-weight:700;color:var(--primary);margin-bottom:8px">NUEVA VISITA</div>
-        <label style="font-size:.77rem;color:var(--text-muted);font-weight:600">Responsable</label>
-        <input type="text" id="fv_autor_${id}" value="${esc(DB.usuarioActual||'')}" placeholder="Tu nombre">
-        <label style="font-size:.77rem;color:var(--text-muted);font-weight:600">Resumen</label>
-        <textarea id="fv_texto_${id}" placeholder="Objetivo, temas tratados, acuerdos, próximos pasos..."></textarea>
-        <label style="font-size:.77rem;color:var(--text-muted);font-weight:600">Fotos (máx. 3)</label>
-        <div class="foto-slots">
-          ${[0,1,2].map(i=>`
-          <label class="foto-slot" id="fv_slot_${id}_${i}" title="Foto ${i+1}">
-            <span class="foto-slot-icon">+</span>
-            <input type="file" accept="image/*" onchange="setFotoV('${id}',${i},this)">
-          </label>`).join('')}
-        </div>
-        <div style="display:flex;gap:8px">
-          <button onclick="guardarVisita('${id}')" style="flex:1;padding:9px;background:var(--primary);color:#fff;border:none;border-radius:7px;font-family:'Barlow Condensed',sans-serif;font-size:.84rem;font-weight:700;cursor:pointer">GUARDAR VISITA</button>
-          <button onclick="toggleFormVisita('${id}')" style="padding:9px 16px;border:1.5px solid var(--border);background:#fff;border-radius:7px;font-size:.82rem;cursor:pointer;color:var(--text-muted)">Cancelar</button>
-        </div>
-      </div>
-      ${vs.length===0?'<div class="sin-visitas">Sin visitas registradas aun</div>':vs.map(v=>`
-      <div class="visita-card">
-        <button class="solo-admin visita-del" onclick="borrarVisita('${id}','${v.id}')" title="Eliminar">X</button>
-        <div style="display:flex;align-items:baseline;gap:10px">
-          <div class="visita-fecha">${fmtFecha(v.fecha)}</div>
-          <div class="visita-autor">${esc(v.autor||'Equipo AM')}</div>
-        </div>
-        <div class="visita-texto">${esc(v.texto||'')}</div>
-        ${v.fotos&&v.fotos.filter(Boolean).length?`<div class="visita-fotos">${v.fotos.filter(Boolean).map(f=>`<img class="visita-foto" src="${f}" onclick="openLightbox('${f}')" title="Ver foto">`).join('')}</div>`:''}
-      </div>`).join('')}
-    </div>`;
-}
-
-function toggleFormVisita(id){
-  const f=document.getElementById('fv_'+id);
-  if(!f) return;
-  _fvTemp[id]=[];
-  f.classList.toggle('open');
-  if(f.classList.contains('open')){
-    const ta=document.getElementById('fv_texto_'+id);
-    if(ta) setTimeout(()=>ta.focus(),80);
-  }
-}
-
-function setFotoV(id,idx,input){
-  if(!input.files[0]) return;
-  const r=new FileReader();
-  r.onload=e=>{
-    if(!_fvTemp[id]) _fvTemp[id]=[];
-    _fvTemp[id][idx]=e.target.result;
-    const sl=document.getElementById(`fv_slot_${id}_${idx}`);
-    if(sl) sl.innerHTML=`<img src="${e.target.result}"><input type="file" accept="image/*" onchange="setFotoV('${id}',${idx},this)">`;
-  };
-  r.readAsDataURL(input.files[0]);
-}
-
-async function guardarVisita(id){
-  const texto=(document.getElementById('fv_texto_'+id)||{}).value||'';
-  const autor=(document.getElementById('fv_autor_'+id)||{}).value||'Equipo AM';
-  if(!texto.trim()){ showToast('Escribe un resumen de la visita','err'); return; }
-  const v={ id:uid(), fecha:new Date().toISOString().slice(0,10), autor:autor.trim(), texto:texto.trim(), fotos:(_fvTemp[id]||[]).filter(Boolean) };
-  if(!DB.visitas[id]) DB.visitas[id]=[];
-  DB.visitas[id].push(v);
-  DB.usuarioActual=autor.trim();
-  await saveDB();
-  showToast('Visita guardada','success');
-  renderVisitas(id);
-}
-
-async function borrarVisita(pid,vid){
-  if(!puedeEliminar()) return;
-  if(!confirm('Eliminar esta visita?')) return;
-  DB.visitas[pid]=(DB.visitas[pid]||[]).filter(v=>v.id!==vid);
-  await saveDB();
-  renderVisitas(pid);
-}
 
 // ── HOTELERÍA POR PROVEEDOR ───────────────────────────────────────────────
 
@@ -3510,8 +3421,14 @@ async function gSyncDelete(id, rutEmpresa){
   const p = PROVEEDORES.find(x=>x._id===id);
   const pid = (p&&p._proveedorId) || ('re_'+(rutEmpresa||'').replace(/[^0-9kK]/g,'')) || id;
   const now=new Date().toISOString();
-  const {error}=await SUPA.client.from('proveedores').update({estado_registro:'Eliminado',deleted_at:now}).eq('proveedor_id',pid);
+  // .select() fuerza que Supabase devuelva las filas afectadas: sin esto,
+  // un update que no coincide con ningun proveedor_id "tiene exito" con 0
+  // filas tocadas y sin error -- el proveedor desaparecia de la pantalla
+  // (borrado en el estado local) aunque siguiera intacto en la base, y
+  // reaparecia al recargar. Ver docs/PENDIENTES.md P-13.
+  const {data,error}=await SUPA.client.from('proveedores').update({estado_registro:'Eliminado',deleted_at:now}).eq('proveedor_id',pid).select('proveedor_id');
   if(error) throw new Error(error.message);
+  if(!data || !data.length) throw new Error('No se encontró el proveedor en la base (id: '+pid+'). No se eliminó nada.');
   for(const t of ['contactos','hoteleria','acuerdos','programas','visitas','moli_beneficiarios'])
     await SUPA.client.from(t).update({estado_registro:'Eliminado'}).eq('proveedor_id',pid);
 }
@@ -3731,7 +3648,7 @@ async function resetearDatos(){
   if(!confirm('¿Borrar todos los datos LOCALES del navegador? (No afecta Supabase)')) return;
   try{ localStorage.removeItem(CLAVE_PREFS); }catch(e){}
   try{ localStorage.removeItem('am_v6_db'); }catch(e){}   // historico legacy: solo se borra aqui, con confirmacion explicita del usuario
-  PROVEEDORES=[]; DB={visitas:{},hoteles:{},acuerdos:{},programas:{},contactos:{},_eliminados:[],usuarioActual:'',tarifas:{simple_clp:50000,doble_clp:80000,tc:950},gsync:{}};
+  PROVEEDORES=[]; DB={visitas:{},hoteles:{},acuerdos:{},programas:{},contactos:{},_eliminados:[],tarifas:{simple_clp:50000,doble_clp:80000,tc:950},gsync:{}};
   location.reload();
 }
 
