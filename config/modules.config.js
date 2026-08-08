@@ -96,7 +96,7 @@ window.AM_MODULES = [
     // Reservado: próxima función a definir. Solo ocupa el espacio en el
     // grid de 3 columnas para que las faenas empiecen su propia fila.
     id: 'proximo-medio-1',
-    nombre: 'Próximamente',
+    nombre: '',
     descripcion: 'Nueva función en camino.',
     icono: '✨',
     ruta: '#',
