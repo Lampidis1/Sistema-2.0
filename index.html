@@ -29,6 +29,7 @@
   .card-medio{background:#f7fafa;border:2px solid #e4eef0;border-radius:14px;padding:20px 12px;text-decoration:none;color:inherit;transition:.16s;display:block;text-align:center}
   .card-medio:hover{transform:translateY(-4px);border-color:#F2A900;box-shadow:0 14px 34px rgba(0,0,0,.14)}
   .card-medio .ic{font-size:2.2rem;margin-bottom:8px}
+  .card-medio .ic-img{height:2.1rem;width:auto}
   .card-medio .ct{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800;color:#006973;text-transform:uppercase;letter-spacing:.02em;margin-bottom:3px}
   .card-medio .cd{font-size:.72rem;color:#5F6973;line-height:1.4}
 
@@ -135,9 +136,13 @@
 
   function tarjeta(m, clase, conDescripcion) {
     var prox = m.estado === 'proximamente';
+    var esImg = /\.png$/i.test(m.icono || '');
+    var ic = esImg
+      ? '<img src="' + esc(m.icono) + '" alt="" class="ic-img">'
+      : esc(m.icono);
     return '<a class="' + clase + '" href="' + (prox ? '#' : esc(m.ruta)) + '"' +
            (prox ? ' style="opacity:.55;cursor:default" onclick="return false"' : '') + '>' +
-           '<div class="ic">' + esc(m.icono) + '</div>' +
+           '<div class="ic">' + ic + '</div>' +
            '<div class="ct">' + esc(m.nombre) + (prox ? ' · Próximamente' : '') + '</div>' +
            (conDescripcion ? '<div class="cd">' + esc(m.descripcion) + '</div>' : '') +
            '</a>';

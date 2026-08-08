@@ -27,9 +27,15 @@
 // CAMPO `homeTier` — controla dónde y de qué tamaño aparece en el Home.
 //   'principal' → arriba, en el par grande (hoy: Proveedores + Empleabilidad)
 //   'medio'     → fila del medio, tamaño normal, EN EL ORDEN DEL ARRAY
-//                 (hoy: Móvil, Planer, MGI, Centinela, Antucoya, Zaldívar)
-//   omitido     → ícono chico, al final de la página ("el resto")
+//                 (hoy: MGI, Móvil, [reservado], Centinela, Antucoya, Zaldívar)
+//   omitido     → ícono chico, al final de la página ("el resto") — hoy:
+//                 Planer, Gestión de usuarios
 // El orden dentro de cada nivel es el orden en que aparecen en este array.
+//
+// CAMPO `icono` — normalmente un emoji. Si el valor termina en `.png` (ruta
+// a shared/assets/), el Home lo pinta como <img> en vez de texto — se usa
+// para las 3 faenas, que muestran la marca "A" de Antofagasta Minerals en
+// vez de un emoji.
 // ═══════════════════════════════════════════════════════════════════════════
 
 window.AM_MODULES = [
@@ -62,31 +68,6 @@ window.AM_MODULES = [
     doc: 'docs/modulos/empleabilidad.md',
   },
   {
-    id: 'movil',
-    nombre: 'Oficina Móvil',
-    descripcion: 'Captura de datos en terreno: registro de CV y cuestionario de apresto.',
-    icono: '📱',
-    ruta: 'modules/movil/',
-    acceso: 'movil',
-    accesoAlterno: 'empleabilidad',
-    estado: 'activo',
-    visibleEnHome: true,
-    homeTier: 'medio',
-    doc: 'docs/modulos/movil.md',
-  },
-  {
-    id: 'planer',
-    nombre: 'Planer',
-    descripcion: 'Pendientes y acciones por especialista de Proveedores, vista conjunta con filtro por autor.',
-    icono: '📋',
-    ruta: 'modules/planer/',
-    acceso: 'planer',
-    estado: 'activo',
-    visibleEnHome: true,
-    homeTier: 'medio',
-    doc: 'docs/modulos/planer.md',
-  },
-  {
     id: 'mgi',
     nombre: 'MGI Habitabilidad',
     descripcion: 'Modelo de gestión integral de habitabilidad y estándares de alojamiento.',
@@ -99,10 +80,36 @@ window.AM_MODULES = [
     doc: 'docs/modulos/mgi.md',
   },
   {
+    id: 'movil',
+    nombre: 'Oficina Móvil',
+    descripcion: 'Vehículo de captura de datos en terreno: registro de CV y cuestionario de apresto.',
+    icono: '🚐',
+    ruta: 'modules/movil/',
+    acceso: 'movil',
+    accesoAlterno: 'empleabilidad',
+    estado: 'activo',
+    visibleEnHome: true,
+    homeTier: 'medio',
+    doc: 'docs/modulos/movil.md',
+  },
+  {
+    // Reservado: próxima función a definir. Solo ocupa el espacio en el
+    // grid de 3 columnas para que las faenas empiecen su propia fila.
+    id: 'proximo-medio-1',
+    nombre: 'Próximamente',
+    descripcion: 'Nueva función en camino.',
+    icono: '✨',
+    ruta: '#',
+    acceso: null,
+    estado: 'proximamente',
+    visibleEnHome: true,
+    homeTier: 'medio',
+  },
+  {
     id: 'centinela',
-    nombre: 'Faena Centinela',
-    descripcion: 'Consulta de solo lectura para la faena Centinela.',
-    icono: '⛏️',
+    nombre: 'CEN',
+    descripcion: 'Proveedores listos para Trabajar',
+    icono: 'shared/assets/logo-amsa-mark.png',
     ruta: 'modules/centinela/',
     acceso: 'centinela',
     estado: 'activo',
@@ -112,9 +119,9 @@ window.AM_MODULES = [
   },
   {
     id: 'antucoya',
-    nombre: 'Faena Antucoya',
-    descripcion: 'Consulta de solo lectura para la faena Antucoya.',
-    icono: '⛏️',
+    nombre: 'ANT',
+    descripcion: 'Proveedores listos para Trabajar',
+    icono: 'shared/assets/logo-amsa-mark.png',
     ruta: 'modules/antucoya/',
     acceso: 'antucoya',
     estado: 'activo',
@@ -124,15 +131,27 @@ window.AM_MODULES = [
   },
   {
     id: 'zaldivar',
-    nombre: 'Faena Zaldívar',
-    descripcion: 'Consulta de solo lectura para la faena Zaldívar.',
-    icono: '⛏️',
+    nombre: 'CMZ',
+    descripcion: 'Proveedores listos para Trabajar',
+    icono: 'shared/assets/logo-amsa-mark.png',
     ruta: 'modules/zaldivar/',
     acceso: 'zaldivar',
     estado: 'activo',
     visibleEnHome: true,
     homeTier: 'medio',
     doc: 'docs/modulos/faenas.md',
+  },
+  {
+    id: 'planer',
+    nombre: 'Planer',
+    descripcion: 'Pendientes y acciones por especialista de Proveedores, vista conjunta con filtro por autor.',
+    icono: '📋',
+    ruta: 'modules/planer/',
+    acceso: 'planer',
+    estado: 'activo',
+    visibleEnHome: true,
+    doc: 'docs/modulos/planer.md',
+    // sin 'homeTier': va en el bloque chico de abajo ("el resto"), igual que admin
   },
   {
     id: 'admin',
