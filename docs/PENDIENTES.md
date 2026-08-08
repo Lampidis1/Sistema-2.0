@@ -634,7 +634,7 @@ sesión, asumiendo que se pierde al cerrar la pestaña.
 
 ---
 
-### P-12 · 🟡 PARCIAL — auditoría RLS hecha (2026-08-06); registro sigue abierto
+### P-12 · 🟡 PARCIAL — endurecido (2026-08-07): dominio de Proveedores ya no se salta
 
 Cualquiera puede crear una cuenta. Queda en estado `pendiente` y el frontend
 la bloquea, pero **es una cuenta autenticada real** frente a la API de
@@ -673,7 +673,37 @@ Supabase. Toda política que se apoye solo en `to authenticated` sin verificar
 módulos — cualquiera puede crear una cuenta, solo que ahora esa cuenta no
 puede leer/escribir nada hasta que un admin la apruebe. Cerrar el registro
 en sí sería un cambio de comportamiento visible (afecta el flujo de "pedir
-acceso"), no una migración de RLS — queda fuera del alcance de este punto.
+acceso"), no una migración de RLS — quedó explícitamente fuera de alcance
+de esta ronda por decisión del dueño del proyecto (ver más abajo).
+
+> **Ronda 2, 2026-08-07 — endurecido sin cerrar el flujo.** Se le preguntó
+> al dueño del proyecto qué tan agresivo debía ser el cierre: apagar el
+> autoregistro por completo (rompe "Solicitar acceso" en los 7 módulos) vs.
+> mover a la base la única restricción real que existe hoy (Proveedores
+> exige `@aminerals.cl`, pero **solo en el frontend** — se salta llamando
+> la API directo). Se eligió la segunda.
+>
+> **Por qué no se pudo aplicar a los 7 por igual:** solo `proveedores.js`
+> restringe dominio. Los otros 6 (`movil`, `empleabilidad`, `mgi`, las 3
+> faenas) aceptan cualquier correo **a propósito** — proveedores externos,
+> especialistas de terreno. Verificado con `grep` antes de tocar nada.
+>
+> **Mecanismo:** trigger `BEFORE INSERT` en `auth.users`
+> (`trg_bloquear_registro_no_aminerals`), no un Auth Hook de Supabase — no
+> depende de una función del dashboard que pueda estar bloqueada por plan
+> (como pasó con P-15). El frontend de Proveedores ahora manda
+> `origen_registro:'principal'` en `options.data` de `signUp()` (queda en
+> `raw_user_meta_data`, disponible al trigger en el mismo insert). Si ese
+> campo no llega o no dice `'principal'`, el trigger no restringe nada —
+> mismo comportamiento de siempre para los demás módulos. No hay forma de
+> escalar enviando o quitando el campo: en el peor caso el resultado es
+> igual al de hoy, nunca peor.
+>
+> **Verificado contra la API real** (sin crear ninguna cuenta real):
+> `signUp` con `origen_registro:'principal'` y un correo `@gmail.com` →
+> rechazado (`P0001`, con el mensaje exacto). Confirmado además que no
+> quedó ninguna fila huérfana en `auth.users` — Postgres revierte toda la
+> transacción al lanzar la excepción.
 
 ---
 

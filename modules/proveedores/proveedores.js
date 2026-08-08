@@ -5641,7 +5641,10 @@ async function registrarseAdmin(){
   if(pass.length<6){ loginError('La contraseña debe tener al menos 6 caracteres'); return; }
   const btn=document.getElementById('regBtn'); btn.disabled=true; btn.textContent='Creando…';
   try{
-    const {data,error}=await SUPA.client.auth.signUp({email,password:pass});
+    // origen_registro: lo valida tambien un trigger en la base (P-12), no
+    // solo el chequeo de arriba -- ese se puede saltar llamando la API
+    // directo, el trigger no.
+    const {data,error}=await SUPA.client.auth.signUp({email,password:pass,options:{data:{origen_registro:'principal'}}});
     if(error) throw error;
     const uid=data.user&&data.user.id;
     if(uid){
