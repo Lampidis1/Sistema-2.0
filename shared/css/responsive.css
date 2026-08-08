@@ -124,12 +124,21 @@
     border-radius: 0 !important;
     padding: 16px !important;
   }
-  /* los modales escritos con estilo en la propia etiqueta */
-  #formModal > div, #gestorModal > div, #modalSubirMinuta > div, #histLocalModal > div {
+  /* Hay 23 modales con el estilo escrito en la propia etiqueta (position:fixed
+     + align-items:center), así que no sirve listarlos por id.
+
+     `safe center` es la clave: mantiene el centrado cuando el contenido cabe
+     (el login se sigue viendo centrado) pero, cuando NO cabe, se comporta como
+     "pegado arriba" en vez de cortar el borde superior y dejarlo inalcanzable.
+     Un navegador que no lo entienda ignora la línea y queda como estaba. */
+  div[style*="position:fixed"][style*="align-items:center"] {
+    align-items: safe center !important;
+    overflow-y: auto !important;
+    padding: 10px !important;
+  }
+  div[style*="position:fixed"][style*="align-items:center"] > div {
     max-width: 100% !important;
-    border-radius: 0 !important;
-    min-height: 100vh;
-    padding: 16px !important;
+    width: 100% !important;
   }
   /* botonera de los formularios: apilada y a lo ancho, fácil de acertar */
   .edit-actions, .form-actions { flex-direction: column-reverse; }
