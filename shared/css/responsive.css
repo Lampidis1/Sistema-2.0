@@ -1,0 +1,150 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   responsive.css — Ajustes de tableta y teléfono para todo el sistema
+   Sistema AM · Antofagasta Minerals
+
+   Se carga en TODOS los módulos y va SIEMPRE AL FINAL, después del CSS propio
+   del módulo: varias reglas de acá tienen que poder ganarle a las del módulo
+   (por eso los !important, acotados a pantallas chicas).
+
+   Nada de esto afecta al escritorio: todo vive dentro de media queries.
+
+   ── QUÉ RESUELVE ───────────────────────────────────────────────────────────
+   1. El zoom automático del iPhone al tocar un campo (lo más molesto de todo)
+   2. Botones demasiado chicos para el dedo
+   3. La tableta tratada como teléfono, desperdiciando media pantalla
+   4. Tablas y ventanas emergentes que se salían de la pantalla
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+
+/* ═══ 1. ZOOM AUTOMÁTICO EN iOS ═════════════════════════════════════════════
+   Safari en iPhone/iPad hace zoom sobre cualquier campo cuya letra mida menos
+   de 16px, y al salir del campo NO vuelve atrás: el usuario queda con la
+   página agrandada y tiene que achicarla a mano. Pasa en cada campo de cada
+   formulario, y es la causa número uno de que el sistema se sienta incómodo
+   en el teléfono.
+
+   La única forma de evitarlo es que el texto mida 16px o más. Solo aplica en
+   pantallas chicas, así que el diseño de escritorio queda igual. */
+@media (max-width: 1024px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+  /* 16px necesita algo más de aire para no verse apretado */
+  input:not([type=checkbox]):not([type=radio]):not([type=file]),
+  select, textarea {
+    min-height: 42px;
+  }
+  textarea { min-height: 72px; }
+}
+
+
+/* ═══ 2. ÁREAS TÁCTILES ═════════════════════════════════════════════════════
+   Un dedo necesita cerca de 44px. Varios botones del sistema median menos de
+   30px de alto: se podían tocar, pero costaba y se erraba seguido.
+   Se aplica solo con puntero grueso (dedo), no con mouse. */
+@media (max-width: 1024px) and (pointer: coarse) {
+  button, .mini, .mini-btn, .view-btn, .filter-chip, .loc-chip,
+  .tab, .modal-tab-btn, .tab-btn, .rca-tab, .kb-nav {
+    min-height: 40px;
+  }
+  /* los que son cuadraditos de icono, también de ancho */
+  .mini, .mini-btn { min-width: 40px; }
+  /* separación entre elementos tocables para no errar al de al lado */
+  .item-acciones, .rca-ct-actions, .lic-mini-actions, .cc-acts { gap: 8px; }
+}
+
+
+/* ═══ 3. TABLETA ════════════════════════════════════════════════════════════
+   Los módulos usaban un único corte en 768px: debajo de eso, todo en una
+   columna. El problema es que un iPad vertical mide justo 768px y quedaba
+   con media pantalla vacía, mostrando una tarjeta por fila.
+
+   Entre 600 y 1024px hay espacio de sobra para dos columnas. */
+@media (min-width: 600px) and (max-width: 1024px) {
+  #viewCards, .cards-grid, #cardsGrid, .cards,
+  .grid, .hot-fichas-grid, .kb-dash-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  /* los indicadores numéricos entran de a tres sin apretarse */
+  .res-grid, .kpi-grid, .ac-kpi-grid, .prog-kpi-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  /* los formularios de dos columnas caben perfectamente en tableta */
+  .grid2, .np-grid, .modal-grid, .kb-modal-grid, .edit-form {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Teléfono: una sola columna, siempre */
+@media (max-width: 599px) {
+  #viewCards, .cards-grid, #cardsGrid, .cards,
+  .grid, .hot-fichas-grid, .kb-dash-grid,
+  .grid2, .np-grid, .modal-grid, .kb-modal-grid, .edit-form,
+  .res-grid, .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .kpi-grid, .ac-kpi-grid, .prog-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  /* las tarjetas de estadísticas piden dos columnas en escritorio */
+  .stat-card { grid-column: 1 / -1 !important; }
+}
+
+
+/* ═══ 4. TABLAS ═════════════════════════════════════════════════════════════
+   Una tabla de 6 columnas no cabe en 375px. En vez de comprimirla hasta que
+   no se lea, se le da scroll horizontal propio: la página no se mueve y la
+   tabla se desliza con el dedo. */
+@media (max-width: 1024px) {
+  .table-wrap, .tabla-wrap, .rca-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table { min-width: max-content; }
+  /* las tablas sueltas se envuelven solas */
+  .modal-body table, .modal-tab-pane table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+
+/* ═══ 5. VENTANAS EMERGENTES ════════════════════════════════════════════════
+   Los formularios largos (nueva visita, editar hotel) quedaban centrados
+   verticalmente: con el teclado abierto, la parte de arriba se salía de la
+   pantalla y no había forma de llegar a ella. Alineados arriba, se recorren
+   entero con scroll. */
+@media (max-width: 767px) {
+  .medit-ov, .modal-overlay {
+    align-items: flex-start !important;
+    padding: 0 !important;
+    overflow-y: auto;
+  }
+  .medit-box {
+    max-width: 100% !important;
+    width: 100% !important;
+    min-height: 100vh;
+    border-radius: 0 !important;
+    padding: 16px !important;
+  }
+  /* los modales escritos con estilo en la propia etiqueta */
+  #formModal > div, #gestorModal > div, #modalSubirMinuta > div, #histLocalModal > div {
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    min-height: 100vh;
+    padding: 16px !important;
+  }
+  /* botonera de los formularios: apilada y a lo ancho, fácil de acertar */
+  .edit-actions, .form-actions { flex-direction: column-reverse; }
+  .edit-actions > *, .form-actions > * { width: 100%; }
+}
+
+
+/* ═══ 6. NADA SE SALE DE LA PANTALLA ════════════════════════════════════════
+   Una palabra larga (un correo, una URL) empujaba el ancho de la página y
+   dejaba toda la pantalla desplazándose de lado. */
+@media (max-width: 1024px) {
+  html, body { overflow-x: hidden; max-width: 100%; }
+  /* correos, RUT y URLs largas cortan en vez de estirar la caja */
+  .dcf-v, .item-desc, .modal-field span, .ag-s, .cc-contacto, .info {
+    overflow-wrap: anywhere;
+  }
+  img, video, canvas { max-width: 100%; }
+}

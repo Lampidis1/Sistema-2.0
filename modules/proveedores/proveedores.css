@@ -720,10 +720,13 @@ body.is-user .solo-admin{ display:none !important; }
   .main{display:block !important}
   .sidebar{position:fixed !important;top:0;left:0;bottom:0;height:100vh !important;width:280px;z-index:901;transform:translateX(-100%);transition:transform .22s;box-shadow:4px 0 24px rgba(0,0,0,.18)}
   .sidebar.show{transform:translateX(0)}
-  /* una sola ficha por fila (vertical) */
-  .cards-grid,#cardsGrid,.cards{grid-template-columns:1fr !important}
-  /* contenido full width */
+  /* Una ficha por fila SOLO en teléfono. En tableta (600-768px, como un iPad
+     vertical) caben dos y antes quedaba media pantalla vacía — lo resuelve
+     shared/css/responsive.css, que se carga después. */
   .content{width:100% !important;padding:12px !important}
+}
+@media(max-width:599px){
+  .cards-grid,#cardsGrid,.cards{grid-template-columns:1fr !important}
 }
 
 
