@@ -284,7 +284,33 @@ Ya no está vacío. Lo que vive ahí hoy:
 | `js/faena-consulta.js` | Consulta de solo lectura por faena | centinela, antucoya, zaldivar |
 | `css/faena-consulta.css` | Estilos de lo anterior | centinela, antucoya, zaldivar |
 | `css/ficha-modal.css` | **Ficha emergente del proveedor** | proveedores, mgi |
+| `css/responsive.css` | **Ajustes de tableta y teléfono** | **los 10 puntos de entrada** |
 | `assets/logo-amsa-*.png` | Logos | todos |
+
+### `css/responsive.css` — leer antes de tocar CSS de un módulo
+
+Se carga **al final**, después del CSS propio del módulo, porque varias de sus
+reglas tienen que poder ganarle (de ahí los `!important`, todos acotados a
+pantallas de ≤1024px). En escritorio no aplica nada.
+
+Lo que resuelve, y conviene no deshacer sin querer:
+
+1. **El zoom automático del iPhone.** Safari agranda la página al tocar
+   cualquier campo cuya letra mida menos de 16px, y al salir **no vuelve
+   atrás**. Por eso todos los `input/select/textarea` pasan a 16px en
+   pantallas chicas. Si defines un campo con `font-size:.85rem`, en el
+   teléfono igual se verá a 16px — es intencional.
+2. **Áreas táctiles** de 40px mínimo, solo con `pointer: coarse` (dedo).
+3. **El corte de tableta.** Los módulos usaban un único `@media(max-width:768px)`
+   y un iPad vertical mide justo 768: quedaba con media pantalla vacía. Ahora
+   600–1024px va a dos columnas y solo bajo 600px a una.
+   ⚠️ Si escribes `grid-template-columns:1fr !important` dentro de un
+   `max-width:768px`, estarás volviendo a tratar la tableta como teléfono.
+   Usa `max-width:599px`.
+4. **Modales con el estilo en la etiqueta.** Hay 23 con `position:fixed` +
+   `align-items:center` inline. Se corrigen en bloque con un selector de
+   atributo y `align-items: safe center`: siguen centrados cuando caben, y
+   cuando no, no dejan el borde superior fuera de alcance.
 
 ### La ficha emergente (`css/ficha-modal.css`)
 
