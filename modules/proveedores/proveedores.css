@@ -155,31 +155,9 @@
   .empty-results p{font-size:.85rem}
 
   /* MODAL */
-  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;align-items:center;justify-content:center;padding:16px}
-  .modal-overlay.open{display:flex}
-  .modal{background:#fff;border-radius:12px;max-width:1000px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:mIn .18s ease}
-  @keyframes mIn{from{opacity:0;transform:scale(.96) translateY(6px)}to{opacity:1;transform:none}}
-  .modal-header{padding:20px 24px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;border-radius:12px 12px 0 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-  .modal-loc{font-size:.67rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
-  .modal-title{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:700;color:var(--text);text-transform:capitalize}
-  .modal-subtitle{font-size:.78rem;color:var(--text-muted);margin-top:2px;text-transform:capitalize}
-  .modal-header-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
-  .btn-edit-modal{padding:7px 14px;border:1.5px solid var(--primary);border-radius:6px;background:#fff;color:var(--primary);font-family:'Barlow Condensed',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .15s}
-  .btn-edit-modal:hover{background:var(--primary);color:#fff}
-  .modal-close{border:none;background:none;cursor:pointer;font-size:19px;color:var(--text-muted);padding:2px}
-  .modal-close:hover{color:var(--text)}
-  .modal-body{padding:20px 24px}
-  .modal-sec{margin-bottom:18px}
-  .modal-sec-title{font-family:'Barlow Condensed',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--primary);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--primary-light)}
-  .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .modal-field label{font-size:.66rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:2px}
-  .modal-field span{font-size:.83rem;color:var(--text);font-weight:500}
   .modal-giros{display:flex;flex-wrap:wrap;gap:5px}
   .modal-giro-tag{padding:3px 10px;border-radius:4px;font-size:.74rem;font-weight:600;background:var(--primary-light);color:var(--primary);border:1px solid rgba(0,119,138,.16)}
-  .modal-desc{background:var(--bg2);border-radius:6px;padding:12px;font-size:.81rem;color:var(--text);line-height:1.7;white-space:pre-line;border:1px solid var(--border)}
   .modal-info-sii{font-size:.79rem;color:var(--text-light);line-height:1.65;white-space:pre-line}
-  .modal-contact a{color:var(--primary);text-decoration:none}
-  .modal-contact a:hover{text-decoration:underline}
 
   /* EDIT MODAL */
   .edit-form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -236,10 +214,6 @@
   /* PAGES */
   .page{display:none}.page.active{display:block}
   /* MODAL TABS */
-  .modal-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin:0 -24px 16px;padding:0 24px}
-  .modal-tab-btn{padding:9px 18px;font-family:'Barlow Condensed',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s}
-  .modal-tab-btn.active{color:var(--primary);border-bottom-color:var(--primary)}
-  .modal-tab-pane{display:none}.modal-tab-pane.active{display:block}
   /* VISITAS */
   .visita-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;position:relative}
   .visita-fecha{font-family:'Barlow Condensed',sans-serif;font-size:.82rem;font-weight:700;color:var(--primary)}
@@ -873,49 +847,11 @@ body.is-user .solo-admin{ display:none !important; }
 
 
 /* ═══ v14 FICHA DETALLE ESTILO ADJUNTO ═══ */
-.modal-tabs{position:sticky;top:0;z-index:30;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.04)}
-.modal-header{z-index:31}
-.dcf-layout{display:grid;grid-template-columns:300px 1fr;gap:0}
-.dcf-left{padding:4px 22px 16px 4px;border-right:1.5px solid var(--border)}
-.dcf-right{padding:4px 4px 16px 22px}
-.dcf-sec-t{font-family:'Barlow Condensed',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dc-teal-dk,#006973);border-bottom:1.5px solid var(--dc-teal-lt,#E4F6F5);padding-bottom:5px;margin-bottom:11px}
-.dcf-item{display:flex;gap:9px;align-items:flex-start;margin-bottom:11px}
-.dcf-ico{font-size:.95rem;width:18px;flex-shrink:0;text-align:center;color:var(--dc-teal,#00A399);margin-top:1px}
-.dcf-l{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted,#6b7780);font-weight:700}
-.dcf-v{font-size:.86rem;color:var(--text,#1c2632);line-height:1.35}
-.dcf-giro{font-size:.82rem;color:var(--text,#1c2632);padding:4px 0;border-bottom:1px solid rgba(0,105,115,.08)}
-.dcf-desc{font-size:.9rem;line-height:1.6;color:var(--text,#1c2632)}
-.dcf-exp{font-family:'Barlow Condensed',sans-serif;font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:#fff;border:1.5px solid var(--dc-teal-dk,#006973);color:var(--dc-teal-dk,#006973);padding:4px 11px;border-radius:5px;display:inline-flex;align-items:center;gap:4px}
-.dcf-flota-box{border:1.5px solid var(--dc-teal-lt,#E4F6F5);border-radius:10px;overflow:hidden}
-.dcf-flota-hdr{background:linear-gradient(135deg,#E4F6F5,#fff);padding:11px 16px;border-bottom:1px solid var(--dc-teal-lt,#E4F6F5)}
-.dcf-flota-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;color:var(--dc-teal-dk,#006973);text-transform:uppercase;letter-spacing:.04em}
-.dcf-flota-s{font-size:.72rem;color:var(--text-muted,#6b7780)}
-.dcf-flota-tbl{width:100%;border-collapse:collapse;font-size:.78rem}
-.dcf-flota-tbl th{text-align:left;font-family:'Barlow Condensed',sans-serif;font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted,#6b7780);padding:8px 14px;background:#f7fbfc;border-bottom:1px solid var(--border)}
-.dcf-flota-tbl td{padding:8px 14px;border-bottom:1px solid rgba(0,0,0,.05);color:var(--text,#1c2632)}
-@media(max-width:768px){.dcf-layout{grid-template-columns:1fr}.dcf-left{border-right:none;border-bottom:1.5px solid var(--border);padding-right:4px}.dcf-right{padding-left:4px}}
 
-/* ═══ FICHA (ventana emergente) responsive en iPhone/Android ═══
-   La ficha trae 5 botones de acción + hasta 6 pestañas + una tabla de
-   maquinaria: en desktop caben en una fila, en teléfono se desbordaban.
-   Se pasa a hoja de pantalla completa y los botones/pestañas pasan a
-   scroll horizontal en vez de comprimirse o cortarse. */
+/* La ficha emergente (estructura, pestañas y su versión de teléfono) vive en
+   shared/css/ficha-modal.css — se comparte con MGI para que ambas plataformas
+   se vean igual. Acá solo queda lo propio de Proveedores. */
 @media(max-width:768px){
-  .modal-overlay{padding:0}
-  .modal{border-radius:0;max-width:100%;width:100%;max-height:100vh;height:100vh}
-  .modal-header{padding:14px 46px 10px 16px;flex-wrap:wrap;border-radius:0}
-  .modal-title{font-size:1.12rem}
-  .modal-header-right{width:100%;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;justify-content:flex-start}
-  .modal-header-right::-webkit-scrollbar{display:none}
-  .btn-edit-modal{flex-shrink:0;padding:7px 11px;font-size:.74rem;white-space:nowrap}
-  .modal-close{position:absolute;top:12px;right:12px;background:#f4f7f7;width:30px;height:30px;border-radius:50%;font-size:20px;line-height:1;z-index:32}
-  .modal-body{padding:14px 16px}
-  .modal-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;margin:0 -16px 14px;padding:0 16px}
-  .modal-tabs::-webkit-scrollbar{display:none}
-  .modal-tab-btn{flex-shrink:0;padding:9px 12px;font-size:.74rem}
-  /* tabla de maquinaria: scroll horizontal propio en vez de cortarse */
-  .dcf-flota-box{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .dcf-flota-tbl{min-width:520px}
   /* las 3 casillas de fotos no caben en 320-375px de ancho a tamaño desktop */
   #fotoUploadArea label{width:31% !important;height:76px !important}
 }

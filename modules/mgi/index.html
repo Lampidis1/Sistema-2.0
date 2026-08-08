@@ -8,7 +8,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="mgi.css">
+<!-- La ficha emergente es la misma que usa Proveedores: vive en shared/
+     (CLAUDE.md Regla 8). Va ANTES de mgi.css, que le pone el morado. -->
+<link rel="stylesheet" href="../../shared/css/ficha-modal.css?v=20260808c">
+<link rel="stylesheet" href="mgi.css?v=20260808c">
 </head>
 <body>
 <div class="gate" id="gate">
@@ -69,8 +72,8 @@
 </div>
 
 <!-- MODAL EDICIÓN -->
-<div class="modal" id="editModal">
-  <div class="modal-box">
+<div class="medit-ov" id="editModal">
+  <div class="medit-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <div id="editModalTitle" style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:#4338ca;text-transform:uppercase">🏨 Editar proveedor</div>
       <button onclick="cerrarEdit()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
@@ -148,8 +151,8 @@
 <script src="mgi.js"></script>
 
 <!-- MODAL NUEVA VISITA MGI -->
-<div class="modal" id="vModal">
-  <div class="modal-box">
+<div class="medit-ov" id="vModal">
+  <div class="medit-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:#4338ca;text-transform:uppercase">🗓️ Nueva visita</div>
       <button onclick="cerrarVModal()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
@@ -202,8 +205,8 @@
   </div>
 </div>
 <!-- MODAL MINUTA MGI -->
-<div class="modal" id="vMinutaModal" style="z-index:60">
-  <div class="modal-box">
+<div class="medit-ov" id="vMinutaModal" style="z-index:60">
+  <div class="medit-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:#4338ca">Vista previa de la minuta</div>
       <button onclick="cerrarVMinuta()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
@@ -234,20 +237,10 @@
 </div>
 
 <!-- MODAL FICHA MGI v13 -->
-<div class="fmodal-ov" id="fmodalOv" onclick="if(event.target===this)cerrarFichaMGI()">
-  <div class="fmodal">
-    <div class="fmodal-head">
-      <button class="fmodal-close" onclick="cerrarFichaMGI()">✕</button>
-      <div class="fm-loc" id="fmLoc"></div>
-      <div class="fm-nom" id="fmNom"></div>
-    </div>
-    <div class="fmodal-body" id="fmBody"></div>
-    <div class="fmodal-foot">
-      <button class="fm-pdf" id="fmPdfBtn">📄 Exportar Ficha PDF</button>
-      <button class="fm-pdf" id="fmEstBtn" style="background:#5b4fcf">📏 Estandarización</button>
-      <button class="fm-cerrar" onclick="cerrarFichaMGI()">Cerrar</button>
-    </div>
-  </div>
+<!-- FICHA EMERGENTE - misma estructura que Proveedores (shared/css/ficha-modal.css).
+     El contenido lo arma verFichaMGI() en mgi.js, igual que openModal() alla. -->
+<div class="modal-overlay" id="fmodalOv" onclick="if(event.target===this)cerrarFichaMGI()">
+  <div class="modal" id="fmodalContent"></div>
 </div>
 <!-- MODAL GESTOR DE CRITERIOS (crear/editar/asignar por rubro con hitos) -->
 <div id="gestorModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;align-items:center;justify-content:center;padding:16px">

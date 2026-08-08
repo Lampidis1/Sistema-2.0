@@ -276,22 +276,45 @@ usuario a Google. Ver `docs/PENDIENTES.md` → P-5.
 
 ## 8. Estado actual de `shared/`
 
-**Todavía vacío**, pero ya es posible llenarlo.
+Ya no está vacío. Lo que vive ahí hoy:
 
-Los 7 módulos venían de archivos monolíticos donde el HTML, el CSS y el JS
-estaban mezclados en un solo `.html`. Eso hacía imposible compartir nada. Ya
-están separados en `index.html` + `.css` + `.js`, así que el código común
-puede empezar a mudarse.
+| Archivo | Qué es | Quién lo usa |
+|---|---|---|
+| `js/auth-guard.js` | Bloque de login unificado (`window.AUTH_CFG`) | movil, empleabilidad, admin, planer |
+| `js/faena-consulta.js` | Consulta de solo lectura por faena | centinela, antucoya, zaldivar |
+| `css/faena-consulta.css` | Estilos de lo anterior | centinela, antucoya, zaldivar |
+| `css/ficha-modal.css` | **Ficha emergente del proveedor** | proveedores, mgi |
+| `assets/logo-amsa-*.png` | Logos | todos |
 
-**Candidato #1: `shared/js/auth-guard.js`.** El bloque de login está copiado
-**7 veces**, una por módulo. Arreglar un bug de autenticación hoy significa
-editar 7 archivos y no olvidarse de ninguno.
+### La ficha emergente (`css/ficha-modal.css`)
 
-Separar el JS **no eliminó ni una línea duplicada** — solo la dejó en un lugar
-donde ahora se puede unificar. Ese es el trabajo siguiente, y va módulo por
-módulo con aprobación explícita.
+La ventana que se abre al hacer clic en una tarjeta: cabecera con acciones,
+pestañas y cuerpo a dos columnas. **Proveedores y MGI deben verse igual**, así
+que los estilos viven acá y cada módulo solo pone su color:
 
-Orden sugerido en `docs/PENDIENTES.md`.
+```css
+/* en mgi.css, DESPUÉS de cargar el shared */
+:root{--fm-primary:#5b4fcf;--fm-primary-lt:#EFECFB;
+      --fm-accent:#5b4fcf;--fm-accent-dk:#4338ca;--fm-accent-lt:#EFECFB}
+```
+
+Sin definir nada, cae al teal de Proveedores. Son **dos** tonos
+(`--fm-primary` para cabecera/pestañas, `--fm-accent-*` para el cuerpo) porque
+Proveedores ya usaba colores distintos en cada zona y no se quiso alterar lo
+que está en producción.
+
+> ⚠️ **Cuidado con los nombres de clase al compartir CSS.** En ese archivo
+> `.modal` es la CAJA blanca y `.modal-overlay` el fondo oscuro. MGI llamaba
+> `.modal` a su fondo oscuro: hubo que renombrarlo a `.medit-ov` para poder
+> compartir. Antes de mover estilos a `shared/`, comparar los nombres de clase
+> de los dos módulos.
+
+### Lo que todavía falta
+
+El bloque de login sigue duplicado en **proveedores, mgi y los 3 de faena**
+(los otros 4 ya usan `auth-guard.js`). Arreglar un bug de autenticación ahí
+obliga a editar varios archivos sin olvidarse de ninguno. Va módulo por
+módulo con aprobación explícita — orden sugerido en `docs/PENDIENTES.md`.
 
 ---
 

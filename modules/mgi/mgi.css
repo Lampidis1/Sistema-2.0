@@ -1,5 +1,8 @@
 
 :root{--primary:#006973;--primary-mid:#00A399;--gold:#F2A900;--text:#1f2a2c;--text-muted:#5F6973;--border:#D7DEE4;--bg:#f4f7f7;--green:#16a34a;--orange:#d89400}
+/* Colores de la ficha emergente compartida (shared/css/ficha-modal.css).
+   Misma estructura que Proveedores, con el morado propio de MGI. */
+:root{--fm-primary:#5b4fcf;--fm-primary-lt:#EFECFB;--fm-accent:#5b4fcf;--fm-accent-dk:#4338ca;--fm-accent-lt:#EFECFB}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text)}
 .top{background:linear-gradient(135deg,#5b4fcf,#4338ca);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -37,8 +40,8 @@ tr{cursor:pointer}tr:hover td{background:#faf9ff}
 .empty{text-align:center;color:var(--text-muted);padding:50px}
 .loading{text-align:center;padding:60px;color:var(--text-muted)}
 /* modal edición */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:none;align-items:center;justify-content:center;padding:16px}
-.modal-box{background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:92vh;overflow-y:auto;padding:24px}
+.medit-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:none;align-items:center;justify-content:center;padding:16px}
+.medit-box{background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:92vh;overflow-y:auto;padding:24px}
 .fld{display:flex;flex-direction:column;gap:3px;margin-bottom:11px}
 .fld label{font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em}
 .fld input,.fld textarea,.fld select{border:1.5px solid var(--border);border-radius:7px;padding:8px 10px;font-size:.88rem;outline:none;font-family:inherit}
@@ -109,24 +112,6 @@ body.is-user .solo-admin{ display:none !important; }
 .cc-acts .call{background:#EFECFB;color:#5b4fcf}
 .cc-acts .mail{background:#eef2f3;color:#2563eb}
 
-/* Modal ficha MGI (solo lectura) */
-.fmodal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
-.fmodal-ov.show{display:flex}
-.fmodal{background:#fff;border-radius:16px;max-width:620px;width:100%;margin:auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-.fmodal-head{background:linear-gradient(135deg,#5b4fcf,#4338ca);color:#fff;padding:22px 24px;position:relative}
-.fmodal-head .fm-loc{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;opacity:.9}
-.fmodal-head .fm-nom{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.5rem;line-height:1.1;margin-top:3px}
-.fmodal-close{position:absolute;top:16px;right:18px;background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:1.1rem;cursor:pointer}
-.fmodal-body{padding:22px 24px;max-height:60vh;overflow-y:auto}
-@media(max-width:768px){.fm-2col{grid-template-columns:1fr !important}}
-.fm-sec{margin-bottom:18px}
-.fm-sec-t{font-family:'Barlow Condensed',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#5b4fcf;border-bottom:2px solid #EFECFB;padding-bottom:4px;margin-bottom:9px}
-.fm-row{display:flex;gap:8px;margin-bottom:5px;font-size:.86rem}
-.fm-row b{color:var(--text-muted,#6b7780);font-weight:600;min-width:90px}
-.fmodal-foot{padding:16px 24px;border-top:1px solid var(--border,#e4e8ea);display:flex;gap:10px}
-.fmodal-foot button{flex:1;padding:11px;border-radius:9px;border:none;font-weight:700;font-size:.9rem;cursor:pointer;font-family:'Barlow Condensed',sans-serif;letter-spacing:.03em}
-.fm-pdf{background:#5b4fcf;color:#fff}
-.fm-cerrar{background:#eef2f3;color:var(--text-muted,#6b7780)}
 @media(max-width:768px){
   .grid{grid-template-columns:1fr}
   .card-compact{padding:11px 13px}

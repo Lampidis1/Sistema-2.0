@@ -34,6 +34,29 @@ distinto enfoque.
 `es_mgi()` da acceso de lectura y escritura sobre ese conjunto; eliminar sigue
 siendo solo de admin.
 
+## La ficha emergente (2026-08-08)
+
+Al hacer clic en **Ver ficha** de una tarjeta se abre la misma ventana que en
+Proveedores: cabecera con acciones, pestañas y cuerpo a dos columnas. Los
+estilos son literalmente el mismo archivo (`shared/css/ficha-modal.css`); MGI
+solo define su morado con las variables `--fm-*` en `mgi.css`.
+
+| | Proveedores | MGI |
+|---|---|---|
+| Pestañas | Datos · Visitas · Hotelería · Contratos · Licitaciones · Programas | Datos · Hotelería · Visitas · Trabajadores |
+| Acciones | Exportar · Editar · Estandarización · Selección · Eliminar | Exportar · Editar · Estandarización · Nueva visita |
+
+**No se duplicó lógica.** Las pestañas Visitas y Trabajadores las llenan las
+mismas funciones que ya usaba el modal de edición: `cargarVisitasMGI()` y
+`cargarTrabajadoresMGI()` ahora reciben el id del contenedor donde pintar
+(por omisión, el del modal de edición — el comportamiento anterior). Cargan
+al abrir la pestaña, no antes.
+
+> ⚠️ El modal de edición se llamaba `.modal` / `.modal-box`. En el CSS
+> compartido `.modal` es la caja blanca de la ficha, así que el de edición
+> pasó a `.medit-ov` / `.medit-box`. Si algo del modal de edición se ve mal,
+> revisar primero ahí.
+
 ## Notas importantes
 
 **Sube archivos al bucket `documentos`** con `getPublicUrl()`

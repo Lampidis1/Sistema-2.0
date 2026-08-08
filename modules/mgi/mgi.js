@@ -359,8 +359,11 @@ function badgeOrigenVisitaMGI(v){
   let s='AMSA'; if(fa.includes('centinela'))s='CEN'; else if(fa.includes('antucoya'))s='ANT'; else if(fa.includes('zald'))s='ZAL';
   return '<span style="background:#E4F6F5;color:#006973;border-radius:5px;padding:1px 7px;font-size:.66rem;font-weight:800">'+s+'</span>';
 }
-async function cargarVisitasMGI(pid){
-  const cont=document.getElementById('eVisitas'); if(!cont) return;
+async function cargarVisitasMGI(pid, contId){
+  // contId permite reusar esta misma funcion desde la ficha emergente
+  // ('fmVisitas') sin duplicar la logica; por defecto pinta en el modal de
+  // edicion ('eVisitas'), que es como se llamaba antes.
+  const cont=document.getElementById(contId||'eVisitas'); if(!cont) return;
   cont.innerHTML='<div style="font-size:.78rem;color:var(--text-muted)">Cargando…</div>';
   try{
     const {data}=await SB.from('visitas').select('*').eq('proveedor_id',pid).neq('estado_registro','Eliminado').order('fecha',{ascending:false});
@@ -378,14 +381,14 @@ async function cargarVisitasMGI(pid){
 
 let ETRAB=[], _trFuncs=[];
 const FUNCS_H=['Mucama','Limpieza','Recepción','Cocina','Mantención','Lavandería','Administración','Seguridad','Garzón/a'];
-async function cargarTrabajadoresMGI(pid){
-  const cont=document.getElementById('eTrabList'); if(!cont) return;
+async function cargarTrabajadoresMGI(pid, contId, resId){
+  const cont=document.getElementById(contId||'eTrabList'); if(!cont) return;
   try{ const {data}=await SB.from('hoteleria_trabajadores').select('*').eq('proveedor_id',pid).neq('estado_registro','Eliminado'); ETRAB=data||[]; }catch(e){ ETRAB=[]; }
-  _trFuncs=[]; renderTrFuncs(); pintarTrabMGI(pid);
+  _trFuncs=[]; renderTrFuncs(); pintarTrabMGI(pid, contId, resId);
 }
-function pintarTrabMGI(pid){
-  const cont=document.getElementById('eTrabList'); if(!cont) return;
-  const res=document.getElementById('eTrabResumen');
+function pintarTrabMGI(pid, contId, resId){
+  const cont=document.getElementById(contId||'eTrabList'); if(!cont) return;
+  const res=document.getElementById(resId||'eTrabResumen');
   if(res){ const h=ETRAB.filter(t=>t.sexo==='Hombre').length,m=ETRAB.filter(t=>t.sexo==='Mujer').length; res.textContent=ETRAB.length?`${ETRAB.length} · ♀ ${m} · ♂ ${h}`:''; }
   if(!ETRAB.length){ cont.innerHTML='<div style="font-size:.78rem;color:var(--text-muted)">Sin trabajadores</div>'; return; }
   cont.innerHTML=ETRAB.map(t=>{ const fs=Array.isArray(t.funciones)?t.funciones:(()=>{try{return JSON.parse(t.funciones||'[]');}catch(e){return[];}})();
@@ -989,47 +992,135 @@ async function estToggleHitoMGI(provId,cid,i){
   renderEstKPI(filtered());
 }
 
+// ── FICHA EMERGENTE ─────────────────────────────────────────────────────────
+// Misma estructura y estética que la ficha de Proveedores: cabecera con
+// acciones, pestañas y cuerpo a dos columnas. Los estilos son los mismos
+// (shared/css/ficha-modal.css); acá solo cambia QUÉ se muestra, porque MGI
+// gestiona hospedaje (habitaciones, contratos, trabajadores) en vez de
+// rubros y maquinaria.
+//
+// No duplica lógica: las visitas y los trabajadores los cargan las mismas
+// funciones que ya usaba el modal de edición (cargarVisitasMGI /
+// cargarTrabajadoresMGI), apuntando a los contenedores de la ficha.
+let FICHA_TAB = 'datos';
+let FICHA_PID = null;
+
 function verFichaMGI(pid){
   const p=DATA.find(x=>x.proveedor_id===pid); if(!p) return;
+  FICHA_PID=pid; FICHA_TAB='datos';
   const cs=CONT[pid]||[]; const cp=cs.find(c=>String(c.principal).toUpperCase()==='TRUE')||cs[0]||null;
   const h=HOT[pid]||{total:0,contratos:[],servicios:[]};
   const ocup=(h.contratos||[]).reduce((s,c)=>s+ctHabs(c),0); const lib=Math.max(0,(h.total||0)-ocup);
+  const camas=(h.contratos||[]).reduce((s,c)=>s+ctCamas(c),0);
   const name=dispName(p);
-  document.getElementById('fmLoc').textContent=p.localidad||'';
-  document.getElementById('fmNom').textContent=name;
-  let b='';
-  b+='<div class="fm-sec"><div class="fm-sec-t">Capacidad de hospedaje</div>';
-  b+='<div class="fm-row"><b>Hab. simples (1 cama)</b><span>'+(h.simples||0)+(h.simples_banio?' · '+h.simples_banio+' con baño privado':'')+'</span></div>';
-  b+='<div class="fm-row"><b>Hab. dobles (2 camas)</b><span>'+(h.dobles||0)+(h.dobles_banio?' · '+h.dobles_banio+' con baño privado':'')+'</span></div>';
-  b+='<div class="fm-row"><b>Total habitaciones</b><span>'+(h.total||0)+'</span></div>';
-  b+='<div class="fm-row"><b>Ocupadas</b><span>'+ocup+'</span></div>';
-  b+='<div class="fm-row"><b>Disponibles</b><span>'+lib+'</span></div>';
-  if((h.contratos||[]).length) b+='<div class="fm-row"><b>Contratos</b><span>'+h.contratos.length+' activo(s)</span></div>';
-  b+='</div>';
-  b+='<div class="fm-sec"><div class="fm-sec-t">Contacto</div>';
-  if(cp){ if(cp.nombre)b+='<div class="fm-row"><b>Nombre</b><span>'+esc(cp.nombre)+'</span></div>';
-    if(cp.cargo)b+='<div class="fm-row"><b>Cargo</b><span>'+esc(cp.cargo)+'</span></div>';
-    if(cp.fono||p.fono_empresa)b+='<div class="fm-row"><b>Teléfono</b><span>'+esc(cp.fono||p.fono_empresa)+'</span></div>';
-    if(cp.correo||p.correo_empresa)b+='<div class="fm-row"><b>Correo</b><span>'+esc(cp.correo||p.correo_empresa)+'</span></div>';
-  } else { if(p.fono_empresa)b+='<div class="fm-row"><b>Teléfono</b><span>'+esc(p.fono_empresa)+'</span></div>';
-    if(p.correo_empresa)b+='<div class="fm-row"><b>Correo</b><span>'+esc(p.correo_empresa)+'</span></div>'; }
-  if(p.rut_empresa)b+='<div class="fm-row"><b>RUT</b><span>'+esc(p.rut_empresa)+'</span></div>';
-  if(p.direccion)b+='<div class="fm-row"><b>Dirección</b><span>'+esc(p.direccion)+'</span></div>';
-  b+='</div>';
-  // ── columna derecha: descripción + servicios + fotos (estilo directorio) ──
-  let d='';
-  if(p.descripcion_general&&p.descripcion_general.trim()) d+='<div class="fm-sec"><div class="fm-sec-t">≡ Descripción general</div><div style="font-size:.9rem;line-height:1.6">'+esc(p.descripcion_general)+'</div></div>';
-  if((h.servicios||[]).length) d+='<div class="fm-sec"><div class="fm-sec-t">🛎 Servicios incluidos</div><div style="display:flex;flex-wrap:wrap;gap:6px">'+h.servicios.map(sv=>'<span style="background:#f3f1fb;color:#5b4fcf;border-radius:14px;padding:4px 11px;font-size:.79rem;font-weight:600">'+esc(sv)+'</span>').join('')+'</div></div>';
-  const _rubroFm=ESTM_RUBRO[MGI_SECCION]; const _pctFm=ESTM.loaded?estmPctProv(pid,_rubroFm):0; const _colFm=_pctFm>=80?'#1e7e34':_pctFm>=50?'#b8860b':'#c0311b';
-  d+='<div class="fm-sec"><div class="fm-sec-t">📏 Estandarización · '+_rubroFm+'</div><div style="display:flex;align-items:center;gap:10px"><b style="font-size:1.2rem;color:'+_colFm+'">'+_pctFm+'%</b><div style="flex:1;height:9px;background:#e0e0e0;border-radius:5px;overflow:hidden"><div style="height:100%;width:'+_pctFm+'%;background:'+_colFm+'"></div></div></div></div>';
-  let _fotos=[]; try{ _fotos=JSON.parse(p.fotos_json||'[]')||[]; }catch(e){}
-  if(_fotos.length) d+='<div class="fm-sec"><div class="fm-sec-t">📷 Fotografías</div><div style="display:flex;flex-wrap:wrap;gap:8px">'+_fotos.slice(0,3).map(u=>'<img src="'+u+'" style="width:31%;aspect-ratio:1.35;object-fit:cover;border-radius:8px;border:1px solid #ddd">').join('')+'</div></div>';
-  document.getElementById('fmBody').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 26px" class="fm-2col"><div>'+b+'</div><div>'+(d||'<div style="font-size:.82rem;color:var(--text-muted)">Sin descripción ni fotos.</div>')+'</div></div>';
-  document.getElementById('fmPdfBtn').onclick=function(){ exportarFichaPDF(pid); };
-  const _estBtn=document.getElementById('fmEstBtn'); if(_estBtn) _estBtn.onclick=function(){ abrirEstandarizacionMGI(pid); };
-  document.getElementById('fmodalOv').classList.add('show');
+  const rubroFm=ESTM_RUBRO[MGI_SECCION]; const pct=ESTM.loaded?estmPctProv(pid,rubroFm):0;
+  const col=pct>=80?'#1e7e34':pct>=50?'#b8860b':'#c0311b';
+  let fotos=[]; try{ fotos=JSON.parse(p.fotos_json||'[]')||[]; }catch(e){ fotos=[]; }
+
+  document.getElementById('fmodalContent').innerHTML=`
+    <div class="modal-header">
+      <div>
+        <div class="modal-loc">📍 ${esc(p.localidad||'—')}</div>
+        <div class="modal-title">${esc(name)}</div>
+        ${name.toLowerCase()!==(p.razon_social||'').toLowerCase()?`<div class="modal-subtitle">${esc(p.razon_social||'')}</div>`:''}
+      </div>
+      <div class="modal-header-right">
+        <button class="btn-edit-modal" onclick="exportarFichaPDF('${pid}')" style="background:var(--fm-primary);color:#fff;border-color:var(--fm-primary)">📄 Exportar Ficha</button>
+        <button class="btn-edit-modal" onclick="cerrarFichaMGI();abrirEdit('${pid}')">✏ Editar</button>
+        <button class="btn-edit-modal" onclick="abrirEstandarizacionMGI('${pid}')">📏 Estandarización</button>
+        <button class="btn-edit-modal" onclick="cerrarFichaMGI();nuevaVisitaMGI('${pid}')">📅 Nueva visita</button>
+        <button class="modal-close" onclick="cerrarFichaMGI()">×</button>
+      </div>
+    </div>
+    <div class="modal-tabs">
+      <button class="modal-tab-btn active" data-tab="datos" onclick="switchFichaTabMGI('datos')">📋 Datos</button>
+      <button class="modal-tab-btn" data-tab="hoteleria" onclick="switchFichaTabMGI('hoteleria')">🏨 Hotelería</button>
+      <button class="modal-tab-btn" data-tab="visitas" onclick="switchFichaTabMGI('visitas')">📅 Visitas</button>
+      <button class="modal-tab-btn" data-tab="trabajadores" onclick="switchFichaTabMGI('trabajadores')">👷 Trabajadores</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="modal-tab-pane active" data-tab="datos">
+        <div class="dcf-layout">
+          <div class="dcf-left">
+            <div class="dcf-sec-t">Datos de Contacto</div>
+            <div class="dcf-item"><span class="dcf-ico">📍</span><div><div class="dcf-l">Localidad</div><div class="dcf-v">${esc(p.localidad||'—')}</div></div></div>
+            <div class="dcf-item"><span class="dcf-ico">🏠</span><div><div class="dcf-l">Dirección</div><div class="dcf-v">${esc(p.direccion||'—')}</div></div></div>
+            <div class="dcf-item"><span class="dcf-ico">🪪</span><div><div class="dcf-l">RUT</div><div class="dcf-v">${esc(p.rut_empresa||'—')}</div></div></div>
+            ${cp?`
+            <div class="dcf-item"><span class="dcf-ico">👤</span><div><div class="dcf-l">Contacto</div><div class="dcf-v">${esc(cp.nombre||'—')}${cp.cargo?`<br><span style="font-size:.74rem;color:var(--text-muted)">${esc(cp.cargo)}</span>`:''}</div></div></div>`:''}
+            ${(cp&&cp.fono)||p.fono_empresa?`<div class="dcf-item"><span class="dcf-ico">📞</span><div><div class="dcf-l">Teléfono</div><div class="dcf-v">${esc((cp&&cp.fono)||p.fono_empresa)}</div></div></div>`:''}
+            ${(cp&&cp.correo)||p.correo_empresa?`<div class="dcf-item"><span class="dcf-ico">✉</span><div><div class="dcf-l">Correo</div><div class="dcf-v" style="word-break:break-all;color:var(--fm-accent-dk)">${esc((cp&&cp.correo)||p.correo_empresa)}</div></div></div>`:''}
+            ${cs.length>1?`<div class="dcf-sec-t" style="margin-top:18px">Otros contactos</div>${cs.slice(1).map(c=>`<div class="dcf-item"><span class="dcf-ico">👤</span><div><div class="dcf-v">${esc(c.nombre||'')}${c.cargo?' · '+esc(c.cargo):''}</div>${c.fono?`<div class="dcf-l">${esc(c.fono)}</div>`:''}</div></div>`).join('')}`:''}
+            <div class="dcf-sec-t" style="margin-top:18px">📏 Estandarización · ${esc(rubroFm)}</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <b style="font-size:1.2rem;color:${col}">${pct}%</b>
+              <div style="flex:1;height:9px;background:#e0e0e0;border-radius:5px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${col}"></div></div>
+            </div>
+          </div>
+          <div class="dcf-right">
+            ${p.descripcion_general&&p.descripcion_general.trim()?`<div class="dcf-sec-t">≡ Descripción General</div><div class="dcf-desc">${esc(p.descripcion_general)}</div>`:''}
+            ${(h.servicios||[]).length?`<div class="dcf-sec-t" style="margin-top:18px">🛎 Servicios incluidos</div><div style="display:flex;flex-wrap:wrap;gap:7px">${h.servicios.map(sv=>`<span class="dcf-exp">${esc(sv)}</span>`).join('')}</div>`:''}
+            ${fotos.length?`<div class="dcf-sec-t" style="margin-top:18px">📷 Fotografías</div><div style="display:flex;flex-wrap:wrap;gap:8px">${fotos.slice(0,3).map(u=>`<img src="${esc(u)}" style="width:31%;aspect-ratio:1.35;object-fit:cover;border-radius:8px;border:1px solid #ddd">`).join('')}</div>`:''}
+            ${!(p.descripcion_general||'').trim()&&!(h.servicios||[]).length&&!fotos.length?`<div style="font-size:.82rem;color:var(--text-muted)">Sin descripción, servicios ni fotos registrados.</div>`:''}
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-tab-pane" data-tab="hoteleria">
+        <div class="dcf-layout">
+          <div class="dcf-left">
+            <div class="dcf-sec-t">Capacidad</div>
+            <div class="dcf-item"><span class="dcf-ico">🛏</span><div><div class="dcf-l">Hab. simples (1 cama)</div><div class="dcf-v">${h.simples||0}${h.simples_banio?` · ${h.simples_banio} con baño privado`:''}</div></div></div>
+            <div class="dcf-item"><span class="dcf-ico">🛏</span><div><div class="dcf-l">Hab. dobles (2 camas)</div><div class="dcf-v">${h.dobles||0}${h.dobles_banio?` · ${h.dobles_banio} con baño privado`:''}</div></div></div>
+            <div class="dcf-item"><span class="dcf-ico">🏨</span><div><div class="dcf-l">Total habitaciones</div><div class="dcf-v"><b>${h.total||0}</b></div></div></div>
+            <div class="dcf-item"><span class="dcf-ico">🔴</span><div><div class="dcf-l">Ocupadas</div><div class="dcf-v">${ocup}</div></div></div>
+            <div class="dcf-item"><span class="dcf-ico">🟢</span><div><div class="dcf-l">Disponibles</div><div class="dcf-v"><b style="color:var(--green)">${lib}</b></div></div></div>
+            ${camas?`<div class="dcf-item"><span class="dcf-ico">🧍</span><div><div class="dcf-l">Camas comprometidas</div><div class="dcf-v">${camas}</div></div></div>`:''}
+          </div>
+          <div class="dcf-right">
+            <div class="dcf-sec-t">📋 Contratos / Ocupación</div>
+            ${(h.contratos||[]).length?`
+            <div class="dcf-flota-box">
+              <div class="dcf-flota-hdr"><div class="dcf-flota-t">${h.contratos.length} contrato(s)</div><div class="dcf-flota-s">Habitaciones comprometidas por cliente</div></div>
+              <table class="dcf-flota-tbl">
+                <thead><tr><th>Cliente</th><th>Simples</th><th>Dobles</th><th>Camas</th><th>Desde</th><th>Hasta</th></tr></thead>
+                <tbody>${h.contratos.map(c=>`<tr>
+                  <td><b>${esc(c.cliente||c.amsa||'—')}</b>${c.amsa?`<br><span style="font-size:.68rem;color:var(--fm-primary)">AMSA · ${esc(c.amsa)}</span>`:''}</td>
+                  <td>${ctSimples(c)}</td><td>${ctDobles(c)}</td><td>${ctCamas(c)}</td>
+                  <td>${esc(c.desde||'—')}</td><td>${esc(c.hasta||'—')}</td></tr>`).join('')}</tbody>
+              </table>
+            </div>`:'<div style="font-size:.82rem;color:var(--text-muted)">Sin contratos registrados.</div>'}
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-tab-pane" data-tab="visitas">
+        <div class="dcf-sec-t">📅 Visitas registradas</div>
+        <div id="fmVisitas"><div style="font-size:.78rem;color:var(--text-muted)">Cargando…</div></div>
+      </div>
+
+      <div class="modal-tab-pane" data-tab="trabajadores">
+        <div class="dcf-sec-t">👷 Trabajadores <span id="fmTrabResumen" style="font-weight:600;color:var(--text-muted);font-size:.78rem;letter-spacing:0;text-transform:none"></span></div>
+        <div id="fmTrabList"><div style="font-size:.78rem;color:var(--text-muted)">Cargando…</div></div>
+      </div>
+
+    </div>`;
+  document.getElementById('fmodalOv').classList.add('open');
 }
-function cerrarFichaMGI(){ document.getElementById('fmodalOv').classList.remove('show'); }
+
+// Mismo patrón que switchModalTab() de Proveedores: las pestañas de Visitas y
+// Trabajadores cargan al abrirlas, no antes.
+function switchFichaTabMGI(tab){
+  FICHA_TAB=tab;
+  const cont=document.getElementById('fmodalContent');
+  cont.querySelectorAll('.modal-tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  cont.querySelectorAll('.modal-tab-pane').forEach(p=>p.classList.toggle('active',p.dataset.tab===tab));
+  if(tab==='visitas') cargarVisitasMGI(FICHA_PID,'fmVisitas');
+  if(tab==='trabajadores') cargarTrabajadoresMGI(FICHA_PID,'fmTrabList','fmTrabResumen');
+}
+
+function cerrarFichaMGI(){ document.getElementById('fmodalOv').classList.remove('open'); }
 
 async function exportarFichaPDF(pid){
   const p=DATA.find(x=>x.proveedor_id===pid); if(!p) return;
