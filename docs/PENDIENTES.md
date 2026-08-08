@@ -464,7 +464,7 @@ Proveedores.
 
 ---
 
-### P-8 · 🟡 PARCIAL — primer corte hecho (2026-08-06): Catálogo de Programas
+### P-8 · 🟡 PARCIAL — segundo corte hecho (2026-08-07): Dashboard de Compromisos
 
 El módulo ya está separado (`index.html` 876 · `.css` 904 · `.js` 6.451), pero
 el `.js` sigue concentrando directorio, hotelería, visitas, compromisos,
@@ -509,10 +509,48 @@ en el mismo orden. Las funciones tienen que seguir siendo globales por los
 > de auth (`ES_ADMIN_ACTUAL`) y el registro público. Se arregla en la
 > próxima ronda que toque esa zona.
 >
-> **Quedan 16 secciones.** Siguiente candidata natural: alguna de las otras
-> chicas y aisladas (MOLI, Trabajadores de Hotelería, Dashboard de
-> Compromisos, Agenda telefónica) — se decide en la próxima ronda, no de
-> una sola vez.
+> **Segundo corte (2026-08-07) — las secciones fáciles se habían acabado.**
+> Al revisar las 4 candidatas anotadas arriba, **ninguna era un bloque
+> limpio** a pesar de que el banner de comentario las agrupa como si lo
+> fueran:
+>
+> | Candidata | Por qué no era limpia |
+> |---|---|
+> | Agenda telefónica | Contiene `registrarLog`, usada 20 veces en todo el archivo |
+> | MOLI | Contiene `montarVisitasV3` — el sistema de visitas real y activo |
+> | Trabajadores de Hotelería | Contiene `puedeEliminar` (6 usos) y `enviarCorreoVisita` (la usa `montarVisitasV3`) |
+> | **Dashboard de Compromisos** | Casi limpia — 3 funciones ajenas al final del bloque |
+>
+> Se eligió Compromisos por ser la más cercana a limpia, y se hizo
+> **extracción quirúrgica**: de las 15 funciones/variables físicamente
+> dentro del banner, se movieron las 12 realmente propias de Compromisos
+> (`COMPROMISOS_CACHE`, `renderCompromisosDash`, `diasRestantesComp`,
+> `pintarCompromisos`, `marcarCumplido`, `reabrirCompromiso`,
+> `LLAMADA_CID`, `abrirLlamada`, `cerrarLlamada`, `llamModoChange`,
+> `guardarLlamada`, `verSeguimiento`) a
+> `modules/proveedores/proveedores-compromisos.js`. Se dejaron **3** en
+> `proveedores.js`, verificadas por sus llamadores reales antes de mover
+> nada:
+>
+> - `badgeOrigenVisita` — la llama `montarVisitasV3`.
+> - `editarContrato` — lo llama la sección de Hotelería/Acuerdos (línea ~1895).
+> - `abrirCorreoMinuta` — **resultó ser código muerto**: cero llamadores en
+>   todo el archivo, ni en el HTML. No se tocó (fuera de alcance de esta
+>   extracción), candidata para una futura ronda tipo P-13.
+>
+> Resultó ser un bloque contiguo después de todo — las 3 funciones que se
+> quedan estaban todas juntas al final del banner, así que no hizo falta
+> extracción salteada.
+>
+> Verificado: sintaxis de ambos archivos; inyección aislada confirma las 6
+> funciones movidas como globales sin errores, y que las 3 que debían
+> quedarse siguen en `proveedores.js`; HTML balanceado (`<div>`/`</div>`)
+> tras agregar el `<script src>`.
+>
+> **Quedan 15 secciones**, y de las 4 candidatas "chicas" ya evaluadas
+> ninguna más califica para una extracción limpia — la próxima ronda
+> necesita el mismo nivel de disección quirúrgica que esta, no una
+> selección rápida por tamaño.
 
 ---
 
