@@ -7,6 +7,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
 <script src="../../config/supabase.config.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanilla-calendar-pro@3.1.0/styles/index.css">
+<script>
+  // vanilla-calendar-pro solo se publica como ESM. Se importa con import()
+  // dinámico dentro de un <script> clásico (sin type="module") para no tocar
+  // el scope global de la página — los 457 onclick del sistema necesitan que
+  // las funciones sigan siendo globales (CLAUDE.md §6).
+  import('https://cdn.jsdelivr.net/npm/vanilla-calendar-pro@3.1.0/+esm')
+    .then(m => { window.VanillaCalendar = m.Calendar; })
+    .catch(() => { window.VanillaCalendar = null; });
+</script>
 <link rel="stylesheet" href="planer.css">
 </head>
 <body>
@@ -58,9 +68,16 @@
     <div class="panel">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px">
         <div class="panel-t" style="margin-bottom:0">📋 Pendientes del equipo</div>
-        <button class="kb-add" onclick="abrirNuevo()">➕ Nuevo pendiente</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="mini-btn" onclick="descargarTodosICS()">⬇️ Descargar todo al calendario</button>
+          <button class="kb-add" onclick="abrirNuevo()">➕ Nuevo pendiente</button>
+        </div>
       </div>
-      <div style="font-size:.83rem;color:var(--text-muted);margin-bottom:14px">Vista conjunta: se ven los pendientes de todos los especialistas. Cada quien solo puede crear o editar los suyos.</div>
+      <div style="font-size:.83rem;color:var(--text-muted);margin-bottom:14px">Vista conjunta: se ven los pendientes de todos los especialistas. Cada quien solo puede crear o editar los suyos. El archivo descargado sirve para iPhone, Android y Outlook.</div>
+      <div class="tabs-vista">
+        <button class="tab-btn active" id="tabLista" onclick="cambiarVista('lista')">📋 Lista</button>
+        <button class="tab-btn" id="tabCal" onclick="cambiarVista('calendario')">🗓️ Calendario</button>
+      </div>
       <div class="filtros">
         <select id="fAutor" onchange="setFiltroAutor(this.value)"><option value="">Todos los autores</option></select>
         <select id="fEstado" onchange="setFiltroEstado(this.value)">
@@ -72,6 +89,10 @@
         <span id="count" style="font-size:.8rem;color:var(--text-muted);margin-left:auto"></span>
       </div>
       <div id="lista"><div class="kb-empty">Cargando…</div></div>
+      <div id="vistaCalendario" style="display:none">
+        <div id="calendario"></div>
+        <div id="calDiaSel" class="cal-dia-sel"></div>
+      </div>
     </div>
   </main>
 </div>
@@ -80,8 +101,14 @@
 <div id="formModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10010;align-items:center;justify-content:center;padding:16px">
   <div style="background:#fff;border-radius:14px;max-width:480px;width:100%;padding:24px;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
     <div class="panel-t" id="formTitle">Nuevo pendiente</div>
-    <div class="fld"><label>Título *</label><input id="fTitulo" placeholder="Ej: Confirmar visita a proveedor X"></div>
-    <div class="fld"><label>Descripción</label><textarea id="fDescripcion" placeholder="Detalle, contexto, próximos pasos..."></textarea></div>
+    <div class="fld">
+      <label>Título *</label>
+      <div class="fld-voz"><input id="fTitulo" placeholder="Ej: Confirmar visita a proveedor X"><button type="button" class="mic-btn" id="micTitulo" onclick="dictar('fTitulo','micTitulo')" title="Dictar por voz">🎤</button></div>
+    </div>
+    <div class="fld">
+      <label>Descripción / notas</label>
+      <div class="fld-voz"><textarea id="fDescripcion" placeholder="Detalle, contexto, próximos pasos..."></textarea><button type="button" class="mic-btn" id="micDesc" onclick="dictar('fDescripcion','micDesc')" title="Dictar por voz">🎤</button></div>
+    </div>
     <div class="g2">
       <div class="fld"><label>Estado</label>
         <select id="fEstado">
@@ -98,7 +125,20 @@
         </select>
       </div>
     </div>
-    <div class="fld"><label>Fecha límite</label><input id="fFecha" type="date"></div>
+    <div class="g2">
+      <div class="fld"><label>Fecha inicio</label><input id="fFechaInicio" type="date"></div>
+      <div class="fld"><label>Fecha término</label><input id="fFecha" type="date"></div>
+    </div>
+    <div class="fld"><label>Repetir</label>
+      <select id="fRecurrencia" onchange="toggleRecurrenciaHasta()">
+        <option value="ninguna">No se repite</option>
+        <option value="semanal">Cada semana</option>
+        <option value="mensual">Cada mes</option>
+      </select>
+    </div>
+    <div class="fld" id="fldRecurrenciaHasta" style="display:none">
+      <label>Repetir hasta</label><input id="fRecurrenciaHasta" type="date">
+    </div>
     <div style="display:flex;gap:8px;margin-top:14px">
       <button class="kb-add" style="flex:1" onclick="guardarItem()">Guardar</button>
       <button class="mini-btn" onclick="cerrarForm()">Cancelar</button>

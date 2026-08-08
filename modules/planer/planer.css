@@ -60,3 +60,23 @@
   .toast.show{opacity:1;transform:none}
   .toast.success{background:var(--green)}
   .toast.warning{background:var(--orange)}
+  .toast.err{background:var(--red)}
+
+  /* TABS LISTA / CALENDARIO */
+  .tabs-vista{display:flex;gap:6px;margin-bottom:14px;border-bottom:1.5px solid var(--border)}
+  .tab-btn{background:none;border:none;padding:8px 14px;font-size:.85rem;font-weight:700;color:var(--text-muted);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1.5px}
+  .tab-btn.active{color:var(--primary);border-bottom-color:var(--primary)}
+
+  /* DICTADO POR VOZ */
+  .fld-voz{position:relative;display:flex;align-items:flex-start;gap:6px}
+  .fld-voz input,.fld-voz textarea{flex:1}
+  .mic-btn{border:1.5px solid var(--border);background:#fff;border-radius:8px;width:40px;height:40px;flex:0 0 40px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .mic-btn.mic-on{background:#fdecea;border-color:var(--red);animation:mic-pulse 1s infinite}
+  @keyframes mic-pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+  /* CALENDARIO */
+  #calendario{--vc-color-main:var(--primary);margin-bottom:14px}
+  .vc-date.cal-tiene-item .vc-date__btn{position:relative}
+  .vc-date.cal-tiene-item .vc-date__btn::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--primary)}
+  .cal-dia-sel{margin-top:10px}
+  .cal-dia-t{font-weight:700;font-size:.85rem;color:var(--primary);margin-bottom:8px}

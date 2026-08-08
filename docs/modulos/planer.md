@@ -50,9 +50,36 @@ create policy planer_update on planer_items for update
 `item_id` (texto, generado en el cliente) · `autor_id` (uuid, `auth.uid()`) ·
 `autor_nombre` (texto, para mostrar/filtrar) · `titulo` · `descripcion` ·
 `estado` (`pendiente`/`en_progreso`/`hecho`) · `prioridad`
-(`baja`/`media`/`alta`) · `fecha_limite` · `origen` (`manual`/`ia` — el
+(`baja`/`media`/`alta`) · `fecha_inicio` · `fecha_limite` · `recurrencia`
+(`ninguna`/`semanal`/`mensual`) · `recurrencia_hasta` · `serie_id` (agrupa
+las filas generadas por una misma recurrencia) · `origen` (`manual`/`ia` — el
 segundo valor queda reservado para cuando se conecte PlanIA-Personal) ·
 `estado_registro` (borrado lógico, mismo trigger que el resto del sistema).
+
+## Calendario, recurrencia, voz y exportación (2026-08-08)
+
+- **Calendario visual**: librería `vanilla-calendar-pro@3.1.0` vía CDN
+  (jsDelivr, `+esm`, ~15KB gzip) — agregada con aprobación explícita del
+  dueño del proyecto (Regla de Oro 6). Se carga con `import()` dinámico
+  dentro de un `<script>` clásico (sin `type="module"`) para no tocar el
+  scope global — ver CLAUDE.md §6.
+- **Feriados de Chile**: hardcodeados en `FERIADOS_CL` (planer.js), sin API
+  externa. Cubre 2026-2027. **Hay que agregar el año siguiente a mano** —
+  no se actualiza solo. No incluye feriados por elecciones (variables).
+- **Recurrencia**: al guardar un pendiente con `recurrencia` distinta de
+  `ninguna`, se generan de una vez todas las filas de la serie (tope 104
+  ocurrencias) con el mismo `serie_id`. Editar una ocurrencia no afecta a
+  las demás — no hay edición masiva de serie todavía.
+- **Dictado por voz**: Web Speech API nativa (`SpeechRecognition`), sin
+  librería ni servicio externo. Funciona en Chrome/Edge. Safari/iOS no
+  expone esta API por JS — el botón de micrófono se oculta solo ahí
+  (feature detection); el teclado de iPhone ya trae su propio dictado sobre
+  los mismos campos de texto.
+- **Exportar a calendario**: genera archivos `.ics` (RFC 5545) en el
+  cliente, sin backend nuevo. Botón individual por pendiente y botón
+  "Descargar todo" (respeta los filtros activos). Lo abre igual iPhone
+  (Calendario), Android (Google Calendar) y Outlook — no depende de ninguno
+  de los tres en particular.
 
 ## Pendiente: la integración con PlanIA-Personal
 
