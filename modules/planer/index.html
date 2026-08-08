@@ -21,7 +21,7 @@
      versión anterior tras un despliegue. Al cambiar el número, la URL cambia
      y el navegador se ve obligado a bajar el archivo nuevo.
      ⚠️ Subir este número cada vez que se edite planer.css o planer.js. -->
-<link rel="stylesheet" href="planer.css?v=20260808">
+<link rel="stylesheet" href="planer.css?v=20260808b">
 </head>
 <body>
 <!-- GATE -->
@@ -71,17 +71,28 @@
   <main>
     <div class="panel">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px">
-        <div class="panel-t" style="margin-bottom:0">📋 Pendientes del equipo</div>
+        <div class="panel-t" style="margin-bottom:0">🗓️ Planificación del equipo</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="mini-btn" onclick="descargarTodosICS()">⬇️ Descargar todo al calendario</button>
-          <button class="kb-add" onclick="abrirNuevo()">➕ Nuevo pendiente</button>
+          <button class="mini-btn" onclick="descargarTodosICS()">⬇️ Al calendario del teléfono</button>
+          <button class="kb-add" onclick="abrirNuevo()">➕ Nuevo</button>
         </div>
       </div>
-      <div style="font-size:.83rem;color:var(--text-muted);margin-bottom:14px">Vista conjunta: se ven los pendientes de todos los especialistas. Cada quien solo puede crear o editar los suyos. El archivo descargado sirve para iPhone, Android y Outlook.</div>
+      <div style="font-size:.83rem;color:var(--text-muted);margin-bottom:14px">Vista conjunta: se ve la planificación de todos los especialistas. Cada quien solo puede crear, editar o eliminar lo suyo.</div>
+
       <div class="tabs-vista">
-        <button class="tab-btn active" id="tabLista" onclick="cambiarVista('lista')">📋 Lista</button>
-        <button class="tab-btn" id="tabCal" onclick="cambiarVista('calendario')">🗓️ Calendario</button>
+        <button class="tab-btn" id="tab_lista" onclick="cambiarVista('lista')">📋 Lista</button>
+        <button class="tab-btn" id="tab_mes" onclick="cambiarVista('mes')">🗓️ Mes</button>
+        <button class="tab-btn active" id="tab_semana" onclick="cambiarVista('semana')">📆 Semana</button>
+        <button class="tab-btn" id="tab_dia" onclick="cambiarVista('dia')">📍 Día</button>
       </div>
+
+      <div class="nav-fechas" id="navFechas">
+        <button class="nav-arrow" onclick="navegar(-1)" title="Anterior">‹</button>
+        <div class="nav-titulo" id="navTitulo"></div>
+        <button class="nav-arrow" onclick="navegar(1)" title="Siguiente">›</button>
+        <button class="nav-hoy" onclick="irHoy()">Hoy</button>
+      </div>
+
       <div class="filtros">
         <select id="fAutor" onchange="setFiltroAutor(this.value)"><option value="">Todos los autores</option></select>
         <select id="fEstado" onchange="setFiltroEstado(this.value)">
@@ -92,11 +103,11 @@
         </select>
         <span id="count" style="font-size:.8rem;color:var(--text-muted);margin-left:auto"></span>
       </div>
-      <div id="lista"><div class="kb-empty">Cargando…</div></div>
-      <div id="vistaCalendario" style="display:none">
-        <div id="calendario"></div>
-        <div id="calDiaSel" class="cal-dia-sel"></div>
-      </div>
+
+      <div id="paneLista" style="display:none"><div id="lista"><div class="kb-empty">Cargando…</div></div></div>
+      <div id="paneMes" style="display:none"><div id="calendario"></div></div>
+      <div id="paneSemana"></div>
+      <div id="paneDia" style="display:none"></div>
     </div>
   </main>
 </div>
@@ -104,7 +115,15 @@
 <!-- MODAL NUEVO/EDITAR -->
 <div id="formModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10010;align-items:center;justify-content:center;padding:16px">
   <div style="background:#fff;border-radius:14px;max-width:480px;width:100%;padding:24px;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <div class="panel-t" id="formTitle">Nuevo pendiente</div>
+    <div class="panel-t" id="formTitle">Nuevo registro</div>
+    <div class="fld">
+      <label>¿Qué es?</label>
+      <select id="fTipo" onchange="onTipoChange()">
+        <option value="pendiente">📌 Pendiente — tarea puntual con fecha</option>
+        <option value="todo">🔁 Rutina — se repite y se marca cada día</option>
+      </select>
+      <div class="fld-ayuda" id="ayudaTipo"></div>
+    </div>
     <div class="fld">
       <label>Título *</label>
       <div class="fld-voz"><input id="fTitulo" placeholder="Ej: Confirmar visita a proveedor X"><button type="button" class="mic-btn" id="micTitulo" onclick="dictar('fTitulo','micTitulo')" title="Dictar por voz">🎤</button></div>
@@ -114,8 +133,11 @@
       <div class="fld-voz"><textarea id="fDescripcion" placeholder="Detalle, contexto, próximos pasos..."></textarea><button type="button" class="mic-btn" id="micDesc" onclick="dictar('fDescripcion','micDesc')" title="Dictar por voz">🎤</button></div>
     </div>
     <div class="g2">
-      <div class="fld"><label>Estado</label>
-        <select id="fEstado">
+      <!-- id distinto del filtro de la barra superior: dos <select id="fEstado">
+           hacían que getElementById devolviera el filtro y el formulario
+           escribiera sobre él en vez de sobre su propio campo. -->
+      <div class="fld" id="fldEstado"><label>Estado</label>
+        <select id="fEstadoItem">
           <option value="pendiente">Pendiente</option>
           <option value="en_progreso">En progreso</option>
           <option value="hecho">Hecho</option>
@@ -130,12 +152,13 @@
       </div>
     </div>
     <div class="g2">
-      <div class="fld"><label>Fecha inicio</label><input id="fFechaInicio" type="date"></div>
-      <div class="fld"><label>Fecha término</label><input id="fFecha" type="date"></div>
+      <div class="fld"><label id="lblFechaIni">Fecha inicio</label><input id="fFechaInicio" type="date"></div>
+      <div class="fld" id="fldFechaFin"><label>Fecha término</label><input id="fFecha" type="date"></div>
     </div>
     <div class="fld"><label>Repetir</label>
       <select id="fRecurrencia" onchange="toggleRecurrenciaHasta()">
         <option value="ninguna">No se repite</option>
+        <option value="diaria" id="optDiaria">Cada día</option>
         <option value="semanal">Cada semana</option>
         <option value="mensual">Cada mes</option>
       </select>
@@ -143,9 +166,10 @@
     <div class="fld" id="fldRecurrenciaHasta" style="display:none">
       <label>Repetir hasta</label><input id="fRecurrenciaHasta" type="date">
     </div>
-    <div style="display:flex;gap:8px;margin-top:14px">
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
       <button class="kb-add" style="flex:1" onclick="guardarItem()">Guardar</button>
       <button class="mini-btn" onclick="cerrarForm()">Cancelar</button>
+      <button class="mini-btn danger" id="btnBorrarForm" style="display:none" onclick="borrarDesdeForm()">🗑 Eliminar</button>
     </div>
   </div>
 </div>
@@ -162,6 +186,6 @@
   onAcceso: function(user){ return _planerOnAcceso(user); }
 };</script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="planer.js?v=20260808"></script>
+<script src="planer.js?v=20260808b"></script>
 </body>
 </html>

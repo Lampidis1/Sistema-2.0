@@ -45,16 +45,76 @@ create policy planer_update on planer_items for update
   using (es_admin() or autor_id = auth.uid());     -- solo lo propio
 ```
 
+## Los dos tipos de fila (columna `tipo`)
+
+| | `pendiente` | `todo` (rutina) |
+|---|---|---|
+| Qué es | Tarea puntual con fecha | Rutina que se repite |
+| Repetición | Genera **copias independientes**, una fila por ocurrencia | **Una sola fila**; las ocurrencias se calculan al vuelo |
+| Frecuencias | semanal, mensual | diaria, semanal, mensual |
+| Cumplimiento | `estado` en la propia fila | una fila por día en `planer_todo_checks` |
+
+**Por qué las rutinas no se materializan:** una rutina diaria a un año serían
+365 filas. En vez de eso se guarda la regla (`fecha_inicio` + `recurrencia` +
+`recurrencia_hasta`) y `aplicaEnDia()` en `planer.js` decide si cae en un día
+dado. Solo se guardan los días efectivamente marcados como cumplidos.
+
+Consecuencia: editar una rutina cambia **todas** sus ocurrencias; editar un
+pendiente de una serie repetida cambia **solo esa**. Es intencional.
+
+## Vistas: mes, semana, día
+
+`VISTA` (`lista`|`mes`|`semana`|`dia`) y `FOCO` (fecha de referencia) son el
+estado de navegación. Las flechas ‹ › mueven el foco un mes, una semana o un
+día según la vista activa.
+
+- **Mes** — `vanilla-calendar-pro`. Un punto bajo el número marca los días con
+  compromisos (teal) o feriados (rojo); al pasar por encima se ve el detalle.
+  Clic en un día → vista Día de ese día.
+  ⚠️ El `modifier` de la librería se aplica sobre el `<button>` (`.vc-date__btn`),
+  **no** sobre el `.vc-date` que lo contiene. El selector CSS depende de eso.
+- **Semana** — 7 columnas hechas a mano (sin librería). En teléfono se apilan
+  como filas. Clic en un día → vista Día. El `＋` de cada columna crea un
+  registro con esa fecha ya puesta.
+- **Día** — dos secciones: *Rutinas del día* (con casilla para marcar
+  cumplido/no cumplido) y *Pendientes del día*.
+
+## Eliminar
+
+Borrado lógico (`estado_registro = 'Eliminado'`), igual que el resto del
+sistema: nada se borra de verdad, deja de listarse. La política `planer_update`
+ya permitía `autor_id = auth.uid()`, así que **cada quien puede eliminar lo
+suyo** sin cambios de RLS; un admin puede eliminar cualquiera.
+
+Eliminar una rutina la quita de **todos** los días — el `confirm()` lo advierte.
+
 ## Columnas de `planer_items`
 
 `item_id` (texto, generado en el cliente) · `autor_id` (uuid, `auth.uid()`) ·
-`autor_nombre` (texto, para mostrar/filtrar) · `titulo` · `descripcion` ·
-`estado` (`pendiente`/`en_progreso`/`hecho`) · `prioridad`
-(`baja`/`media`/`alta`) · `fecha_inicio` · `fecha_limite` · `recurrencia`
-(`ninguna`/`semanal`/`mensual`) · `recurrencia_hasta` · `serie_id` (agrupa
-las filas generadas por una misma recurrencia) · `origen` (`manual`/`ia` — el
-segundo valor queda reservado para cuando se conecte PlanIA-Personal) ·
-`estado_registro` (borrado lógico, mismo trigger que el resto del sistema).
+`autor_nombre` (texto, para mostrar/filtrar) · `tipo` (`pendiente`/`todo`) ·
+`titulo` · `descripcion` · `estado` (`pendiente`/`en_progreso`/`hecho`) ·
+`prioridad` (`baja`/`media`/`alta`) · `fecha_inicio` · `fecha_limite` ·
+`recurrencia` (`ninguna`/`diaria`/`semanal`/`mensual`) · `recurrencia_hasta` ·
+`serie_id` (agrupa las filas generadas por una misma recurrencia) · `origen`
+(`manual`/`ia` — el segundo valor queda reservado para cuando se conecte
+PlanIA-Personal) · `estado_registro` (borrado lógico).
+
+## Tabla `planer_todo_checks`
+
+Un día marcado como cumplido de una rutina. PK compuesta `(todo_id, fecha)`;
+desmarcar **borra la fila**. RLS: lectura conjunta (`es_admin() or es_planer()`),
+insert/delete solo del propio autor.
+
+## Trampa conocida: IDs duplicados en el HTML
+
+El filtro de estado de la barra y el campo de estado del formulario tenían
+**ambos** `id="fEstado"`. `getElementById` devuelve el primero, así que el
+formulario leía y escribía el filtro. El campo del formulario ahora es
+`fEstadoItem`. Al agregar campos, revisar que no se repitan IDs:
+
+```bash
+grep -o 'id="[^"]*"' index.html | sort | uniq -d
+```
 
 ## Calendario, recurrencia, voz y exportación (2026-08-08)
 
