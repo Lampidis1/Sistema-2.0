@@ -242,6 +242,7 @@ function renderMapa() {
       }),
       title: h.nombre,
     }).addTo(MAPA);
+    m._hospId = h.id;
     m.bindPopup(`<b>${esc(h.nombre)}</b><br>${esc(h.direccion || '')}<br>
       <span style="color:#006973"><b>${h.hab_disponibles}</b> hab. libres · <b>${h.camas_max}</b> camas</span><br>
       ${h.fono ? '📞 ' + esc(h.fono) : ''}`);
@@ -249,12 +250,58 @@ function renderMapa() {
   });
   setTimeout(() => MAPA.invalidateSize(), 60);   // el mapa nace oculto en su pestaña
 
+  pintarTablaMapa(conUbic);
+
   document.getElementById('sinUbicacion').innerHTML = sinUbic.length ? `
     <div class="aviso">
       <b>${sinUbic.length} hospedaje${sinUbic.length === 1 ? '' : 's'} sin ubicación en el mapa.</b>
       Su calle todavía no está registrada en el mapa base; sí aparecen en las otras pestañas.
       <div class="aviso-lista">${sinUbic.map(h => `<span onclick="verFicha('${h.id}')">${esc(h.nombre)}</span>`).join('')}</div>
     </div>` : '';
+}
+
+// Los pines muestran un número: esta tabla dice de quién es cada uno. Va
+// ordenada de más a menos disponibilidad, así lo útil queda arriba. Al tocar
+// una fila el mapa vuela a ese pin y lo abre.
+function pintarTablaMapa(lista) {
+  const cont = document.getElementById('tablaMapa');
+  if (!lista.length) { cont.innerHTML = ''; return; }
+  const orden = lista.slice().sort((a, b) => b.hab_disponibles - a.hab_disponibles
+    || a.nombre.localeCompare(b.nombre, 'es'));
+  const totalHab = orden.reduce((s, h) => s + h.hab_disponibles, 0);
+  const totalCam = orden.reduce((s, h) => s + h.camas_max, 0);
+
+  cont.innerHTML = `
+    <div class="tm-t">📍 ${orden.length} hospedajes marcados en el mapa</div>
+    <div class="tabla-wrap"><table class="tabla tabla-mapa">
+      <thead><tr>
+        <th class="num">Pin</th><th>Hospedaje</th><th>Dirección</th>
+        <th class="num">Hab. libres</th><th class="num">Camas</th><th class="num">Instaladas</th>
+      </tr></thead>
+      <tbody>${orden.map(h => `<tr onclick="irAlPin('${h.id}')" title="Ver en el mapa">
+        <td class="num"><span class="tm-pin">${h.hab_disponibles}</span></td>
+        <td><b>${esc(h.nombre)}</b></td>
+        <td>${esc(h.direccion || '—')}</td>
+        <td class="num"><b>${h.hab_disponibles}</b></td>
+        <td class="num"><b>${h.camas_max}</b></td>
+        <td class="num sec">${h.hab_total}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr>
+        <td></td><td colspan="2"><b>Total marcado en el mapa</b></td>
+        <td class="num"><b>${totalHab}</b></td>
+        <td class="num"><b>${totalCam}</b></td>
+        <td></td>
+      </tr></tfoot>
+    </table></div>`;
+}
+
+// Centra el mapa en un hospedaje y abre su globo.
+function irAlPin(id) {
+  const m = MARCADORES.find(x => x._hospId === id);
+  if (!m) return;
+  MAPA.setView(m.getLatLng(), 18, { animate: true });
+  m.openPopup();
+  document.getElementById('mapa').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // ── 3 · TODOS, AGRUPADOS POR EMPRESA ────────────────────────────────────────

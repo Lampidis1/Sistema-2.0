@@ -123,3 +123,10 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text)}
 .pin span{transform:rotate(45deg);color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.85rem;line-height:1}
 .leaflet-marker-icon:hover .pin{background:linear-gradient(135deg,#F2A900,#d99500)}
 .leaflet-marker-icon:hover .pin span{color:#1c2632}
+
+/* Tabla de lo marcado en el mapa: cada fila es un pin */
+#tablaMapa{margin-top:16px}
+.tm-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;color:var(--primary-dark);text-transform:uppercase;letter-spacing:.04em;margin-bottom:9px}
+.tabla-mapa tfoot td{background:var(--primary-light);color:var(--primary-dark);border-top:2px solid var(--primary-mid);padding:10px 14px}
+.tm-pin{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 7px;border-radius:14px;background:linear-gradient(135deg,#00A399,#006973);color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.86rem;box-shadow:0 1px 3px rgba(0,0,0,.22)}
+.tabla-mapa .sec{color:var(--text-muted);font-weight:400}

@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="../../shared/css/ficha-modal.css?v=20260808f">
-<link rel="stylesheet" href="hoteles-sg.css?v=20260809b">
+<link rel="stylesheet" href="hoteles-sg.css?v=20260809c">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/). -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
 </head>
@@ -54,6 +54,8 @@
   <section id="vMapa" style="display:none">
     <div class="nota">Se marcan los hospedajes con habitaciones registradas y ubicación conocida. Toca un punto para ver el detalle.</div>
     <div id="mapa"></div>
+    <!-- Tabla de lo que esta marcado en el mapa: cada fila corresponde a un pin -->
+    <div id="tablaMapa"></div>
     <div id="sinUbicacion"></div>
   </section>
 
@@ -74,6 +76,6 @@
   <div class="modal" id="fichaBox"></div>
 </div>
 
-<script src="hoteles-sg.js?v=20260809b"></script>
+<script src="hoteles-sg.js?v=20260809c"></script>
 </body>
 </html>
