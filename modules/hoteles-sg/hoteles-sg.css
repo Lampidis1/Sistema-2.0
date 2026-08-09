@@ -12,12 +12,15 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text)}
 
-/* CABECERA */
-.top{background:linear-gradient(135deg,#006973,#00A399);color:#fff;padding:16px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+/* CABECERA
+   Fondo blanco, igual que el header de Proveedores. El logo de AMSA lleva el
+   texto en negro: sobre el teal quedaba con muy poco contraste. */
+.top{background:#fff;border-bottom:3px solid var(--primary);padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .top img{height:38px}
-.top-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.35rem;letter-spacing:.04em;text-transform:uppercase;line-height:1}
-.top-s{font-size:.74rem;opacity:.92;letter-spacing:.05em;text-transform:uppercase;margin-top:2px}
-.top-badge{margin-left:auto;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:6px 15px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.top-txt{border-left:1px solid var(--border);padding-left:16px}
+.top-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.35rem;letter-spacing:.04em;text-transform:uppercase;line-height:1;color:var(--primary-dark)}
+.top-s{font-size:.72rem;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;margin-top:2px}
+.top-badge{margin-left:auto;background:var(--primary-light);color:var(--primary-dark);border:1px solid rgba(0,163,153,.32);border-radius:20px;padding:6px 15px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
 
 .wrap{max-width:1180px;margin:0 auto;padding:20px}
 
@@ -96,6 +99,9 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text)}
 
 @media(max-width:900px){ .kpis{grid-template-columns:repeat(2,1fr)} }
 @media(max-width:599px){
+  /* el logo baja a su propia linea: el separador vertical queda suelto */
+  .top{padding:12px 16px;gap:10px}
+  .top-txt{border-left:none;padding-left:0}
   .top-badge{margin-left:0;width:100%;text-align:center}
   #mapa{height:400px}
 }
