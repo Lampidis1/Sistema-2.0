@@ -105,3 +105,9 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text)}
   .top-badge{margin-left:0;width:100%;text-align:center}
   #mapa{height:400px}
 }
+
+/* Encabezados ordenables de la lista */
+.tabla th.orden{cursor:pointer;user-select:none}
+.tabla th.orden:hover{background:#d3ecec}
+.tabla td.sec{color:var(--text-muted);font-weight:400}
+.ocup{color:#b86000;font-weight:600}

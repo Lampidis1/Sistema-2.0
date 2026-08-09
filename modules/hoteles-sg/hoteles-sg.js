@@ -40,19 +40,37 @@ async function cargar() {
   }
 }
 
-// Con habitaciones registradas. Sin dato de capacidad no se puede afirmar que
-// haya disponibilidad, así que esos quedan fuera de esta vista (aparecen en
-// "Todos por empresa").
-const disponibles = () => DATOS.filter(h => h.hab_total > 0);
+// Con habitaciones LIBRES ahora mismo: la vista ya descuenta las que estan
+// comprometidas en contratos. Un hospedaje lleno (o sin capacidad cargada) no
+// aparece aca — si en "Todos por empresa".
+const disponibles = () => DATOS.filter(h => h.hab_disponibles > 0);
+
+// Orden de la lista: se hace clic en el encabezado de la columna.
+let ORDEN = { col: 'nombre', asc: true };
+function ordenarPor(col) {
+  if (ORDEN.col === col) ORDEN.asc = !ORDEN.asc;
+  // los textos parten A→Z; los numeros, de mayor a menor (lo util primero)
+  else ORDEN = { col: col, asc: (col === 'nombre' || col === 'direccion') };
+  render();
+}
+function aplicarOrden(arr) {
+  const c = ORDEN.col, s = ORDEN.asc ? 1 : -1;
+  return arr.slice().sort((a, b) => {
+    const x = a[c], y = b[c];
+    if (typeof x === 'number' && typeof y === 'number') return (x - y) * s;
+    return String(x || '').localeCompare(String(y || ''), 'es') * s;
+  });
+}
+const flecha = c => ORDEN.col === c ? (ORDEN.asc ? ' ▲' : ' ▼') : '';
 
 function pintarKpis() {
   const d = disponibles();
-  const habs = d.reduce((s, h) => s + h.hab_total, 0);
+  const habs = d.reduce((s, h) => s + h.hab_disponibles, 0);
   const camas = d.reduce((s, h) => s + h.camas_max, 0);
   document.getElementById('kpis').innerHTML = `
-    <div class="kpi"><div class="kpi-n">${d.length}</div><div class="kpi-l">Hospedajes con capacidad</div></div>
-    <div class="kpi"><div class="kpi-n">${habs}</div><div class="kpi-l">Habitaciones</div></div>
-    <div class="kpi"><div class="kpi-n">${camas}</div><div class="kpi-l">Camas máximo</div></div>
+    <div class="kpi"><div class="kpi-n">${d.length}</div><div class="kpi-l">Hospedajes con disponibilidad</div></div>
+    <div class="kpi"><div class="kpi-n">${habs}</div><div class="kpi-l">Habitaciones libres</div></div>
+    <div class="kpi"><div class="kpi-n">${camas}</div><div class="kpi-l">Camas disponibles</div></div>
     <div class="kpi"><div class="kpi-n">${DATOS.length}</div><div class="kpi-l">En el programa MGI</div></div>`;
 }
 
@@ -88,15 +106,26 @@ function renderDisponibles() {
   const cont = document.getElementById('listaDisp');
   if (!d.length) { cont.innerHTML = '<div class="cargando">Sin hospedajes para esta búsqueda.</div>'; return; }
 
+  d = aplicarOrden(d);
+
   if (MODO === 'lista') {
+    // Encabezados ordenables: un clic ordena, otro invierte.
     cont.innerHTML = `<div class="tabla-wrap"><table class="tabla">
-      <thead><tr><th>Hospedaje</th><th>Dirección</th><th>Contacto</th><th>Hab.</th><th>Camas máx.</th></tr></thead>
+      <thead><tr>
+        <th class="orden" onclick="ordenarPor('nombre')">Hospedaje${flecha('nombre')}</th>
+        <th class="orden" onclick="ordenarPor('direccion')">Dirección${flecha('direccion')}</th>
+        <th>Contacto</th>
+        <th class="orden num" onclick="ordenarPor('hab_disponibles')">Hab. libres${flecha('hab_disponibles')}</th>
+        <th class="orden num" onclick="ordenarPor('camas_max')">Camas${flecha('camas_max')}</th>
+        <th class="orden num" onclick="ordenarPor('hab_total')">Instaladas${flecha('hab_total')}</th>
+      </tr></thead>
       <tbody>${d.map(h => `<tr onclick="verFicha('${h.id}')">
         <td><b>${esc(h.nombre)}</b></td>
         <td>${esc(h.direccion || '—')}</td>
         <td>${contactoHTML(h)}</td>
-        <td class="num">${h.hab_total}</td>
+        <td class="num"><b>${h.hab_disponibles}</b></td>
         <td class="num"><b>${h.camas_max}</b></td>
+        <td class="num sec">${h.hab_total}</td>
       </tr>`).join('')}</tbody></table></div>`;
     return;
   }
@@ -108,10 +137,10 @@ function renderDisponibles() {
       </div>
       <div class="ficha-b">
         <div class="cap">
-          <div class="cap-i"><div class="cap-n">${h.hab_total}</div><div class="cap-l">Habitaciones</div></div>
-          <div class="cap-i"><div class="cap-n">${h.camas_max}</div><div class="cap-l">Camas máx.</div></div>
+          <div class="cap-i"><div class="cap-n">${h.hab_disponibles}</div><div class="cap-l">Hab. libres</div></div>
+          <div class="cap-i"><div class="cap-n">${h.camas_max}</div><div class="cap-l">Camas</div></div>
         </div>
-        <div class="detalle">${h.hab_simples} simple${h.hab_simples === 1 ? '' : 's'} · ${h.hab_dobles} doble${h.hab_dobles === 1 ? '' : 's'}</div>
+        <div class="detalle">${h.hab_simples} simple${h.hab_simples === 1 ? '' : 's'} · ${h.hab_dobles} doble${h.hab_dobles === 1 ? '' : 's'}${h.hab_ocupadas ? ` · <span class="ocup">${h.hab_ocupadas} ocupada${h.hab_ocupadas === 1 ? '' : 's'}</span>` : ''}</div>
         ${contactoHTML(h, true)}
       </div>
       <button class="ficha-btn">Ver ficha →</button>
@@ -206,11 +235,13 @@ function verFicha(id) {
     <div class="modal-body">
       <div class="dcf-layout">
         <div class="dcf-left">
-          <div class="dcf-sec-t">Capacidad</div>
-          <div class="dcf-item"><span class="dcf-ico">🛏</span><div><div class="dcf-l">Habitaciones simples</div><div class="dcf-v">${h.hab_simples}</div></div></div>
-          <div class="dcf-item"><span class="dcf-ico">🛏</span><div><div class="dcf-l">Habitaciones dobles</div><div class="dcf-v">${h.hab_dobles}</div></div></div>
-          <div class="dcf-item"><span class="dcf-ico">🏨</span><div><div class="dcf-l">Total habitaciones</div><div class="dcf-v"><b>${h.hab_total}</b></div></div></div>
-          <div class="dcf-item"><span class="dcf-ico">🧍</span><div><div class="dcf-l">Camas máximo</div><div class="dcf-v"><b>${h.camas_max}</b><br><span style="font-size:.72rem;color:var(--text-muted)">una doble puede usarse como simple</span></div></div></div>
+          <div class="dcf-sec-t">Disponibilidad ahora</div>
+          <div class="dcf-item"><span class="dcf-ico">🛏</span><div><div class="dcf-l">Simples libres</div><div class="dcf-v">${h.hab_simples}</div></div></div>
+          <div class="dcf-item"><span class="dcf-ico">🛏</span><div><div class="dcf-l">Dobles libres</div><div class="dcf-v">${h.hab_dobles}</div></div></div>
+          <div class="dcf-item"><span class="dcf-ico">✅</span><div><div class="dcf-l">Habitaciones libres</div><div class="dcf-v"><b>${h.hab_disponibles}</b></div></div></div>
+          <div class="dcf-item"><span class="dcf-ico">🧍</span><div><div class="dcf-l">Camas disponibles</div><div class="dcf-v"><b>${h.camas_max}</b><br><span style="font-size:.72rem;color:var(--text-muted)">una doble puede usarse como simple</span></div></div></div>
+          <div class="dcf-sec-t" style="margin-top:18px">Capacidad instalada</div>
+          <div class="dcf-item"><span class="dcf-ico">🏨</span><div><div class="dcf-l">Total del hospedaje</div><div class="dcf-v">${h.hab_total} habitaciones${h.hab_ocupadas ? ` · ${h.hab_ocupadas} con contrato` : ''}</div></div></div>
         </div>
         <div class="dcf-right">
           <div class="dcf-sec-t">Contacto</div>
