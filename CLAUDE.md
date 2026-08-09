@@ -93,14 +93,20 @@ un proveedor ni qué es una faena, y así debe seguir. Para agregar un módulo
 al menú se edita el config, **nunca el Home**.
 
 > ⚠️ **Única excepción (P-3, `docs/PENDIENTES.md`), acotada a propósito:**
-> el Home lee las `storageKey` de sesión de los 8 módulos en `localStorage`
-> (sin red, sin cargar Supabase) para **ocultar** — nunca para revelar — las
-> tarjetas de `proveedores`/`empleabilidad` si la sesión existente no tiene
-> ese acceso. Sigue sin saber qué es un módulo: solo compara el slug
-> `acceso`/`accesoAlterno` de cada entrada contra `accesos` del JWT. Los 6
-> módulos ocultos por `visibleEnHome: false` siguen ocultos siempre, sin
-> importar el acceso real — eso seguiría siendo un cambio de comportamiento
-> mayor, no cubierto por esta excepción.
+> el Home lee las `storageKey` de sesión de los módulos en `localStorage`
+> (sin red, sin cargar Supabase) para **atenuar** las tarjetas que la sesión
+> actual no puede abrir. Sigue sin saber qué es un módulo: solo compara el
+> slug `acceso`/`accesoAlterno` de cada entrada contra `accesos` del JWT.
+>
+> **Antes las ocultaba, y fue un error.** Un usuario con un solo acceso veía
+> una tarjeta suelta rodeada de huecos y creía que la página estaba rota.
+> Ocultar tampoco protegía nada: `modules.config.js` es un archivo público
+> que cualquiera puede abrir, y lo que protege de verdad son las políticas
+> RLS (Regla 3). Hoy se muestran todas, atenuadas y con candado las que no
+> se pueden abrir, y siguen siendo clicables por si la persona tiene otra
+> cuenta.
+>
+> Un módulo con `publico: true` (hoy solo `hoteles-sg`) nunca se atenúa.
 
 ### 🥇 Regla 8 — Un módulo no depende de otro
 

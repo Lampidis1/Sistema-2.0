@@ -32,8 +32,8 @@
 //                 Planer, Gestión de usuarios
 // El orden dentro de cada nivel es el orden en que aparecen en este array.
 //
-// CAMPO `icono` — normalmente un emoji. Si el valor termina en `.png` (ruta
-// a shared/assets/), el Home lo pinta como <img> en vez de texto — se usa
+// CAMPO `icono` — normalmente un emoji. Si el valor termina en `.png` o `.svg`
+// (ruta a shared/assets/), el Home lo pinta como <img> en vez de texto — se usa
 // para las 3 faenas, que muestran la marca "A" de Antofagasta Minerals en
 // vez de un emoji.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -96,7 +96,7 @@ window.AM_MODULES = [
     id: 'hoteles-sg',
     nombre: 'Hoteles SG',
     descripcion: 'Disponibilidad de hospedajes del programa MGI en Sierra Gorda. Página pública, sin clave.',
-    icono: '🛏️',
+    icono: 'shared/assets/icono-hospedaje.svg',
     ruta: 'modules/hoteles-sg/',
     acceso: null,              // pública: no pide sesión (lee una vista acotada)
     publico: true,             // el Home nunca la oculta (ver tieneAcceso en index.html)

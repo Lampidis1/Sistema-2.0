@@ -48,6 +48,13 @@
   .badge{display:inline-block;background:#E4F6F5;color:#006973;border-radius:20px;padding:4px 14px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
   .foot{color:#98a4ac;font-size:.72rem;letter-spacing:.04em;text-align:center;margin-top:10px}
   .empty{grid-column:1/-1;color:#98a4ac;font-size:.8rem;text-align:center;padding:10px;font-style:italic}
+
+  /* Módulo que la sesión actual no puede abrir: se muestra igual, atenuado
+     y con candado, en vez de desaparecer y dejar la página con huecos. */
+  .card-principal,.card-medio,.card-chico{position:relative}
+  .sin-acceso{opacity:.42;filter:grayscale(.85)}
+  .sin-acceso:hover{opacity:.72;filter:grayscale(.35)}
+  .candado{position:absolute;top:8px;right:10px;font-size:.9rem;opacity:.8}
 </style>
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/). -->
 <link rel="stylesheet" href="shared/css/responsive.css?v=20260808f">
@@ -72,7 +79,7 @@
   </div>
 <!-- ?v= : obliga al navegador a bajar el config nuevo tras un despliegue en
      vez de servir su copia guardada. Subir el número al editar el config. -->
-<script src="config/modules.config.js?v=20260808g"></script>
+<script src="config/modules.config.js?v=20260808h"></script>
 <script>
 // El Home no conoce ningun modulo: solo pinta lo que declara modules.config.js.
 (function () {
@@ -130,8 +137,16 @@
     return false;
   }
 
+  // Antes las tarjetas sin acceso se OCULTABAN. El resultado era un Home casi
+  // vacío -- un usuario con un solo acceso veía una tarjeta suelta y huecos, y
+  // parecía que la página estaba rota. Además ocultar no protegía nada: este
+  // config es un archivo público que cualquiera puede abrir, y lo que protege
+  // de verdad son las políticas RLS (CLAUDE.md Regla 3).
+  // Ahora se muestran todas y las que la sesión no puede abrir van atenuadas
+  // con un candado, pero siguen siendo clicables: quien tenga otra cuenta
+  // puede iniciar sesión ahí.
   var sesion = leerSesion();
-  mods = mods.filter(function (m) { return tieneAcceso(m, sesion); });
+  mods.forEach(function (m) { m._sinAcceso = !tieneAcceso(m, sesion); });
 
   function esc(t) {
     return String(t).replace(/[&<>"]/g, function (c) {
@@ -141,12 +156,15 @@
 
   function tarjeta(m, clase, conDescripcion) {
     var prox = m.estado === 'proximamente';
-    var esImg = /\.png$/i.test(m.icono || '');
+    var esImg = /\.(png|svg)$/i.test(m.icono || '');
     var ic = esImg
       ? '<img src="' + esc(m.icono) + '" alt="" class="ic-img">'
       : esc(m.icono);
-    return '<a class="' + clase + '" href="' + (prox ? '#' : esc(m.ruta)) + '"' +
-           (prox ? ' style="opacity:.55;cursor:default" onclick="return false"' : '') + '>' +
+    var cls = clase + (m._sinAcceso ? ' sin-acceso' : '');
+    return '<a class="' + cls + '" href="' + (prox ? '#' : esc(m.ruta)) + '"' +
+           (prox ? ' style="opacity:.55;cursor:default" onclick="return false"' : '') +
+           (m._sinAcceso ? ' title="Tu sesión actual no tiene acceso a este módulo"' : '') + '>' +
+           (m._sinAcceso ? '<span class="candado">🔒</span>' : '') +
            '<div class="ic">' + ic + '</div>' +
            '<div class="ct">' + (m.nombre ? esc(m.nombre) + (prox ? ' · Próximamente' : '') : (prox ? 'Próximamente' : '')) + '</div>' +
            (conDescripcion ? '<div class="cd">' + esc(m.descripcion) + '</div>' : '') +
