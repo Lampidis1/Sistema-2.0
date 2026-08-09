@@ -241,6 +241,7 @@
             <option value="za">Nombre Z → A</option>
             <option value="loc">Por localidad</option>
           </select>
+          <button class="rbar-extra" onclick="exportarBaseCompleta()" style="border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;font-size:.82rem;cursor:pointer;background:#fff;color:var(--primary)" title="Bajar toda la base a Excel para editarla fuera y volver a subirla">📤 Bajar base</button>
           <button class="rbar-extra" onclick="abrirRutDuplicados()" style="border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;font-size:.82rem;cursor:pointer;background:#fff;color:var(--primary)" title="Buscar empresas con el mismo RUT">🔎 RUT duplicados</button>
           <button class="btn-add-prov" onclick="openNuevoProveedor()" title="Agregar un proveedor nuevo">➕ Nuevo proveedor</button>
         </div>
@@ -380,11 +381,11 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<script src="proveedores.js?v=20260808"></script>
+<script src="proveedores.js?v=20260808g"></script>
 <script src="proveedores-programas.js?v=20260808"></script>
 <script src="proveedores-compromisos.js?v=20260808"></script>
 <script src="proveedores-agenda.js?v=20260808"></script>
-<script src="proveedores-pdf.js?v=20260808"></script>
+<script src="proveedores-pdf.js?v=20260808g"></script>
 
 <!-- MODAL AYUDA SUPABASE -->
 <div id="syncHelpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center">
@@ -856,6 +857,7 @@
       <label class="mnav-act" style="cursor:pointer;text-align:center">📊 Subir Excel
         <input type="file" accept=".xlsx,.xls" multiple style="display:none" onchange="handleFiles(this.files);toggleMobileNav()">
       </label>
+      <button class="mnav-act" onclick="exportarBaseCompleta();toggleMobileNav()">📤 Bajar base completa (Excel)</button>
     </div>
   </div>
   <div class="mnav-secciones">

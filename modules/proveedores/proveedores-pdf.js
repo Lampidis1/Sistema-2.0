@@ -238,3 +238,66 @@ async function confirmarSubirMinutaManual(){
     btn.disabled=false; btn.textContent='Subir y registrar';
   }
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BASE COMPLETA A EXCEL
+// Para depurar la base fuera del sistema: se baja todo, se corrige en Excel y
+// se vuelve a subir con "Subir Excel" (handleFiles), que cruza por RUT.
+//
+// ⚠️ El archivo trae RUT, correos y teléfonos de todos los proveedores. Es
+// información interna: no se sube a la nube ni se comparte fuera de AMSA
+// (CLAUDE.md Regla 5).
+// ═══════════════════════════════════════════════════════════════════════════
+function exportarBaseCompleta(){
+  if(typeof XLSX==='undefined'){ showToast('La librería de Excel no cargó','err'); return; }
+  if(!PROVEEDORES.length){ showToast('No hay proveedores cargados','err'); return; }
+
+  const filas = PROVEEDORES.map(p=>{
+    const cs = DB.contactos[p._id]||[];
+    const cp = cs.find(c=>c.principal)||cs[0]||{};
+    const h  = DB.hoteles[p._id]||{};
+    return {
+      'ID (no editar)'      : p._id,
+      'RUT empresa'         : p.rut_empresa||'',
+      'Razón social'        : p.razon_social||'',
+      'Nombre fantasía'     : p.nombre_fantasia||'',
+      'Localidad'           : p.localidad||'',
+      'Dirección'           : p.direccion||'',
+      'Correo empresa'      : p.correo||'',
+      'Teléfono empresa'    : p.fono||'',
+      'Contacto'            : cp.nombre||'',
+      'Cargo contacto'      : cp.cargo||'',
+      'Teléfono contacto'   : cp.fono||'',
+      'Correo contacto'     : cp.correo||'',
+      'Rubros'              : (p.rubrosNorm||[]).join(' | '),
+      'Giros SII'           : (p.giros||[]).join(' | '),
+      'Actividad principal' : p.actividad_principal||'',
+      'Categoría SII'       : p.categoria_sii||'',
+      'Facturación'         : p.facturar||'',
+      'Agrupación gremial'  : p.agrupacion||'',
+      'Servicios con AM'    : p.servicio_am||'',
+      'Rango de trabajos'   : p.rango_trabajos||'',
+      'Experiencia CEN'     : p.pub_centinela?'Sí':'No',
+      'Experiencia ANT'     : p.pub_antucoya ?'Sí':'No',
+      'Experiencia CMZ'     : p.pub_zaldivar ?'Sí':'No',
+      'Programa MGI'        : p.programa_mgi===true?'Sí':p.programa_mgi===false?'No':'(sin definir)',
+      'Sección MGI'         : p.programa_mgi_rubro||'',
+      'Hab. simples'        : h.simples||0,
+      'Hab. dobles'         : h.dobles||0,
+      'Descripción'         : p.descripcion||'',
+      'Notas'               : p.notas_ficha||'',
+      'Estado'              : p.estado||'Activo',
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(filas);
+  ws['!cols'] = Object.keys(filas[0]).map(k=>({wch: k==='Descripción'||k==='Notas' ? 42 : Math.max(14, k.length+2)}));
+  ws['!autofilter'] = {ref: ws['!ref']};
+  ws['!freeze'] = {xSplit:0, ySplit:1};
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Proveedores');
+  const hoy = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `base-proveedores-${hoy}.xlsx`);
+  showToast(`📤 ${filas.length} proveedores exportados`,'success');
+}

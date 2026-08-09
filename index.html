@@ -72,7 +72,7 @@
   </div>
 <!-- ?v= : obliga al navegador a bajar el config nuevo tras un despliegue en
      vez de servir su copia guardada. Subir el número al editar el config. -->
-<script src="config/modules.config.js?v=20260808"></script>
+<script src="config/modules.config.js?v=20260808g"></script>
 <script>
 // El Home no conoce ningun modulo: solo pinta lo que declara modules.config.js.
 (function () {
@@ -118,6 +118,7 @@
   }
 
   function tieneAcceso(m, sesion) {
+    if (m.publico) return true;   // pagina publica: visible siempre, con o sin sesion
     if (!sesion) return true; // sin sesion: no se oculta nada
     if (sesion.rol === 'admin') return true;
     if (sesion.estado !== 'aprobado') return false;

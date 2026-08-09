@@ -1,0 +1,101 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   hoteles-sg.css — Página pública de disponibilidad · Sierra Gorda
+   Misma estética del sistema (teal AMSA). La ficha emergente viene de
+   shared/css/ficha-modal.css, igual que en Proveedores y MGI.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root{
+  --primary:#00778A; --primary-dark:#006973; --primary-mid:#00A399; --primary-light:#E4F6F5;
+  --gold:#F2A900; --text:#1c2632; --text-light:#5a6474; --text-muted:#6b7780;
+  --border:#D7DEE4; --bg:#F4F7F8; --green:#1a7a38;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text)}
+
+/* CABECERA */
+.top{background:linear-gradient(135deg,#006973,#00A399);color:#fff;padding:16px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.top img{height:38px}
+.top-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.35rem;letter-spacing:.04em;text-transform:uppercase;line-height:1}
+.top-s{font-size:.74rem;opacity:.92;letter-spacing:.05em;text-transform:uppercase;margin-top:2px}
+.top-badge{margin-left:auto;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:6px 15px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+
+.wrap{max-width:1180px;margin:0 auto;padding:20px}
+
+/* INDICADORES */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:#fff;border:1px solid var(--border);border-radius:12px;padding:15px;text-align:center}
+.kpi-n{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:2rem;color:var(--primary-dark);line-height:1}
+.kpi-l{font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-top:3px}
+
+/* PESTAÑAS */
+.tabs{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:16px;overflow-x:auto}
+.tab-b{background:none;border:none;padding:11px 20px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.95rem;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.tab-b.active{color:var(--primary-dark);border-bottom-color:var(--primary-dark)}
+
+.barra{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.buscar{flex:1;min-width:220px;border:1.5px solid var(--border);border-radius:10px;padding:11px 15px;font-size:.95rem;outline:none;font-family:inherit}
+.buscar:focus{border-color:var(--primary)}
+.seg{display:flex;border:1.5px solid var(--border);border-radius:9px;overflow:hidden;background:#fff}
+.seg-b{background:#fff;border:none;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.88rem;cursor:pointer;color:var(--text-muted)}
+.seg-b.active{background:var(--primary);color:#fff}
+
+.nota{background:var(--primary-light);border-left:3px solid var(--primary);border-radius:0 8px 8px 0;padding:10px 14px;font-size:.85rem;color:var(--primary-dark);margin-bottom:14px}
+.cargando{text-align:center;padding:50px 20px;color:var(--text-muted);font-style:italic}
+
+/* FICHAS */
+.fichas{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:15px}
+.ficha{background:#fff;border:1.5px solid var(--border);border-radius:13px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:.14s}
+.ficha:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,105,115,.14);border-color:var(--primary-mid)}
+.ficha-h{background:linear-gradient(135deg,#006973,#00A399);color:#fff;padding:13px 15px}
+.ficha-n{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.16rem;line-height:1.15}
+.ficha-d{font-size:.74rem;opacity:.92;margin-top:3px}
+.ficha-b{padding:13px 15px;flex:1}
+.cap{display:flex;gap:9px;margin-bottom:9px}
+.cap-i{flex:1;text-align:center;background:var(--primary-light);border-radius:9px;padding:9px 5px}
+.cap-n{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.6rem;color:var(--primary-dark);line-height:1}
+.cap-l{font-size:.64rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+.detalle{font-size:.8rem;color:var(--text-muted);margin-bottom:9px}
+.ct-box{display:flex;flex-direction:column;gap:5px}
+.ct{font-size:.79rem;text-decoration:none;padding:6px 10px;border-radius:7px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ct.tel{background:#E7F8EE;color:#12803c;font-weight:700}
+.ct.mail{background:#EEF3FB;color:#1a56db}
+.ct-vacio{font-size:.78rem;color:var(--text-muted);font-style:italic}
+.ficha-btn{border:none;border-top:1px solid var(--border);background:#fafdfd;color:var(--primary-dark);padding:11px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.9rem;letter-spacing:.04em;cursor:pointer;width:100%}
+.ficha-btn:hover{background:var(--primary);color:#fff}
+
+/* TABLA */
+.tabla-wrap{background:#fff;border:1px solid var(--border);border-radius:12px;overflow-x:auto}
+.tabla{width:100%;border-collapse:collapse;font-size:.87rem}
+.tabla th{background:var(--primary-light);color:var(--primary-dark);text-align:left;padding:11px 14px;font-family:'Barlow Condensed',sans-serif;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.tabla td{padding:11px 14px;border-top:1px solid var(--border);vertical-align:middle}
+.tabla tbody tr{cursor:pointer}
+.tabla tbody tr:hover td{background:#f7fbfc}
+.tabla .num{text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem}
+
+/* MAPA */
+#mapa{height:520px;border-radius:12px;border:1.5px solid var(--border);z-index:1}
+.aviso{background:#FFF8E6;border:1px solid #F2CE7A;border-radius:10px;padding:13px 16px;font-size:.85rem;margin-top:14px;color:#7a5a00}
+.aviso-lista{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.aviso-lista span{background:#fff;border:1px solid #F2CE7A;border-radius:16px;padding:4px 12px;font-size:.79rem;cursor:pointer;color:var(--text)}
+.aviso-lista span:hover{background:var(--gold);color:#1c2632}
+
+/* AGRUPADO POR EMPRESA */
+.grupo{background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.grupo-h{background:#f4f8f9;padding:11px 15px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.grupo-n{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.02rem;color:var(--primary-dark);text-transform:uppercase;letter-spacing:.02em}
+.grupo-m{font-size:.76rem;color:var(--text-muted)}
+.grupo-i{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 15px;border-top:1px solid #eef2f3;cursor:pointer}
+.grupo-i:hover{background:#f7fbfc}
+.gi-n{font-weight:600;font-size:.93rem}
+.gi-d{font-size:.76rem;color:var(--text-muted);margin-top:1px}
+.gi-c{text-align:right;font-size:.76rem;color:var(--text-muted);white-space:nowrap}
+.gi-c b{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;color:var(--primary-dark)}
+.gi-sd{font-style:italic;opacity:.75}
+
+.pie{text-align:center;color:var(--text-muted);font-size:.78rem;line-height:1.7;margin:32px 0 12px;padding-top:18px;border-top:1px solid var(--border)}
+
+@media(max-width:900px){ .kpis{grid-template-columns:repeat(2,1fr)} }
+@media(max-width:599px){
+  .top-badge{margin-left:0;width:100%;text-align:center}
+  #mapa{height:400px}
+}

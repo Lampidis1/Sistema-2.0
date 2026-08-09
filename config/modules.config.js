@@ -93,17 +93,17 @@ window.AM_MODULES = [
     doc: 'docs/modulos/movil.md',
   },
   {
-    // Reservado: próxima función a definir. Solo ocupa el espacio en el
-    // grid de 3 columnas para que las faenas empiecen su propia fila.
-    id: 'proximo-medio-1',
-    nombre: '',
-    descripcion: 'Nueva función en camino.',
-    icono: '✨',
-    ruta: '#',
-    acceso: null,
-    estado: 'proximamente',
+    id: 'hoteles-sg',
+    nombre: 'Hoteles SG',
+    descripcion: 'Disponibilidad de hospedajes del programa MGI en Sierra Gorda. Página pública, sin clave.',
+    icono: '🛏️',
+    ruta: 'modules/hoteles-sg/',
+    acceso: null,              // pública: no pide sesión (lee una vista acotada)
+    publico: true,             // el Home nunca la oculta (ver tieneAcceso en index.html)
+    estado: 'activo',
     visibleEnHome: true,
     homeTier: 'medio',
+    doc: 'docs/modulos/hoteles-sg.md',
   },
   {
     id: 'centinela',

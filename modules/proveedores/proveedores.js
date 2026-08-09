@@ -1039,6 +1039,28 @@ function openEditModal(id){
             <label class="ef-faena-chip"><input type="checkbox" id="ef_pub_ant" ${p.pub_antucoya?'checked':''}><span><b>ANT</b> · Antucoya</span></label>
           </div>
         </div>
+
+        <!-- PROGRAMA MGI HABITABILIDAD ─────────────────────────────────────
+             Marcarlo suma el proveedor a la plataforma MGI con todas sus
+             funciones (visitas, estandarización, capacidad). Desmarcarlo lo
+             saca. Antes MGI adivinaba por el texto del rubro y no había forma
+             de entrar ni salir a voluntad. -->
+        <div class="form-field full" style="margin-top:18px">
+          <div style="background:linear-gradient(135deg,#5b4fcf,#4338ca);color:#fff;padding:9px 14px;border-radius:7px;margin-bottom:12px;font-family:'Barlow Condensed',sans-serif;font-weight:800;letter-spacing:.05em;text-transform:uppercase;font-size:.85rem">🏘 Programa MGI Habitabilidad</div>
+          <label class="ef-faena-chip" style="border-color:#5b4fcf">
+            <input type="checkbox" id="ef_mgi" ${p.programa_mgi===true?'checked':''} onchange="efMgiChange()">
+            <span><b>Participa del programa MGI</b><br><span style="font-size:.72rem;color:var(--text-muted)">Aparece en la plataforma MGI con visitas, estandarización y capacidad</span></span>
+          </label>
+          <div id="ef_mgi_rubro_box" style="margin-top:10px;${p.programa_mgi===true?'':'display:none'}">
+            <label style="font-size:.68rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.07em">Sección dentro de MGI</label>
+            <select id="ef_mgi_rubro" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;margin-top:4px">
+              <option value="hoteleria"    ${(p.programa_mgi_rubro||'hoteleria')==='hoteleria'?'selected':''}>🏨 Hotelería</option>
+              <option value="lavanderia"   ${p.programa_mgi_rubro==='lavanderia'?'selected':''}>🧺 Lavandería</option>
+              <option value="alimentacion" ${p.programa_mgi_rubro==='alimentacion'?'selected':''}>🍽 Alimentación</option>
+            </select>
+          </div>
+          ${p.programa_mgi===false?'<div style="margin-top:8px;font-size:.74rem;color:#b86000">Este proveedor fue sacado del programa explícitamente.</div>':''}
+        </div>
       </div>
       <!-- MAQUINARIA / FLOTA (se muestra si hay rubro de transporte o maquinaria) -->
       <div id="ef_maq_section" class="edit-section" style="display:block">
@@ -1070,6 +1092,12 @@ function openEditModal(id){
   _efFlota=Array.isArray(p.flota)?JSON.parse(JSON.stringify(p.flota)):[];
   efRenderMaq(); efRubrosChange();
 }
+// Muestra la seccion de MGI solo si el proveedor participa del programa.
+function efMgiChange(){
+  const on=!!document.getElementById('ef_mgi')?.checked;
+  const box=document.getElementById('ef_mgi_rubro_box');
+  if(box) box.style.display=on?'':'none';
+}
 function esc(s){ return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function saveEdit(id){
@@ -1097,6 +1125,13 @@ function saveEdit(id){
   p.pub_centinela      = !!document.getElementById('ef_pub_cen')?.checked;
   p.pub_antucoya       = !!document.getElementById('ef_pub_ant')?.checked;
   p.pub_zaldivar       = !!document.getElementById('ef_pub_zal')?.checked;
+  // Programa MGI: true = dentro, false = fuera. Nunca vuelve a null, porque
+  // una vez que alguien decide, esa decisión manda sobre la detección por texto.
+  if(document.getElementById('ef_mgi')){
+    p.programa_mgi       = !!document.getElementById('ef_mgi').checked;
+    p.programa_mgi_rubro = p.programa_mgi ? (document.getElementById('ef_mgi_rubro')?.value||'hoteleria') : null;
+    if(p.programa_mgi && p.programa_mgi_rubro==='hoteleria') p.es_hoteleria=true;
+  }
   // Giros: máximo 2 campos
   p.giros=[document.getElementById('ef_giro1')?.value.trim(),document.getElementById('ef_giro2')?.value.trim()].filter(Boolean);
   // Rubros: máximo 3 selectores (orden preservado)
@@ -3332,6 +3367,9 @@ function mapProvFromSupa(p){
     servicio_am:p.servicios_am||'', estado:p.estado_registro||'Activo',
     rango_trabajos:p.rango_trabajos||'', acceso_publico:!!p.acceso_publico,
     pub_centinela:!!p.pub_centinela, pub_antucoya:!!p.pub_antucoya, pub_zaldivar:!!p.pub_zaldivar,
+    // Programa MGI: se conserva null (= decidir por texto, como siempre)
+    programa_mgi:(p.programa_mgi===null||p.programa_mgi===undefined)?null:!!p.programa_mgi,
+    programa_mgi_rubro:p.programa_mgi_rubro||null, es_hoteleria:!!p.es_hoteleria,
     flota:(()=>{try{return JSON.parse(p.flota_json||'[]')||[];}catch(e){return [];}})(),
     fotos:(()=>{try{return JSON.parse(p.fotos_json||'[]')||[];}catch(e){return [];}})(),
     notas_ficha:p.notas_ficha||'',
@@ -3363,6 +3401,8 @@ async function gSyncPush(proveedorId){
       servicios_am: p.servicio_am||'', estado_registro: p.estado||'Activo',
       rango_trabajos: p.rango_trabajos||'', acceso_publico: !!p.acceso_publico,
       pub_centinela: !!p.pub_centinela, pub_antucoya: !!p.pub_antucoya, pub_zaldivar: !!p.pub_zaldivar,
+      programa_mgi: (p.programa_mgi===null||p.programa_mgi===undefined)?null:!!p.programa_mgi,
+      programa_mgi_rubro: p.programa_mgi_rubro||null, es_hoteleria: !!p.es_hoteleria,
       flota_json: JSON.stringify(p.flota||[]),
       notas_ficha: p.notas_ficha||'',
       fuente:'web_v2', updated_at: now,
