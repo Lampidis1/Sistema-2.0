@@ -157,16 +157,68 @@ function contactoHTML(h, bloque) {
 }
 
 // ── 2 · MAPA ────────────────────────────────────────────────────────────────
+// El mapa NO usa imágenes de un servidor externo. El pueblo entero (calles,
+// manzanas y línea férrea) son 55 KB de GeoJSON guardados en el repositorio y
+// servidos por Vercel, así que ningún tercero ve la IP de quien entra y la
+// página funciona aunque el servicio de mapas de turno se caiga.
+//
+// El archivo se extrajo una vez de OpenStreetMap. Para actualizarlo, ver
+// docs/modulos/hoteles-sg.md.
+const ESTILO_MAPA = {
+  principal: { color: '#9aa8ae', weight: 5 },
+  calle:     { color: '#b9c4c9', weight: 3.5 },
+  camino:    { color: '#cfd7da', weight: 1.6, dashArray: '4,4' },
+  tren:      { color: '#8b98a0', weight: 2, dashArray: '9,6' },
+  edificio:  { color: '#cbd5d8', weight: .8, fill: true, fillColor: '#e3eaec', fillOpacity: 1 },
+  zona:      { color: '#dfe7e4', weight: .8, fill: true, fillColor: '#eef3f0', fillOpacity: .8 },
+};
+
+function dibujarPueblo() {
+  fetch('../../shared/assets/mapa-sierra-gorda.geojson')
+    .then(r => r.json())
+    .then(gj => {
+      L.geoJSON(gj, {
+        style: f => Object.assign({ fill: false, lineCap: 'round', lineJoin: 'round' },
+                                  ESTILO_MAPA[f.properties.c] || ESTILO_MAPA.camino),
+        interactive: false,
+      }).addTo(MAPA).bringToBack();
+
+      // Nombre de la calle, UNA vez por calle. Una misma calle viene partida en
+      // varios segmentos: se rotula el mas largo, no cada trozo.
+      const porNombre = {};
+      gj.features.filter(f => f.properties.n && (f.properties.c === 'calle' || f.properties.c === 'principal'))
+        .forEach(f => {
+          const cs = f.geometry.coordinates;
+          const largo = cs.length;
+          if (!porNombre[f.properties.n] || largo > porNombre[f.properties.n].largo) {
+            porNombre[f.properties.n] = { cs: cs, largo: largo };
+          }
+        });
+      Object.keys(porNombre).forEach(n => {
+        const cs = porNombre[n].cs;
+        const m = cs[Math.floor(cs.length / 2)];
+        if (!m) return;
+        L.marker([m[1], m[0]], {
+          interactive: false,
+          icon: L.divIcon({ className: 'calle-lbl', html: n, iconSize: [0, 0] }),
+        }).addTo(MAPA);
+      });
+    })
+    .catch(() => {
+      document.getElementById('mapa').insertAdjacentHTML('beforeend',
+        '<div class="mapa-error">No se pudo cargar el plano del pueblo.</div>');
+    });
+}
+
 function renderMapa() {
   const conUbic = disponibles().filter(h => h.lat && h.lng);
   const sinUbic = disponibles().filter(h => !h.lat || !h.lng);
 
   if (!MAPA) {
-    MAPA = L.map('mapa').setView(SIERRA_GORDA, 16);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© colaboradores de OpenStreetMap',
-    }).addTo(MAPA);
+    MAPA = L.map('mapa', { attributionControl: false }).setView(SIERRA_GORDA, 17);
+    L.control.attribution({ prefix: false })
+      .addAttribution('Calles © colaboradores de OpenStreetMap (ODbL)').addTo(MAPA);
+    dibujarPueblo();
   }
   MARCADORES.forEach(m => MAPA.removeLayer(m));
   MARCADORES = [];
@@ -177,11 +229,21 @@ function renderMapa() {
   conUbic.forEach(h => {
     const k = h.lat.toFixed(5) + ',' + h.lng.toFixed(5);
     const n = (usados[k] = (usados[k] || 0) + 1) - 1;
-    const ang = n * 2.4, rad = n === 0 ? 0 : 0.00012 * Math.sqrt(n);
+    // espiral: separa lo suficiente para poder tocar cada uno con el dedo
+    const ang = n * 2.399963, rad = n === 0 ? 0 : 0.00019 * Math.sqrt(n + 0.6);
     const lat = h.lat + rad * Math.cos(ang), lng = h.lng + rad * Math.sin(ang);
-    const m = L.marker([lat, lng]).addTo(MAPA);
+    // pin propio: muestra las habitaciones libres y no depende de imagenes
+    // externas (los iconos por defecto de Leaflet se bajan de su CDN)
+    const m = L.marker([lat, lng], {
+      icon: L.divIcon({
+        className: 'pin-wrap',
+        html: `<div class="pin"><span>${h.hab_disponibles}</span></div>`,
+        iconSize: [30, 38], iconAnchor: [15, 38], popupAnchor: [0, -34],
+      }),
+      title: h.nombre,
+    }).addTo(MAPA);
     m.bindPopup(`<b>${esc(h.nombre)}</b><br>${esc(h.direccion || '')}<br>
-      <span style="color:#006973"><b>${h.hab_total}</b> hab · <b>${h.camas_max}</b> camas máx.</span><br>
+      <span style="color:#006973"><b>${h.hab_disponibles}</b> hab. libres · <b>${h.camas_max}</b> camas</span><br>
       ${h.fono ? '📞 ' + esc(h.fono) : ''}`);
     MARCADORES.push(m);
   });

@@ -58,17 +58,66 @@ Verificado: `proveedores` sigue devolviendo `[]` a un cliente sin sesión.
 `camas_max = simples + dobles × 2`, porque **una habitación doble puede
 ocuparse como simple**. Lo calcula la vista, no el navegador.
 
-## Dependencia nueva: Leaflet + OpenStreetMap
+## El mapa no depende de ningún servidor de mapas
 
-- **Leaflet 1.9.4** (BSD-2, sin dependencias, ~147 KB) por CDN, versión fija
-  como las otras 7 librerías.
-- Las imágenes del mapa vienen de **`tile.openstreetmap.org`**. Eso significa
-  que el navegador de cada visitante hace peticiones a ese servidor, y por
-  tanto **expone su IP a un tercero** — el mismo problema que Google Fonts
-  (`docs/PENDIENTES.md` → P-5). OpenStreetMap es una fundación sin fines de
-  lucro, no una red publicitaria, pero es un tercero igual.
-  Alternativa si algún día molesta: una imagen estática del pueblo con los
-  puntos dibujados encima, sin ninguna llamada externa.
+**Leaflet 1.9.4** (BSD-2, sin dependencias) por CDN, versión fija como las
+otras librerías. Pero **el mapa en sí es un archivo del repositorio**:
+
+`shared/assets/mapa-sierra-gorda.geojson` — 55 KB con el pueblo completo:
+124 elementos entre calles, manzanas, edificios y la línea férrea.
+
+Ventajas de tenerlo local en vez de pedir imágenes a un servidor de mapas:
+
+- **Ningún tercero ve la IP** de quien entra a la página (a diferencia de
+  `tile.openstreetmap.org` o Google Maps).
+- **Funciona aunque el servicio de mapas de turno se caiga** o cambie sus
+  condiciones de uso.
+- Pesa menos que las imágenes de un solo nivel de zoom, y se ve nítido en
+  cualquier zoom porque es vectorial.
+- Los marcadores también son propios (`divIcon` con CSS) y muestran las
+  habitaciones libres: los iconos que trae Leaflet se bajan de su CDN.
+
+**Atribución obligatoria:** los datos son de OpenStreetMap bajo ODbL, así que
+el mapa muestra «Calles © colaboradores de OpenStreetMap (ODbL)». No se puede
+quitar.
+
+### Cómo actualizar el plano del pueblo
+
+```bash
+curl -s -X POST https://overpass-api.de/api/interpreter --data-binary @- <<'EOF' -o osm.json
+[out:json][timeout:90];
+(
+  way["highway"](-22.9010,-69.3320,-22.8820,-69.3090);
+  way["building"](-22.9010,-69.3320,-22.8820,-69.3090);
+  way["landuse"](-22.9010,-69.3320,-22.8820,-69.3090);
+  way["railway"](-22.9010,-69.3320,-22.8820,-69.3090);
+);
+out geom;
+EOF
+```
+
+Después se convierte a GeoJSON con las clases que usa el CSS (`principal`,
+`calle`, `camino`, `edificio`, `tren`, `zona`) y coordenadas a 5 decimales
+(≈1 m, suficiente y mantiene el archivo chico).
+
+### Por qué faltan hospedajes de calle Díaz Gana
+
+**Esa calle no existe en OpenStreetMap** — se verificó con Overpass: el pueblo
+tiene 15 calles con nombre y Díaz Gana no está entre ellas. Por eso esos
+hospedajes no se pudieron geocodificar y aparecen listados bajo el mapa.
+
+Dos salidas: agregar la calle a OpenStreetMap (queda para todos y en la
+próxima extracción aparece sola), o cargar a mano `lat`/`lng` de esos
+hospedajes editando el proveedor.
+
+### Sobre Google Maps
+
+Se evaluó. **Descargar sus mapas no es viable**: sus condiciones prohíben
+almacenar o servir sus imágenes por fuera de su API. Usar la API en vivo
+exige una clave con facturación asociada (visible en el navegador, aunque se
+puede restringir por dominio), cobra pasado un tramo gratuito, y hace que
+Google vea la IP de cada visitante. Para un pueblo de 15 calles, el GeoJSON
+local cubre la necesidad sin ninguna de esas contras.
 
 ## Las coordenadas
 
