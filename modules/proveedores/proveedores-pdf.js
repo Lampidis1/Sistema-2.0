@@ -275,6 +275,58 @@ function rutValido(r){
 const _valRut  = r => String(r||'').toUpperCase().replace(/[^0-9K]/g,'');
 const _valNom  = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
 
+// Distancia de edición: cuántos cambios de una letra separan dos textos.
+// Sirve para pillar errores de tipeo, que es lo que de verdad produce fichas
+// repetidas: «Hostal Tronar 3» vs «Hotal Tronar 3».
+function _distancia(a,b){
+  if(a===b) return 0;
+  if(!a.length||!b.length) return Math.max(a.length,b.length);
+  let prev=Array.from({length:b.length+1},(_,i)=>i);
+  for(let i=1;i<=a.length;i++){
+    const fila=[i];
+    for(let j=1;j<=b.length;j++){
+      fila[j]=Math.min(prev[j]+1, fila[j-1]+1, prev[j-1]+(a[i-1]===b[j-1]?0:1));
+    }
+    prev=fila;
+  }
+  return prev[b.length];
+}
+
+// ¿Dos fichas del mismo RUT son el MISMO local, o dos establecimientos?
+//
+// Compartir RUT NO es un error: el RUT es de la empresa, no del local. Una
+// misma empresa tiene varias sucursales (Hostal Minero 1 al 5, los Tronar), e
+// incluso puede tener dos negocios de rubro distinto en la misma dirección
+// (una lavandería y un hospedaje).
+//
+// Solo se marca como sospechoso cuando:
+//   · coinciden dirección Y rubro  → casi seguro es la misma ficha dos veces
+//   · los nombres se diferencian en 1-2 letras → error de tipeo
+function _mismoLocal(a,b){
+  const da=_valNom(a.direccion), db=_valNom(b.direccion);
+  const ra=(a.rubrosNorm||[]).join('|'), rb=(b.rubrosNorm||[]).join('|');
+  if(da && db && da===db){
+    // misma dirección: solo es duplicado si además el rubro coincide.
+    // Si los rubros difieren son dos negocios en el mismo local.
+    if(!ra || !rb || ra===rb) return 'misma dirección y mismo rubro';
+    return null;
+  }
+  const na=_valNom(a.nombre_fantasia||a.razon_social), nb=_valNom(b.nombre_fantasia||b.razon_social);
+  if(na && nb && na!==nb){
+    // Las sucursales se numeran: «Hostal Tronar», «Hostal Tronar 2»,
+    // «Hostal Tronar 3»… Si al quitar el número final quedan iguales, son
+    // locales distintos de la misma cadena y NO hay nada que revisar.
+    const baseA=na.replace(/\d+$/,''), baseB=nb.replace(/\d+$/,'');
+    if(baseA===baseB) return null;
+    // Distintas de verdad: 1-2 letras de diferencia es un error de tipeo
+    // («Hostal Tronar 3» vs «Hotal Tronar 3»).
+    if(Math.abs(baseA.length-baseB.length)<=2 && _distancia(baseA,baseB)<=2){
+      return 'nombres casi idénticos (posible error de tipeo)';
+    }
+  }
+  return null;
+}
+
 // Devuelve la lista de problemas de un proveedor, del más grave al más leve.
 function _problemas(p, porRut, porNombre){
   const f=[];
@@ -285,8 +337,12 @@ function _problemas(p, porRut, porNombre){
   // datos que parecen de prueba
   const n=_valNom(p.nombre_fantasia||p.razon_social);
   if(/^(test|prueba|asdf|qwer|aaa+|xxx+)/.test(n) || n.length<3) f.push('POSIBLE DATO DE PRUEBA');
-  if(rut && (porRut[rut]||[]).length>1)      f.push('RUT repetido ('+porRut[rut].length+')');
-  if(n   && (porNombre[n]||[]).length>1)     f.push('Nombre repetido');
+  // Compartir RUT es normal: se informa como dato, no como problema.
+  const hermanas=(porRut[rut]||[]).filter(o=>o._id!==p._id);
+  if(rut && hermanas.length && !p.multi_verificado){
+    const choque=hermanas.map(o=>_mismoLocal(p,o)).find(Boolean);
+    if(choque) f.push('POSIBLE FICHA REPETIDA: '+choque);
+  }
   if(!String(p.direccion||'').trim())        f.push('sin dirección');
   if(!String(p.correo||'').trim())           f.push('sin correo');
   if(!String(p.fono||'').trim())             f.push('sin teléfono');
@@ -335,6 +391,8 @@ function exportarBaseCompleta(){
       'Exp. CEN'            : p.pub_centinela?'Sí':'No',
       'Exp. ANT'            : p.pub_antucoya ?'Sí':'No',
       'Exp. CMZ'            : p.pub_zaldivar ?'Sí':'No',
+      'Sucursal'            : p.sucursal||'',
+      'Locales de este RUT' : (porRut[_valRut(p.rut_empresa)]||[]).length||1,
       'Programa MGI'        : p.programa_mgi===true?'Sí':p.programa_mgi===false?'No':'(sin definir)',
       'Sección MGI'         : p.programa_mgi_rubro||'',
       'Hab. simples'        : h.simples||0,

@@ -3370,6 +3370,9 @@ function mapProvFromSupa(p){
     // Programa MGI: se conserva null (= decidir por texto, como siempre)
     programa_mgi:(p.programa_mgi===null||p.programa_mgi===undefined)?null:!!p.programa_mgi,
     programa_mgi_rubro:p.programa_mgi_rubro||null, es_hoteleria:!!p.es_hoteleria,
+    // El RUT es de la empresa, no del local: una empresa puede tener varias
+    // sucursales. `multi_verificado` marca que ya se revisó que son distintas.
+    sucursal:p.sucursal||'', multi_verificado:!!p.multi_verificado,
     flota:(()=>{try{return JSON.parse(p.flota_json||'[]')||[];}catch(e){return [];}})(),
     fotos:(()=>{try{return JSON.parse(p.fotos_json||'[]')||[];}catch(e){return [];}})(),
     notas_ficha:p.notas_ficha||'',
@@ -3403,6 +3406,7 @@ async function gSyncPush(proveedorId){
       pub_centinela: !!p.pub_centinela, pub_antucoya: !!p.pub_antucoya, pub_zaldivar: !!p.pub_zaldivar,
       programa_mgi: (p.programa_mgi===null||p.programa_mgi===undefined)?null:!!p.programa_mgi,
       programa_mgi_rubro: p.programa_mgi_rubro||null, es_hoteleria: !!p.es_hoteleria,
+      sucursal: p.sucursal||null, multi_verificado: !!p.multi_verificado,
       flota_json: JSON.stringify(p.flota||[]),
       notas_ficha: p.notas_ficha||'',
       fuente:'web_v2', updated_at: now,

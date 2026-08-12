@@ -106,9 +106,38 @@ la ficha que se queda absorbe contactos, habitaciones, programas y visitas de
 la otra, y completa sus propios campos vacíos con los de ella. La absorbida
 queda con `estado = 'Eliminado'` — nada se borra de verdad.
 
-> ⚠️ **Un mismo RUT repetido no siempre es un error.** Un dueño puede tener
-> varios hospedajes (HAI 1/2/3, Hostal Minero 1 al 5, Casa Besalco 1 al 4).
-> La ventana lo advierte: fusionar solo cuando sean literalmente el mismo lugar.
+### Un RUT ≠ un establecimiento
+
+Esto es lo más importante de entender antes de tocar nada:
+
+**El RUT identifica a la EMPRESA, no al local.** Compartir RUT es lo normal, no
+un error. En la base hay tres situaciones legítimas:
+
+| Situación | Ejemplo real | ¿Es duplicado? |
+|---|---|---|
+| Varias sucursales, distinta dirección | Hostal Minero 1 al 5, Casa Besalco 1 al 4, los 5 Tronar | **No** |
+| Dos negocios de rubro distinto en la **misma** dirección | una lavandería y un hospedaje en Caracoles 16 | **No** |
+| Misma dirección **y** mismo rubro | la misma ficha cargada dos veces | **Sí** |
+
+Por eso `_mismoLocal()` (en `proveedores-pdf.js`) **no marca por RUT repetido**.
+Solo levanta la mano cuando:
+
+1. **Coinciden dirección y rubro.** Si las direcciones son iguales pero los
+   rubros difieren, son dos negocios en el mismo local y no se marca.
+2. **Los nombres se diferencian en 1–2 letras**, que es un error de tipeo —
+   «Hostal Tronar 3» vs «Hotal Tronar 3».
+
+> ⚠️ **Las sucursales se numeran.** «Hostal Tronar» y «Hostal Tronar 2» se
+> diferencian en un carácter, así que la regla de tipeo las marcaba como
+> sospechosas. Antes de comparar se le quita el número final al nombre: si lo
+> que queda es igual, son sucursales de la misma cadena y no se marca nada.
+
+Probado contra los 12 grupos reales de la base: de 37 fichas que comparten RUT,
+solo señala «Hotal Tronar 3», que es el único typo verdadero.
+
+**Campos nuevos:** `sucursal` (nombre del local, para no confundir fichas de la
+misma empresa) y `multi_verificado` (alguien ya revisó ese grupo y confirmó que
+son locales distintos; deja de aparecer como pendiente).
 
 ### La plantilla
 

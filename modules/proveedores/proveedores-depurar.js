@@ -299,40 +299,113 @@ function depFusionar(idQueda, idSeVa) {
   });
 }
 
-// Lista los duplicados que hay ahora mismo, para fusionarlos desde acá.
+// ── FICHAS QUE COMPARTEN RUT ────────────────────────────────────────────────
+// Compartir RUT NO es un error: el RUT identifica a la EMPRESA, no al local.
+// Una misma empresa puede tener varias sucursales (Hostal Minero 1 al 5, Casa
+// Besalco 1 al 4, los Tronar), y hasta dos negocios de rubro distinto en la
+// misma dirección (una lavandería y un hospedaje).
+//
+// Por eso esta pantalla NO habla de «duplicados»: lista los locales de cada
+// empresa y solo destaca los que de verdad parecen la misma ficha repetida.
 function depListarDuplicados() {
   const porRut = {};
   PROVEEDORES.filter(p => p.estado !== 'Eliminado').forEach(p => {
     const r = _valRut(p.rut_empresa); if (r) (porRut[r] = porRut[r] || []).push(p);
   });
-  const grupos = Object.keys(porRut).filter(r => porRut[r].length > 1);
+  const grupos = Object.keys(porRut).filter(r => porRut[r].length > 1)
+    .sort((a, b) => porRut[b].length - porRut[a].length);
+
   const cont = document.getElementById('depResumen');
   document.getElementById('depPaso1').style.display = 'none';
   document.getElementById('depPaso2').style.display = '';
   document.getElementById('depBtnAplicar').style.display = 'none';
 
-  if (!grupos.length) { cont.innerHTML = '<div class="dep-vacio">No hay RUT repetidos.</div>'; return; }
+  if (!grupos.length) { cont.innerHTML = '<div class="dep-vacio">No hay empresas con más de un local.</div>'; return; }
+
+  // ¿Alguna pareja del grupo parece la MISMA ficha repetida?
+  const sospechas = {};
+  grupos.forEach(r => {
+    const g = porRut[r]; sospechas[r] = [];
+    for (let i = 0; i < g.length; i++) for (let j = i + 1; j < g.length; j++) {
+      const razon = _mismoLocal(g[i], g[j]);
+      if (razon) sospechas[r].push({ a: g[i], b: g[j], razon });
+    }
+  });
+  const conSospecha = grupos.filter(r => sospechas[r].length && !porRut[r][0].multi_verificado);
+  const soloSucursales = grupos.filter(r => !conSospecha.includes(r));
 
   cont.innerHTML = `<div class="dep-info">
-      <b>${grupos.length}</b> RUT con más de una ficha.
-      <span class="dep-warn">Ojo: un mismo dueño PUEDE tener varios hospedajes (HAI 1/2/3, Hostal Minero 1 al 5…).
-      Fusiona solo cuando sean literalmente el mismo lugar.</span>
+      <b>${grupos.length}</b> empresa(s) con más de un local · <b>${conSospecha.length}</b> con algo que revisar.
+      <span class="dep-ok">Compartir RUT es normal: el RUT es de la empresa, no del local.
+      Una empresa puede tener varias sucursales, y hasta dos negocios distintos en la misma dirección.</span>
     </div>` +
-    grupos.map(r => {
-      const g = porRut[r];
-      return `<div class="dep-prov">
-        <div class="dep-prov-h">RUT ${esc(r)} <span class="dep-id">${g.length} fichas</span></div>
-        ${g.map(p => `<div class="dep-dup">
-          <div>
-            <div class="dep-dup-n">${esc(p.nombre_fantasia || p.razon_social || p._id)}</div>
-            <div class="dep-dup-d">${esc(p.direccion || 'sin dirección')} · ${esc(p._id)}</div>
-          </div>
-          <div class="dep-dup-btns">
-            ${g.filter(o => o._id !== p._id).map(o =>
-              `<button class="mini-btn" onclick="depFusionar('${p._id}','${o._id}')"
-                title="Esta ficha absorbe a la otra">⇐ absorber «${esc((o.nombre_fantasia || o.razon_social || o._id).slice(0, 22))}»</button>`).join('')}
-          </div>
-        </div>`).join('')}
+
+    (conSospecha.length ? `<div class="dep-sec-t">⚠ Parecen la misma ficha repetida</div>` +
+      conSospecha.map(r => depGrupoHTML(r, porRut[r], sospechas[r])).join('') : '') +
+
+    (soloSucursales.length ? `<div class="dep-sec-t">✓ Locales distintos de una misma empresa</div>` +
+      soloSucursales.map(r => depGrupoHTML(r, porRut[r], [])).join('') : '');
+}
+
+function depGrupoHTML(rut, g, sospechas) {
+  const verif = g.some(p => p.multi_verificado);
+  return `<div class="dep-prov ${sospechas.length ? 'dep-alerta' : ''}">
+    <div class="dep-prov-h">
+      ${esc(g[0].razon_social || g[0].nombre_fantasia || 'RUT ' + rut)}
+      <span class="dep-id">RUT ${esc(rut)} · ${g.length} locales${verif ? ' · ✓ revisado' : ''}</span>
+      ${!verif ? `<button class="mini-btn" style="margin-left:auto" onclick="depMarcarSucursales('${rut}')"
+          title="Confirmar que son locales distintos y dejar de verlos como pendientes">✓ Son locales distintos</button>` : ''}
+    </div>
+    ${sospechas.map(sp => `<div class="dep-sospecha">
+      ⚠ <b>${esc(sp.a.nombre_fantasia || sp.a.razon_social)}</b> y
+        <b>${esc(sp.b.nombre_fantasia || sp.b.razon_social)}</b>: ${esc(sp.razon)}
+      <div class="dep-dup-btns">
+        <button class="mini-btn" onclick="depFusionar('${sp.a._id}','${sp.b._id}')">Dejar «${esc((sp.a.nombre_fantasia || sp.a.razon_social || '').slice(0, 20))}» y fusionar</button>
+        <button class="mini-btn" onclick="depFusionar('${sp.b._id}','${sp.a._id}')">Dejar «${esc((sp.b.nombre_fantasia || sp.b.razon_social || '').slice(0, 20))}» y fusionar</button>
+      </div>
+    </div>`).join('')}
+    ${g.map(p => {
+      const h = DB.hoteles[p._id] || {};
+      const habs = (parseInt(h.simples) || 0) + (parseInt(h.dobles) || 0);
+      const nVis = (DB.visitas[p._id] || []).length;
+      return `<div class="dep-dup">
+        <div>
+          <div class="dep-dup-n">${esc(p.nombre_fantasia || p.razon_social || p._id)}</div>
+          <div class="dep-dup-d">📍 ${esc(p.direccion || 'sin dirección')}
+            · ${esc((p.rubrosNorm || []).join(', ') || 'sin rubro')}
+            ${habs ? ' · ' + habs + ' hab' : ''}${nVis ? ' · ' + nVis + ' visita(s)' : ''}</div>
+        </div>
+        <div class="dep-dup-btns">
+          <button class="mini-btn" onclick="depPonerSucursal('${p._id}')" title="Ponerle nombre a este local">🏷 Sucursal</button>
+        </div>
       </div>`;
-    }).join('');
+    }).join('')}
+  </div>`;
+}
+
+// Confirma que las fichas de ese RUT son locales distintos: dejan de aparecer
+// como pendientes de revisar, tanto acá como en el Excel.
+async function depMarcarSucursales(rut) {
+  const g = PROVEEDORES.filter(p => _valRut(p.rut_empresa) === rut && p.estado !== 'Eliminado');
+  if (!g.length) return;
+  if (!confirm(`Confirmar que estos ${g.length} locales son establecimientos distintos de la misma empresa.\n\n`
+    + g.map(p => '  · ' + (p.nombre_fantasia || p.razon_social) + ' — ' + (p.direccion || 'sin dirección')).join('\n')
+    + '\n\nDejarán de aparecer como pendientes de revisar.')) return;
+  g.forEach(p => { p.multi_verificado = true; p._edited = true; });
+  await saveDB();
+  for (const p of g) if (SUPA.session) await gSyncPush(p._id);
+  showToast('✓ Marcados como locales distintos', 'success');
+  depListarDuplicados();
+}
+
+// Nombre del local, para no confundir fichas de la misma empresa.
+async function depPonerSucursal(id) {
+  const p = PROVEEDORES.find(x => x._id === id); if (!p) return;
+  const v = prompt('Nombre de este local (ej: «Colón #32», «Sucursal 2»):', p.sucursal || p.direccion || '');
+  if (v === null) return;
+  p.sucursal = v.trim(); p._edited = true;
+  await saveDB();
+  if (SUPA.session) await gSyncPush(id);
+  showToast('✓ Guardado', 'success');
+  depListarDuplicados();
 }

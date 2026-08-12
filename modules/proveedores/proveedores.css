@@ -916,3 +916,10 @@ body.is-user .solo-admin{ display:none !important; }
   .dep-antes,.dep-despues{grid-column:2}
   .dep-flecha{display:none}
 }
+.dep-ok{color:#12803c;display:block;margin-top:5px;font-size:.82rem}
+.dep-sec-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-light);margin:18px 0 9px;padding-bottom:5px;border-bottom:2px solid var(--border)}
+.dep-prov.dep-alerta{border-color:#F2A900;box-shadow:0 0 0 2px rgba(242,169,0,.13)}
+.dep-prov.dep-alerta .dep-prov-h{background:#FFF8E6}
+.dep-prov-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dep-sospecha{background:#FFF8E6;border-top:1px solid #F2CE7A;padding:10px 13px;font-size:.84rem;color:#7a5a00}
+.dep-sospecha .dep-dup-btns{margin-top:7px}
