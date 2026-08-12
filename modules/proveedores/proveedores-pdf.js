@@ -240,23 +240,77 @@ async function confirmarSubirMinutaManual(){
 }
 
 
+
+
 // ═══════════════════════════════════════════════════════════════════════════
-// BASE COMPLETA A EXCEL
-// Para depurar la base fuera del sistema: se baja todo, se corrige en Excel y
-// se vuelve a subir con "Subir Excel" (handleFiles), que cruza por RUT.
+// EXCEL DE REVISIÓN Y VALIDACIÓN DE LA BASE
 //
-// ⚠️ El archivo trae RUT, correos y teléfonos de todos los proveedores. Es
-// información interna: no se sube a la nube ni se comparte fuera de AMSA
-// (CLAUDE.md Regla 5).
+// Baja toda la base con los problemas ya detectados, para depurarla fuera del
+// sistema y volver a subirla con "Subir Excel" (handleFiles), que cruza por RUT.
+//
+// Cuatro hojas:
+//   Proveedores  todo, con las columnas de validación al final
+//   Revisar      solo lo que tiene problemas, lo más grave arriba
+//   Duplicados   agrupados por RUT y por nombre (ojo: un dueño puede tener
+//                varios hospedajes; no todo RUT repetido es un error)
+//   Hotelería    capacidad declarada
+//
+// ⚠️ El archivo trae RUT, correos y teléfonos. Es información interna: no se
+// sube a la nube ni sale de AMSA (CLAUDE.md Regla 5).
 // ═══════════════════════════════════════════════════════════════════════════
+
+// Validación de RUT chileno (módulo 11). Un RUT mal escrito es la causa más
+// común de proveedores duplicados: entran dos veces porque no calzan entre sí.
+function rutValido(r){
+  const t=String(r||'').toUpperCase().replace(/[^0-9K]/g,'');
+  if(t.length<8||t.length>9) return false;
+  const cuerpo=t.slice(0,-1), dv=t.slice(-1);
+  if(!/^\d+$/.test(cuerpo)) return false;
+  let suma=0,mul=2;
+  for(let i=cuerpo.length-1;i>=0;i--){ suma+=parseInt(cuerpo[i])*mul; mul=mul===7?2:mul+1; }
+  const r11=11-(suma%11);
+  return (r11===11?'0':r11===10?'K':String(r11))===dv;
+}
+// _rutNorm ya existe en proveedores.js: aca se usa un nombre propio.
+const _valRut  = r => String(r||'').toUpperCase().replace(/[^0-9K]/g,'');
+const _valNom  = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+
+// Devuelve la lista de problemas de un proveedor, del más grave al más leve.
+function _problemas(p, porRut, porNombre){
+  const f=[];
+  const rut=_valRut(p.rut_empresa);
+  if(!rut)                    f.push('SIN RUT');
+  else if(!rutValido(p.rut_empresa)) f.push('RUT INVÁLIDO');
+  if(!String(p.razon_social||'').trim() && !String(p.nombre_fantasia||'').trim()) f.push('SIN NOMBRE');
+  // datos que parecen de prueba
+  const n=_valNom(p.nombre_fantasia||p.razon_social);
+  if(/^(test|prueba|asdf|qwer|aaa+|xxx+)/.test(n) || n.length<3) f.push('POSIBLE DATO DE PRUEBA');
+  if(rut && (porRut[rut]||[]).length>1)      f.push('RUT repetido ('+porRut[rut].length+')');
+  if(n   && (porNombre[n]||[]).length>1)     f.push('Nombre repetido');
+  if(!String(p.direccion||'').trim())        f.push('sin dirección');
+  if(!String(p.correo||'').trim())           f.push('sin correo');
+  if(!String(p.fono||'').trim())             f.push('sin teléfono');
+  if(!(p.rubrosNorm||[]).length)             f.push('sin rubro');
+  return f;
+}
+
 function exportarBaseCompleta(){
   if(typeof XLSX==='undefined'){ showToast('La librería de Excel no cargó','err'); return; }
   if(!PROVEEDORES.length){ showToast('No hay proveedores cargados','err'); return; }
+
+  // índices para detectar repetidos
+  const porRut={}, porNombre={};
+  PROVEEDORES.forEach(p=>{
+    const r=_valRut(p.rut_empresa); if(r) (porRut[r]=porRut[r]||[]).push(p);
+    const n=_valNom(p.nombre_fantasia||p.razon_social); if(n) (porNombre[n]=porNombre[n]||[]).push(p);
+  });
 
   const filas = PROVEEDORES.map(p=>{
     const cs = DB.contactos[p._id]||[];
     const cp = cs.find(c=>c.principal)||cs[0]||{};
     const h  = DB.hoteles[p._id]||{};
+    const prob = _problemas(p, porRut, porNombre);
+    const grave = prob.some(x=>x===x.toUpperCase()&&x.length>4);
     return {
       'ID (no editar)'      : p._id,
       'RUT empresa'         : p.rut_empresa||'',
@@ -278,9 +332,9 @@ function exportarBaseCompleta(){
       'Agrupación gremial'  : p.agrupacion||'',
       'Servicios con AM'    : p.servicio_am||'',
       'Rango de trabajos'   : p.rango_trabajos||'',
-      'Experiencia CEN'     : p.pub_centinela?'Sí':'No',
-      'Experiencia ANT'     : p.pub_antucoya ?'Sí':'No',
-      'Experiencia CMZ'     : p.pub_zaldivar ?'Sí':'No',
+      'Exp. CEN'            : p.pub_centinela?'Sí':'No',
+      'Exp. ANT'            : p.pub_antucoya ?'Sí':'No',
+      'Exp. CMZ'            : p.pub_zaldivar ?'Sí':'No',
       'Programa MGI'        : p.programa_mgi===true?'Sí':p.programa_mgi===false?'No':'(sin definir)',
       'Sección MGI'         : p.programa_mgi_rubro||'',
       'Hab. simples'        : h.simples||0,
@@ -288,16 +342,79 @@ function exportarBaseCompleta(){
       'Descripción'         : p.descripcion||'',
       'Notas'               : p.notas_ficha||'',
       'Estado'              : p.estado||'Activo',
+      // ── columnas de validación ──
+      'RUT válido'          : _valRut(p.rut_empresa) ? (rutValido(p.rut_empresa)?'Sí':'NO') : 'sin RUT',
+      'Revisar'             : grave?'SÍ':(prob.length?'menor':''),
+      'Problemas'           : prob.join(' · '),
+      'Qué corregir'        : '',   // columna en blanco para anotar
     };
   });
 
-  const ws = XLSX.utils.json_to_sheet(filas);
-  ws['!cols'] = Object.keys(filas[0]).map(k=>({wch: k==='Descripción'||k==='Notas' ? 42 : Math.max(14, k.length+2)}));
-  ws['!autofilter'] = {ref: ws['!ref']};
-  ws['!freeze'] = {xSplit:0, ySplit:1};
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Proveedores');
-  const hoy = new Date().toISOString().slice(0,10);
-  XLSX.writeFile(wb, `base-proveedores-${hoy}.xlsx`);
-  showToast(`📤 ${filas.length} proveedores exportados`,'success');
+  const hoja = (datos, nombre, anchos) => {
+    if(!datos.length) datos=[{'(sin registros)':''}];
+    const ws = XLSX.utils.json_to_sheet(datos);
+    ws['!cols'] = Object.keys(datos[0]).map(k=>({wch: anchos&&anchos[k] ? anchos[k]
+      : (k==='Descripción'||k==='Notas'||k==='Problemas'||k==='Detalle') ? 44 : Math.max(13,k.length+2)}));
+    ws['!autofilter'] = {ref: ws['!ref']};
+    ws['!freeze'] = {xSplit:0, ySplit:1};
+    XLSX.utils.book_append_sheet(wb, ws, nombre);
+  };
+
+  hoja(filas, 'Proveedores');
+
+  // 2 · solo lo que hay que revisar, lo más grave primero
+  const revisar = filas.filter(f=>f['Problemas'])
+    .sort((a,b)=> (b['Revisar']==='SÍ') - (a['Revisar']==='SÍ')
+               || b['Problemas'].length - a['Problemas'].length);
+  hoja(revisar.map(f=>({
+    'Revisar':f['Revisar'], 'Problemas':f['Problemas'],
+    'ID (no editar)':f['ID (no editar)'], 'RUT empresa':f['RUT empresa'], 'RUT válido':f['RUT válido'],
+    'Razón social':f['Razón social'], 'Nombre fantasía':f['Nombre fantasía'],
+    'Localidad':f['Localidad'], 'Dirección':f['Dirección'],
+    'Correo empresa':f['Correo empresa'], 'Teléfono empresa':f['Teléfono empresa'],
+    'Qué corregir':'',
+  })), 'Revisar');
+
+  // 3 · repetidos. Un dueño PUEDE tener varios hospedajes: hay que mirarlos,
+  //     no borrarlos a ciegas.
+  const dups=[];
+  Object.keys(porRut).filter(r=>porRut[r].length>1).forEach(r=>{
+    porRut[r].forEach(p=>dups.push({
+      'Tipo':'Mismo RUT', 'Clave':r, 'Cuántos':porRut[r].length,
+      'ID (no editar)':p._id, 'Nombre':p.nombre_fantasia||p.razon_social,
+      'RUT':p.rut_empresa||'', 'Dirección':p.direccion||'',
+      '¿Es el mismo? (Sí/No)':'', 'Acción':'',
+    }));
+  });
+  Object.keys(porNombre).filter(n=>porNombre[n].length>1).forEach(n=>{
+    porNombre[n].forEach(p=>dups.push({
+      'Tipo':'Mismo nombre', 'Clave':n, 'Cuántos':porNombre[n].length,
+      'ID (no editar)':p._id, 'Nombre':p.nombre_fantasia||p.razon_social,
+      'RUT':p.rut_empresa||'', 'Dirección':p.direccion||'',
+      '¿Es el mismo? (Sí/No)':'', 'Acción':'',
+    }));
+  });
+  hoja(dups.sort((a,b)=>a.Tipo.localeCompare(b.Tipo)||a.Clave.localeCompare(b.Clave)), 'Duplicados');
+
+  // 4 · capacidad declarada
+  hoja(PROVEEDORES.filter(p=>{const h=DB.hoteles[p._id]; return h&&(h.simples||h.dobles);})
+    .map(p=>{
+      const h=DB.hoteles[p._id]||{};
+      const s=h.simples||0, d=h.dobles||0;
+      return {
+        'ID (no editar)':p._id, 'Hospedaje':p.nombre_fantasia||p.razon_social,
+        'RUT':p.rut_empresa||'', 'Dirección':p.direccion||'',
+        'Hab. simples':s, 'Hab. dobles':d, 'Hab. totales':s+d,
+        'Camas máximo':s+d*2,           // una doble puede ocuparse como simple
+        'Simples c/ baño':h.simples_banio||0, 'Dobles c/ baño':h.dobles_banio||0,
+        'Programa MGI':p.programa_mgi===true?'Sí':p.programa_mgi===false?'No':'(sin definir)',
+        'Qué corregir':'',
+      };
+    }), 'Hotelería');
+
+  const hoy=new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `revision-base-proveedores-${hoy}.xlsx`);
+  const nGraves=filas.filter(f=>f['Revisar']==='SÍ').length;
+  showToast(`📤 ${filas.length} proveedores · ${revisar.length} por revisar (${nGraves} graves)`,'success');
 }
