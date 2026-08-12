@@ -3758,8 +3758,11 @@ function borrarHistoricoLocal(){
 }
 
 function descargarPlantilla(){
-  const headers=['NOMBRE CONTACTO','CARGO','RUT PERSONA','RAZÓN SOCIAL','NOMBRE FANTASÍA','RUT EMPRESA','LOCALIDAD','DIRECCIÓN','CORREO','FONO','GIROS SII','ACTIVIDAD PRINCIPAL','DESCRIPCIÓN GENERAL','PLATAFORMAS MINERAS','CATEGORÍA SII','AUTORIZACIÓN PARA FACTURAR','AGRUPACIÓN GREMIAL','SERVICIOS CON AM','HAB SIMPLES','HAB DOBLES','PROGRAMAS / INICIATIVAS'];
-  const ejemplo=['Juan Pérez','Gerente','12.345.678-9','Comercial Ejemplo SpA','Hotel Ejemplo','76.123.456-7','Sierra Gorda','Av. Principal 123','contacto@ejemplo.cl','+56 9 1234 5678','Hospedaje\nAlimentación','Servicios de hotelería','Hotel con 10 habitaciones equipadas','Centinela','Primera Categoría','Autorizado','Cámara de Comercio Sierra Gorda','Sí — Contrato vigente','6','4','Programa Formación Proveedores'];
+  // ⚠️ El ORDEN manda: el lector toma las columnas por posición (row[0],
+  // row[5]…), no por su nombre. Si se agrega una al medio, hay que mover
+  // también los índices en handleFiles().
+  const headers=['NOMBRE CONTACTO','CARGO','RUT PERSONA','RAZÓN SOCIAL','NOMBRE FANTASÍA','RUT EMPRESA','LOCALIDAD','DIRECCIÓN','CORREO','FONO','GIROS SII','ACTIVIDAD PRINCIPAL','DESCRIPCIÓN GENERAL','PLATAFORMAS MINERAS','CATEGORÍA SII','AUTORIZACIÓN PARA FACTURAR','AGRUPACIÓN GREMIAL','SERVICIOS CON AM','HAB SIMPLES','HAB DOBLES','PROGRAMAS / INICIATIVAS','HAB SIMPLES BAÑO PRIVADO','HAB DOBLES BAÑO PRIVADO','HABITACIONES DISPONIBLES'];
+  const ejemplo=['Juan Pérez','Gerente','12.345.678-9','Comercial Ejemplo SpA','Hotel Ejemplo','76.123.456-7','Sierra Gorda','Av. Principal 123','contacto@ejemplo.cl','+56 9 1234 5678','Hospedaje\nAlimentación','Servicios de hotelería','Hotel con 10 habitaciones equipadas','Centinela','Primera Categoría','Autorizado','Cámara de Comercio Sierra Gorda','Sí — Contrato vigente','6','4','Programa Formación Proveedores','6','2','3'];
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet([headers,ejemplo]);
   ws['!cols']=headers.map((h,i)=>({wch: i===12?45:i===10?32:20}));
@@ -3770,7 +3773,7 @@ function descargarPlantilla(){
   }
   XLSX.utils.book_append_sheet(wb,ws,'Plantilla');
   // hoja instrucciones
-  const inst=[['INSTRUCCIONES DE LLENADO'],[''],['• Una fila por contacto. Mismo RUT EMPRESA = mismo proveedor (se agrupan contactos).'],['• GIROS SII: separa varios con salto de línea o ; '],['• AUTORIZACIÓN PARA FACTURAR: Autorizado / No autorizado / Boleta honorario'],['• SERVICIOS CON AM: Sí — Contrato vigente / En proceso de licitación / No'],['• HAB SIMPLES / HAB DOBLES: solo para proveedores de hospedaje'],['• PROGRAMAS: separa varios con |'],['• Borra la fila de ejemplo antes de cargar.']];
+  const inst=[['INSTRUCCIONES DE LLENADO'],[''],['• Una fila por contacto. Mismo RUT EMPRESA = mismo proveedor (se agrupan contactos).'],['• GIROS SII: separa varios con salto de línea o ; '],['• AUTORIZACIÓN PARA FACTURAR: Autorizado / No autorizado / Boleta honorario'],['• SERVICIOS CON AM: Sí — Contrato vigente / En proceso de licitación / No'],['• HAB SIMPLES / HAB DOBLES: solo para proveedores de hospedaje'],['• PROGRAMAS: separa varios con |'],['• HAB ... BAÑO PRIVADO: cuántas de esas habitaciones tienen baño propio.'],['• HABITACIONES DISPONIBLES: cuántas quedan libres hoy (solo informativo).'],['• Borra la fila de ejemplo antes de cargar.'],[''],['ESTA PLANTILLA ES PARA CARGAR PROVEEDORES NUEVOS.'],['Para CORREGIR datos que ya están en el sistema, usa el botón «Depurar»:'],['esta carga solo rellena campos vacíos, nunca pisa un dato existente.']];
   const wi=XLSX.utils.aoa_to_sheet(inst); wi['!cols']=[{wch:90}];
   XLSX.utils.book_append_sheet(wb,wi,'Instrucciones');
   XLSX.writeFile(wb,'Plantilla_Proveedores_AM.xlsx');

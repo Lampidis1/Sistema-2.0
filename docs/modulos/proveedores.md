@@ -63,3 +63,56 @@ autenticación. Ver `PENDIENTES.md` → P-1.
 
 No lo reescribas de una. Son 8.215 líneas en producción. Se parte por
 secciones, empezando por las más independientes, y una por vez.
+
+## Cargar Excel vs Depurar — cuál usar (2026-08-09)
+
+Son dos cosas distintas y no son intercambiables:
+
+| | **Subir Excel** (plantilla) | **🧹 Depurar** |
+|---|---|---|
+| Para qué | Cargar proveedores **nuevos** | **Corregir** los que ya están |
+| Empareja por | RUT | columna `ID (no editar)` |
+| Campos existentes | **solo rellena los vacíos**, nunca pisa | **sobreescribe**, previa aprobación |
+| Lee las columnas | por **posición** | por **nombre** |
+| Corregir un RUT | ❌ crea un duplicado | ✅ funciona |
+
+**Por qué el importador no sirve para depurar.** `finishLoad()` hace un merge
+que solo completa campos vacíos (`if (valNuevo && !valExist)`). Y busca al
+proveedor por su RUT: si corriges un RUT mal escrito, deja de calzar con el de
+la base y en vez de arreglarlo **crea una ficha nueva**. Justo lo contrario de
+depurar.
+
+### La ventana Depurar (`proveedores-depurar.js`)
+
+1. Se baja la base con **📤 Bajar base**.
+2. Se corrige en Excel **sin tocar la columna `ID (no editar)`** — esa columna
+   es la que permite encontrar la ficha aunque cambie el RUT.
+3. Se sube en **🧹 Depurar**: muestra cada diferencia (valor actual tachado en
+   rojo → valor nuevo en verde) y solo aplica las marcadas.
+
+Detalles que importan:
+
+- **Una celda vacía no borra**. Para dejar un campo en blanco hay que escribir
+  `-`. Así una columna que se borró sin querer en Excel no vacía media base.
+- Los cambios de **RUT** se resaltan aparte y se avisa si el RUT nuevo tampoco
+  pasa la validación de módulo 11.
+- Las filas con un ID que ya no existe se ignoran y se informan.
+- Todo cambio queda en `registro_ediciones` con la acción `depurar`.
+
+### Fusionar fichas repetidas
+
+En la misma ventana, **«Ver fichas repetidas»** agrupa por RUT. Al fusionar,
+la ficha que se queda absorbe contactos, habitaciones, programas y visitas de
+la otra, y completa sus propios campos vacíos con los de ella. La absorbida
+queda con `estado = 'Eliminado'` — nada se borra de verdad.
+
+> ⚠️ **Un mismo RUT repetido no siempre es un error.** Un dueño puede tener
+> varios hospedajes (HAI 1/2/3, Hostal Minero 1 al 5, Casa Besalco 1 al 4).
+> La ventana lo advierte: fusionar solo cuando sean literalmente el mismo lugar.
+
+### La plantilla
+
+Tiene **24 columnas** y el lector las toma **por posición**, no por nombre. Si
+se agrega una columna al medio, hay que mover también los índices en
+`handleFiles()`. Las tres últimas (baño privado y disponibilidad) faltaban en
+la plantilla aunque el lector ya las leía.

@@ -17,7 +17,7 @@
 <!-- La ficha emergente es comun con MGI: vive en shared/ (CLAUDE.md Regla 8).
      Va ANTES de proveedores.css para que el modulo pueda ajustar detalles. -->
 <link rel="stylesheet" href="../../shared/css/ficha-modal.css?v=20260808c">
-<link rel="stylesheet" href="proveedores.css?v=20260808e">
+<link rel="stylesheet" href="proveedores.css?v=20260809d">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -241,6 +241,7 @@
             <option value="za">Nombre Z → A</option>
             <option value="loc">Por localidad</option>
           </select>
+          <button class="rbar-extra" onclick="abrirDepurar()" style="border:1.5px solid #5b4fcf;border-radius:7px;padding:7px 12px;font-size:.82rem;cursor:pointer;background:#fff;color:#5b4fcf" title="Aplicar el Excel corregido y fusionar fichas repetidas">🧹 Depurar</button>
           <button class="rbar-extra" onclick="exportarBaseCompleta()" style="border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;font-size:.82rem;cursor:pointer;background:#fff;color:var(--primary)" title="Bajar toda la base a Excel para editarla fuera y volver a subirla">📤 Bajar base</button>
           <button class="rbar-extra" onclick="abrirRutDuplicados()" style="border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;font-size:.82rem;cursor:pointer;background:#fff;color:var(--primary)" title="Buscar empresas con el mismo RUT">🔎 RUT duplicados</button>
           <button class="btn-add-prov" onclick="openNuevoProveedor()" title="Agregar un proveedor nuevo">➕ Nuevo proveedor</button>
@@ -381,11 +382,57 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<script src="proveedores.js?v=20260808g"></script>
+
+<!-- ░░ DEPURAR BASE DE DATOS ░░ -->
+<div id="depModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10020;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:920px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
+    <div class="dep-head">
+      <div>
+        <div class="dep-t">&#129529; Depurar base de datos</div>
+        <div class="dep-s">Corregir datos desde el Excel de revision y fusionar fichas repetidas</div>
+      </div>
+      <button onclick="cerrarDepurar()" class="dep-x">&#10005;</button>
+    </div>
+
+    <div class="dep-body">
+      <div id="depPaso1">
+        <div class="dep-pasos">
+          <div class="dep-paso"><b>1.</b> Baja la base con <b>&#128228; Bajar base</b></div>
+          <div class="dep-paso"><b>2.</b> Corrige en Excel <u>sin tocar</u> la columna <b>ID (no editar)</b></div>
+          <div class="dep-paso"><b>3.</b> Sube el archivo aca: veras cada cambio antes de aplicarlo</div>
+        </div>
+        <label class="dep-drop">
+          <span class="dep-drop-ico">&#128193;</span>
+          <span><b>Elegir el Excel corregido</b><br><span class="dep-drop-s">.xlsx con la hoja Proveedores o Revisar</span></span>
+          <input type="file" id="depArchivo" accept=".xlsx,.xls" style="display:none" onchange="depLeerArchivo(this)">
+        </label>
+        <div class="dep-o">o</div>
+        <button class="mini-btn" style="width:100%" onclick="depListarDuplicados()">&#128269; Ver fichas repetidas y fusionarlas</button>
+        <div class="dep-aviso">
+          Una celda vacia <b>no borra</b> el dato: para dejar un campo en blanco escribe <b>-</b> en la celda.
+        </div>
+      </div>
+
+      <div id="depPaso2" style="display:none">
+        <div id="depResumen"></div>
+      </div>
+    </div>
+
+    <div class="dep-foot">
+      <button class="mini-btn" onclick="abrirDepurar()">&#8592; Empezar de nuevo</button>
+      <div style="flex:1"></div>
+      <button class="mini-btn" onclick="cerrarDepurar()">Cerrar</button>
+      <button class="btn-save" id="depBtnAplicar" style="display:none" onclick="depAplicar()">&#128190; Aplicar cambios marcados</button>
+    </div>
+  </div>
+</div>
+
+<script src="proveedores.js?v=20260809d"></script>
 <script src="proveedores-programas.js?v=20260808"></script>
 <script src="proveedores-compromisos.js?v=20260808"></script>
 <script src="proveedores-agenda.js?v=20260808"></script>
 <script src="proveedores-pdf.js?v=20260809b"></script>
+<script src="proveedores-depurar.js?v=20260809a"></script>
 
 <!-- MODAL AYUDA SUPABASE -->
 <div id="syncHelpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center">
@@ -858,6 +905,7 @@
         <input type="file" accept=".xlsx,.xls" multiple style="display:none" onchange="handleFiles(this.files);toggleMobileNav()">
       </label>
       <button class="mnav-act" onclick="exportarBaseCompleta();toggleMobileNav()">📤 Bajar base completa (Excel)</button>
+      <button class="mnav-act" onclick="abrirDepurar();toggleMobileNav()">🧹 Depurar base de datos</button>
     </div>
   </div>
   <div class="mnav-secciones">
