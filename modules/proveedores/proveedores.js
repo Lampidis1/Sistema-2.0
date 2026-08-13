@@ -3924,6 +3924,7 @@ async function kbLoadAll(){
 function kbSelect(board, btn){
   KB.board=board;
   document.querySelectorAll('.kb-nav').forEach(b=>b.classList.toggle('active', b.dataset.board===board));
+  if(board==='planer') return giCargarPlaner();   // pendientes del Planer
   if(board==='rca') return renderRCA();
   if(board==='dashboard') return renderKbDashboard();
   if(board==='reclamos') return renderReclamosFiltro();

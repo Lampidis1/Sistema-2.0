@@ -286,3 +286,121 @@ async function rcaBorrarDoc(id) {
     await rcaCargar(); rcaRenderDocs();
   } catch (e) { showToast('Error: ' + e.message, 'err'); }
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GESTIÓN INTERNA · PANEL DEL PLANER
+//
+// Trae los pendientes y rutinas que el equipo cargó en el Planer y los muestra
+// acá como alertas, para no tener que saltar entre módulos.
+//
+// SOLO LECTURA. Crear o editar sigue siendo del Planer: la RLS de
+// planer_items permite leer a quien tiene el acceso principal, pero escribir
+// exige el slug 'planer' y ser el autor de la fila.
+// ═══════════════════════════════════════════════════════════════════════════
+
+let GI_ITEMS = [];
+let GI_FILTRO = 'alertas';   // alertas | semana | todos
+
+const _hoyISO = () => { const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+
+async function giCargarPlaner(){
+  const cont = document.getElementById('kanbanContent');
+  cont.innerHTML = '<div class="kb-empty">Cargando pendientes del equipo…</div>';
+  try{
+    const { data, error } = await SUPA.client.from('planer_items')
+      .select('*').neq('estado_registro','Eliminado').order('fecha_limite',{ascending:true});
+    if(error) throw error;
+    GI_ITEMS = data || [];
+    giRender();
+  }catch(e){
+    // Si el usuario no tiene permiso, se dice con todas sus letras en vez de
+    // mostrar una lista vacía que parezca "no hay nada pendiente".
+    cont.innerHTML = `<div class="kb-empty">No se pudieron leer los pendientes del Planer.<br>
+      <span style="font-size:.82rem">${esc(e.message)}</span></div>`;
+  }
+}
+
+function giSetFiltro(f){ GI_FILTRO = f; giRender(); }
+
+// Un pendiente es alerta si vence hoy o ya venció y no está hecho.
+function giEsAlerta(i){
+  if(i.estado === 'hecho') return false;
+  const f = i.fecha_limite || i.fecha_inicio;
+  return !!f && f <= _hoyISO();
+}
+function giDiasRestantes(i){
+  const f = i.fecha_limite || i.fecha_inicio; if(!f) return null;
+  return Math.round((new Date(f+'T00:00:00') - new Date(_hoyISO()+'T00:00:00'))/86400000);
+}
+
+function giRender(){
+  const cont = document.getElementById('kanbanContent');
+  const hoy = _hoyISO();
+  const en7 = new Date(Date.now()+7*86400000).toISOString().slice(0,10);
+
+  const alertas = GI_ITEMS.filter(giEsAlerta);
+  const semana  = GI_ITEMS.filter(i=>{
+    const f=i.fecha_limite||i.fecha_inicio;
+    return i.estado!=='hecho' && f && f>hoy && f<=en7;
+  });
+  const hechos  = GI_ITEMS.filter(i=>i.estado==='hecho').length;
+
+  const lista = GI_FILTRO==='alertas' ? alertas
+              : GI_FILTRO==='semana'  ? semana
+              : GI_ITEMS.filter(i=>i.estado!=='hecho');
+
+  // por autor, para ver la carga de cada especialista
+  const porAutor = {};
+  GI_ITEMS.filter(i=>i.estado!=='hecho').forEach(i=>{
+    const a=i.autor_nombre||'—'; porAutor[a]=(porAutor[a]||0)+1;
+  });
+
+  cont.innerHTML = `
+    <div class="kb-head">
+      <div class="kb-title">📌 Pendientes del equipo</div>
+      <a class="kb-add" href="../planer/" target="_blank" rel="noopener" style="text-decoration:none">Abrir Planer ↗</a>
+    </div>
+    <div class="gi-nota">Se ven los pendientes cargados en el Planer. Para crear o editar, entra al Planer.</div>
+
+    <div class="gi-kpis">
+      <div class="gi-kpi ${alertas.length?'alerta':''}"><div class="gi-kpi-n">${alertas.length}</div><div class="gi-kpi-l">Vencidos o de hoy</div></div>
+      <div class="gi-kpi"><div class="gi-kpi-n">${semana.length}</div><div class="gi-kpi-l">Próximos 7 días</div></div>
+      <div class="gi-kpi"><div class="gi-kpi-n">${GI_ITEMS.filter(i=>i.estado!=='hecho').length}</div><div class="gi-kpi-l">Abiertos</div></div>
+      <div class="gi-kpi"><div class="gi-kpi-n" style="color:var(--green)">${hechos}</div><div class="gi-kpi-l">Cerrados</div></div>
+    </div>
+
+    ${Object.keys(porAutor).length ? `<div class="gi-autores">
+      ${Object.keys(porAutor).sort((a,b)=>porAutor[b]-porAutor[a])
+        .map(a=>`<span class="gi-autor">👤 ${esc(a)} <b>${porAutor[a]}</b></span>`).join('')}
+    </div>` : ''}
+
+    <div class="gi-filtros">
+      ${[['alertas','⚠ Alertas',alertas.length],['semana','📆 Esta semana',semana.length],['todos','📋 Todos los abiertos',GI_ITEMS.filter(i=>i.estado!=='hecho').length]]
+        .map(([k,t,n])=>`<button class="gi-f ${GI_FILTRO===k?'active':''}" onclick="giSetFiltro('${k}')">${t} <span>${n}</span></button>`).join('')}
+    </div>
+
+    ${!lista.length ? `<div class="kb-empty">${GI_FILTRO==='alertas'?'Nada vencido. Al día. 👌':'Sin pendientes en este filtro.'}</div>`
+      : `<div class="gi-lista">${lista.map(giFilaHTML).join('')}</div>`}`;
+}
+
+function giFilaHTML(i){
+  const d = giDiasRestantes(i);
+  const venc = d!==null && d<0;
+  const hoyMismo = d===0;
+  const esRutina = i.tipo==='todo';
+  return `<div class="gi-item ${venc?'venc':hoyMismo?'hoy':''}">
+    <div class="gi-pri pri-${esc(i.prioridad||'media')}" title="Prioridad ${esc(i.prioridad||'media')}"></div>
+    <div style="flex:1;min-width:0">
+      <div class="gi-t">${esRutina?'🔁 ':''}${esc(i.titulo)}</div>
+      <div class="gi-m">
+        👤 ${esc(i.autor_nombre||'—')}
+        ${i.fecha_limite||i.fecha_inicio ? ' · 📅 '+esc(i.fecha_limite||i.fecha_inicio) : ''}
+        ${d!==null ? ` · <b class="${venc?'gi-venc':hoyMismo?'gi-hoy':''}">${venc?`${Math.abs(d)} día(s) atrasado`:hoyMismo?'vence hoy':`en ${d} día(s)`}</b>` : ''}
+        · ${esc({pendiente:'Pendiente',en_progreso:'En progreso',hecho:'Hecho'}[i.estado]||i.estado)}
+      </div>
+      ${i.descripcion?`<div class="gi-d">${esc(i.descripcion)}</div>`:''}
+    </div>
+  </div>`;
+}

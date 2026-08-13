@@ -17,7 +17,7 @@
 <!-- La ficha emergente es comun con MGI: vive en shared/ (CLAUDE.md Regla 8).
      Va ANTES de proveedores.css para que el modulo pueda ajustar detalles. -->
 <link rel="stylesheet" href="../../shared/css/ficha-modal.css?v=20260808c">
-<link rel="stylesheet" href="proveedores.css?v=20260809g">
+<link rel="stylesheet" href="proveedores.css?v=20260809h">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -113,7 +113,7 @@
     &#128207; Estandarizaci&#243;n
   </button>
   <button class="nav-tab" onclick="switchPage('kanban',this)" data-page="kanban">
-    &#128203; Kanban
+    &#129309; Gesti&#243;n Interna
   </button>
 </nav>
 <!-- PAGE DIRECTORIO -->
@@ -346,6 +346,8 @@
 <div class="page" id="page-kanban">
   <div class="kanban-wrap">
     <div class="kanban-side">
+      <div class="kb-group-title">📌 Del Planer</div>
+      <button class="kb-nav" data-board="planer" onclick="kbSelect('planer',this)">⚠️ Pendientes del equipo</button>
       <div class="kb-group-title">⚙️ Operación</div>
       <button class="kb-nav active" data-board="proyectos"   onclick="kbSelect('proyectos',this)">📁 Proyectos / Iniciativas</button>
       <button class="kb-nav" data-board="reuniones"   onclick="kbSelect('reuniones',this)">🗓️ Reuniones</button>
@@ -354,7 +356,6 @@
       <div class="kb-group-title">🤝 Red y Abastecimiento</div>
       <button class="kb-nav" data-board="contactos"     onclick="kbSelect('contactos',this)">👥 Contactos</button>
       <button class="kb-nav" data-board="prov_locales"  onclick="kbSelect('prov_locales',this)">🏪 Proveedores Locales</button>
-      <button class="kb-nav" data-board="rca"           onclick="kbSelect('rca',this)">📋 Cumplimiento RCA</button>
       <div class="kb-group-title">📊 Resumen</div>
       <button class="kb-nav" data-board="dashboard"     onclick="kbSelect('dashboard',this)">📈 Dashboard Kanban</button>
     </div>
@@ -514,13 +515,13 @@
   </div>
 </div>
 
-<script src="proveedores.js?v=20260809g"></script>
+<script src="proveedores.js?v=20260809h"></script>
 <script src="proveedores-programas.js?v=20260808"></script>
 <script src="proveedores-compromisos.js?v=20260808"></script>
 <script src="proveedores-agenda.js?v=20260808"></script>
 <script src="proveedores-pdf.js?v=20260809d"></script>
 <script src="proveedores-depurar.js?v=20260809b"></script>
-<script src="proveedores-rca.js?v=20260809a"></script>
+<script src="proveedores-rca.js?v=20260809b"></script>
 
 <!-- MODAL AYUDA SUPABASE -->
 <div id="syncHelpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center">
@@ -1004,7 +1005,7 @@
     <div class="mobile-nav-item" onclick="mobileGo('licitaciones_dir')">Licitaciones</div>
     <div class="mobile-nav-item" onclick="mobileGo('compromisos')">Compromisos</div>
     <div class="mobile-nav-item" onclick="mobileGo('programas_dash')">Programas</div>
-    <div class="mobile-nav-item" onclick="mobileGo('kanban')">Kanban</div>
+    <div class="mobile-nav-item" onclick="mobileGo('kanban')">Gestión Interna</div>
   </div>
 </div>
 <!-- Botón flotante de filtros (solo móvil, en directorio) -->
