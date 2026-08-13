@@ -1161,3 +1161,12 @@ body.is-user .solo-admin{ display:none !important; }
   .lt-cab,.lt-fila,.lt-cab{grid-template-columns:150px 1fr}
   .lt-cab{grid-template-columns:150px repeat(5,1fr)}
 }
+
+/* Aviso de contrato pendiente en una licitación adjudicada */
+.lt-contrato{display:inline-block;margin-top:5px;font-size:.72rem;font-weight:700;
+             border-radius:14px;padding:3px 10px;line-height:1.4}
+.lt-contrato.ok{background:#e8f6ec;color:#1e7e34;border:1px solid #b7e0c2}
+.lt-contrato.falta{background:#F2A900;color:#3a2c00;border:1px solid #d99700;
+                   cursor:pointer;font-family:inherit}
+.lt-contrato.falta:hover{background:#d99700;color:#fff}
+.ac-de-lic{font-size:.74rem;color:#1e7e34;font-weight:600;margin-top:2px}

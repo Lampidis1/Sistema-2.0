@@ -2172,7 +2172,14 @@ function licCardHtml(pid,l){
   let h='<div style="border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;background:#fff">';
   h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">';
   h+='<div style="flex:1;min-width:180px"><div style="font-weight:700;font-size:.98rem">'+esc(l.nombre)+'</div>';
-  h+='<div style="font-size:.78rem;color:var(--text-muted);margin-top:2px">Avance: '+done+'/'+LIC_HITOS.length+' hitos · <span style="color:'+col+';font-weight:700">'+esc(l.estado_final||l.estado_proceso||'En curso')+'</span></div></div>';
+  h+='<div style="font-size:.78rem;color:var(--text-muted);margin-top:2px">Avance: '+done+'/'+LIC_HITOS.length+' hitos · <span style="color:'+col+';font-weight:700">'+esc(l.estado_final||l.estado_proceso||'En curso')+'</span></div>';
+  // Adjudicada sin contrato: el paso que falta queda a la vista.
+  if(licAdjudicada(l)){
+    h+= acContratoDeLic(pid,l.id)
+      ? '<div class="lt-contrato ok">📄 Contrato cargado</div>'
+      : '<button class="lt-contrato falta" onclick="licIrContrato(\''+pid+'\',\''+l.id+'\')">📄 Cargar contrato</button>';
+  }
+  h+='</div>';
   h+='<div style="display:flex;gap:6px"><button class="btn-edit-modal" onclick="licFormEditar(\''+pid+'\',\''+l.id+'\')">✏ Editar</button>';
   h+='<button class="btn-edit-modal solo-admin" style="color:#c0311b" onclick="licEliminar(\''+pid+'\',\''+l.id+'\')">🗑</button></div></div>';
   // ruta de hitos
@@ -2188,6 +2195,41 @@ function licCardHtml(pid,l){
   });
   h+='</div></div>';
   return h;
+}
+
+// ── Adjudicada → contrato ────────────────────────────────────────────────
+// Cuando una licitación se marca Adjudicado, lo que sigue siempre es cargar
+// el contrato. En vez de dejarlo a la memoria de cada uno, el sistema salta
+// solo a Contratos con el formulario abierto y el vínculo ya hecho.
+let AC_PRE=null;   // {pid, licitacion_id, servicio}
+
+function acContratoDeLic(pid,lid){
+  return (DB.acuerdos[pid]||[]).find(a=>a.licitacion_id===lid) || null;
+}
+// Desde la línea de tiempo: abre la ficha en Contratos listo para cargar.
+function licIrContrato(pid,lid){
+  const l=(DB.licitaciones[pid]||[]).find(x=>x.id===lid);
+  AC_PRE={pid:pid, licitacion_id:lid, servicio:(l&&l.nombre)||''};
+  abrirDesde(pid,'acuerdos');
+}
+// Abre y prellena el formulario de contrato si venimos de una adjudicación.
+function acAplicarPrellenado(id){
+  if(!AC_PRE || AC_PRE.pid!==id) return;
+  const f=document.getElementById('fac_'+id); if(!f) return;
+  f.classList.add('open');
+  const serv=document.getElementById('fac_serv_'+id);
+  if(serv && AC_PRE.servicio) serv.value=AC_PRE.servicio;
+  if(!document.getElementById('acPreAviso')){
+    const av=document.createElement('div');
+    av.id='acPreAviso';
+    av.style.cssText='background:#e8f6ec;border:1px solid #b7e0c2;border-radius:8px;'+
+                     'padding:9px 11px;font-size:.8rem;color:#1e7e34;margin-bottom:10px;font-weight:600';
+    av.textContent='🏆 Licitación adjudicada'+(AC_PRE.servicio?': '+AC_PRE.servicio:'')+
+                   ' — completa los datos del contrato. Quedará vinculado a este proceso.';
+    f.insertBefore(av,f.firstChild);
+  }
+  f.scrollIntoView({behavior:'smooth',block:'nearest'});
+  const co=document.getElementById('fac_co_'+id); if(co) co.focus();
 }
 
 // ── Formulario nueva/editar licitación ──
@@ -2243,7 +2285,14 @@ async function licGuardar(pid){
   const guardada=LICIT_EDIT; LICIT_EDIT=null;
   renderLicitacionesModal(pid);
   actualizarBadgeLicitaciones();
-  showToast('✅ Licitación guardada','success');
+  // Adjudicada y sin contrato cargado: se va derecho a cargarlo.
+  if(licAdjudicada(guardada) && !acContratoDeLic(pid,guardada.id)){
+    AC_PRE={pid:pid, licitacion_id:guardada.id, servicio:guardada.nombre||''};
+    showToast('🏆 Adjudicada — carga ahora el contrato','success');
+    switchModalTab('acuerdos');
+  } else {
+    showToast('✅ Licitación guardada','success');
+  }
 }
 async function licEliminar(pid,lid){
   if(typeof ES_ADMIN_ACTUAL!=='undefined' && !ES_ADMIN_ACTUAL){ showToast('Solo un administrador puede eliminar','err'); return; }
@@ -2364,6 +2413,10 @@ function renderLicitacionesDir(){
         <div class="lt-prov-n">${esc(dispName(p))}</div>
         <div class="lt-prov-l">${esc(l.nombre||'Sin nombre')}</div>
         <div class="lt-prov-e" style="color:${col}">${adj?'✓ Adjudicada':cerrada?'✗ Perdida':(etapa<0?'Por iniciar':'En '+esc(LIC_HITOS[etapa].label))}</div>
+        ${adj ? (acContratoDeLic(p._id,l.id)
+            ? '<div class="lt-contrato ok">📄 Contrato cargado</div>'
+            : `<button class="lt-contrato falta" onclick="event.stopPropagation();licIrContrato('${p._id}','${l.id}')">📄 Cargar contrato</button>`)
+          : ''}
       </div>
       <div class="lt-pista">
         <div class="lt-linea"><div class="lt-avance" style="width:${pct}%;background:${col}"></div></div>
@@ -2475,6 +2528,7 @@ function renderAcuerdos(id){
         <button class="visita-del" onclick="borrarAcuerdo('${id}','${ac.id}')">✕</button>
         <div class="ac-compania">Minera ${esc(ac.compania)}</div>
         <div class="ac-servicio">${esc(ac.servicio||'Sin servicio especificado')}</div>
+        ${ac.licitacion_id?`<div class="ac-de-lic">🏆 Viene de la licitación: ${esc(((DB.licitaciones[id]||[]).find(x=>x.id===ac.licitacion_id)||{}).nombre||'proceso adjudicado')}</div>`:''}
         <div class="ac-grid">
           <div class="ac-field"><strong>Proveedor:</strong> ${esc(ac.proveedor)}</div>
           <div class="ac-field"><strong>Área:</strong> ${esc(ac.area||'—')}</div>
@@ -2501,6 +2555,7 @@ function renderAcuerdos(id){
       </div>`;
     }).join('')}
   </div>`;
+  acAplicarPrellenado(id);
 }
 
 function toggleFormAc(id){
@@ -2535,14 +2590,17 @@ async function guardarAcuerdo(id){
     descripcion_servicio:'', usd_manual:null, pdf_url:'', foto1_url:'', foto2_url:'', foto3_url:'', visitas_json:[],
     created_by:miNombre(),
     prov_id:id,
+    licitacion_id:(AC_PRE&&AC_PRE.pid===id)?AC_PRE.licitacion_id:'',
   };
   if(!DB.acuerdos[id]) DB.acuerdos[id]=[];
   DB.acuerdos[id].push(ac);
   await saveDB();
+  if(AC_PRE&&AC_PRE.pid===id) AC_PRE=null;
+  const av=document.getElementById('acPreAviso'); if(av) av.remove();
   toggleFormAc(id);
   renderAcuerdos(id);
   actualizarBadgeAcuerdos();
-  showToast('✅ Licitación guardada','success');
+  showToast(ac.licitacion_id?'✅ Contrato guardado y vinculado a la licitación':'✅ Contrato guardado','success');
   await licPushSupabase(id, ac);
 }
 async function borrarAcuerdo(pid,aid){
@@ -3380,7 +3438,7 @@ function hydrateFromSupabase(b){
       prov_id:pid, servicio:a.servicio||'', area:a.area||'', adc:a.adc||'',
       os:a.os||'', monto_clp:parseInt(a.monto_clp)||0, periodo:a.periodo||'',
       fecha_inicio:a.fecha_inicio||'', fecha_fin:a.fecha_fin||'',
-      localidad:a.localidad||'', rubro:a.rubro||'',
+      localidad:a.localidad||'', rubro:a.rubro||'', licitacion_id:a.licitacion_id||'',
       descripcion_servicio:a.descripcion_servicio||'', anio:a.anio||(a.fecha_inicio||'').slice(0,4),
       usd_manual:a.usd_manual||null, pdf_url:a.pdf_url||'',
       foto1_url:a.foto1_url||'', foto2_url:a.foto2_url||'', foto3_url:a.foto3_url||'',
@@ -3499,7 +3557,8 @@ async function gSyncPush(proveedorId){
       compania:a.compania||'', proveedor:a.proveedor||'', servicio:a.servicio||'',
       area:a.area||'', adc:a.adc||'', os:a.os||'', monto_clp:a.monto_clp||0,
       periodo:a.periodo||'', fecha_inicio:a.fecha_inicio||'', fecha_fin:a.fecha_fin||'',
-      localidad:a.localidad||'', rubro:a.rubro||'', estado_registro:'Activo', updated_at:now
+      localidad:a.localidad||'', rubro:a.rubro||'', licitacion_id:a.licitacion_id||null,
+      estado_registro:'Activo', updated_at:now
     }));
     if(acs.length) await SUPA.client.from('acuerdos').insert(acs);
 
