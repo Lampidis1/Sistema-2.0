@@ -118,24 +118,24 @@ function dashPintar(){
     </div>
 
     <div class="dash-hero">
-      ${dashTarjeta('🗓️', visitas.length, 'Visitas realizadas', promMes+' por mes en promedio', DASH_COLOR.tealDk)}
-      ${dashTarjeta('✅', pctComp+'%', 'Compromisos cumplidos', cerrados+' de '+comps.length, pctComp>=80?DASH_COLOR.verde:pctComp>=50?DASH_COLOR.oro:DASH_COLOR.rojo)}
-      ${dashTarjeta('🤝', provVisitados, 'Proveedores visitados', 'de '+PROVEEDORES.filter(p=>p.estado!=='Eliminado').length+' en la base', DASH_COLOR.azul)}
-      ${dashTarjeta('📄', vigentes.length, 'Contratos vigentes', monto?_clp(monto):'sin monto cargado', DASH_COLOR.morado)}
+      ${dashTarjeta('🗓️', visitas.length, 'Visitas realizadas', promMes+' por mes en promedio', DASH_COLOR.tealDk, 'visitas')}
+      ${dashTarjeta('✅', pctComp+'%', 'Compromisos cumplidos', cerrados+' de '+comps.length, pctComp>=80?DASH_COLOR.verde:pctComp>=50?DASH_COLOR.oro:DASH_COLOR.rojo, 'compromisos')}
+      ${dashTarjeta('🤝', provVisitados, 'Proveedores visitados', 'de '+PROVEEDORES.filter(p=>p.estado!=='Eliminado').length+' en la base', DASH_COLOR.azul, 'proveedores')}
+      ${dashTarjeta('📄', vigentes.length, 'Contratos vigentes', monto?_clp(monto):'sin monto cargado', DASH_COLOR.morado, 'contratos')}
     </div>
 
     <div class="dash-card dash-ancho">
-      <div class="dash-card-t">Ritmo de trabajo · visitas por mes</div>
+      <div class="dash-card-t">Ritmo de trabajo · visitas por mes <span class="dash-pista">toca una barra</span></div>
       <div class="dash-chart" style="height:230px"><canvas id="dashRitmo"></canvas></div>
     </div>
 
     <div class="dash-fila">
       <div class="dash-card">
-        <div class="dash-card-t">Aporte por especialista</div>
+        <div class="dash-card-t">Aporte por especialista <span class="dash-pista">toca una barra</span></div>
         <div class="dash-chart" style="height:230px"><canvas id="dashEquipo"></canvas></div>
       </div>
       <div class="dash-card">
-        <div class="dash-card-t">Estado de los compromisos</div>
+        <div class="dash-card-t">Estado de los compromisos <span class="dash-pista">toca un tramo</span></div>
         <div class="dash-chart" style="height:230px"><canvas id="dashComp"></canvas></div>
         ${vencidos ? `<div class="dash-alerta">⚠ ${vencidos} compromiso(s) vencido(s) sin cerrar</div>` : ''}
       </div>
@@ -143,7 +143,7 @@ function dashPintar(){
 
     <div class="dash-fila">
       <div class="dash-card">
-        <div class="dash-card-t">Cobertura territorial · visitas por localidad</div>
+        <div class="dash-card-t">Cobertura territorial <span class="dash-pista">toca una barra</span></div>
         <div class="dash-chart" style="height:250px"><canvas id="dashTerritorio"></canvas></div>
       </div>
       <div class="dash-card">
@@ -157,10 +157,11 @@ function dashPintar(){
   dashChartCompromisos(cerrados, abiertos, vencidos);
   dashChartTerritorio(visitas);
   dashEstandarizacion();
+  dashConectarClicks(rango, visitas, comps);
 }
 
-function dashTarjeta(ico, valor, titulo, sub, color){
-  return `<div class="dash-hero-c">
+function dashTarjeta(ico, valor, titulo, sub, color, cual){
+  return `<div class="dash-hero-c" onclick="dashDetalleHero('${cual}')" title="Ver el detalle">
     <div class="dash-hero-ico">${ico}</div>
     <div class="dash-hero-n" style="color:${color}">${valor}</div>
     <div class="dash-hero-t">${titulo}</div>
@@ -264,4 +265,187 @@ function dashEstandarizacion(){
       <div class="dash-est-s">${provs.length} proveedor(es)</div>
     </div>`;
   }).join('') || '<div class="dash-sinest">Sin proveedores en los rubros de habitabilidad.</div>';
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PANEL DE DETALLE
+// Cada gráfico y cada indicador es clicable: al tocarlos se abre un panel
+// lateral con las visitas o compromisos que hay DETRÁS de ese número.
+//
+// La idea es que el dashboard siga siendo visual: el detalle no está en la
+// pantalla, aparece solo cuando se pide.
+// ═══════════════════════════════════════════════════════════════════════════
+
+function dashNombreProv(pid){
+  const p = PROVEEDORES.find(x => x._id === pid);
+  return p ? (typeof dispName === 'function' ? dispName(p) : (p.nombre_fantasia || p.razon_social)) : null;
+}
+
+// Abre el panel con una lista de visitas ya filtrada.
+function dashDetalleVisitas(titulo, subtitulo, visitas){
+  const orden = visitas.slice().sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));
+  const comps = DASH_DATOS.compromisos;
+  const cuerpo = !orden.length
+    ? '<div class="dd-vacio">Sin visitas en esta selección.</div>'
+    : orden.map(v=>{
+        const nom = dashNombreProv(v.proveedor_id);
+        const nC = comps.filter(c=>c.visita_id===v.visita_id).length;
+        const abiertos = comps.filter(c=>c.visita_id===v.visita_id && !c.cerrado).length;
+        return `<div class="dd-item" ${nom?`onclick="dashIrAFicha('${v.proveedor_id}')" title="Abrir la ficha"`:''}>
+          <div class="dd-fecha">${esc(String(v.fecha||'').slice(8,10))}<span>${DASH_MESES[(+String(v.fecha||'').slice(5,7)||1)-1]}</span></div>
+          <div style="flex:1;min-width:0">
+            <div class="dd-t">${esc(nom || 'Proveedor no encontrado')}</div>
+            <div class="dd-m">
+              👤 ${esc(v.responsable_nombre||'sin responsable')}
+              ${v.comuna?' · 📍 '+esc(v.comuna):''}
+              ${nC?` · ✅ ${nC-abiertos}/${nC} compromisos`:''}
+              ${v.origen_plataforma==='mgi'?' · <b>MGI</b>':''}
+            </div>
+          </div>
+          ${nom?'<span class="dd-ir">›</span>':''}
+        </div>`;
+      }).join('');
+  dashAbrirPanel(titulo, subtitulo || (orden.length+' visita(s)'), cuerpo);
+}
+
+function dashDetalleCompromisos(titulo, lista){
+  const hoyISO = new Date().toISOString().slice(0,10);
+  const cuerpo = !lista.length
+    ? '<div class="dd-vacio">Sin compromisos en esta selección.</div>'
+    : lista.map(c=>{
+        const v = DASH_DATOS.visitas.find(x=>x.visita_id===c.visita_id);
+        const nom = v ? dashNombreProv(v.proveedor_id) : null;
+        const venc = !c.cerrado && c.fecha_limite && c.fecha_limite < hoyISO;
+        return `<div class="dd-item ${venc?'venc':''}" ${v&&nom?`onclick="dashIrAFicha('${v.proveedor_id}')"`:''}>
+          <div class="dd-est ${c.cerrado?'ok':venc?'venc':'abierto'}">${c.cerrado?'✓':venc?'!':'○'}</div>
+          <div style="flex:1;min-width:0">
+            <div class="dd-t">${esc(c.descripcion || 'Compromiso sin descripción')}</div>
+            <div class="dd-m">
+              ${nom?esc(nom):'—'}
+              ${c.responsable?' · 👤 '+esc(c.responsable):''}
+              ${c.fecha_limite?' · 📅 '+esc(c.fecha_limite):''}
+              ${venc?' · <b style="color:#c0311b">vencido</b>':''}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+  dashAbrirPanel(titulo, lista.length+' compromiso(s)', cuerpo);
+}
+
+function dashAbrirPanel(titulo, subtitulo, cuerpoHTML){
+  document.getElementById('ddTitulo').textContent = titulo;
+  document.getElementById('ddSub').textContent = subtitulo;
+  document.getElementById('ddCuerpo').innerHTML = cuerpoHTML;
+  document.getElementById('ddPanel').classList.add('abierto');
+  document.getElementById('ddFondo').classList.add('abierto');
+}
+function dashCerrarPanel(){
+  document.getElementById('ddPanel').classList.remove('abierto');
+  document.getElementById('ddFondo').classList.remove('abierto');
+}
+// Del detalle a la ficha completa del proveedor, en el Directorio.
+function dashIrAFicha(pid){
+  if(!pid) return;
+  dashCerrarPanel();
+  if(typeof abrirDesde === 'function') abrirDesde(pid, 'visitas');
+}
+
+// Se engancha a los gráficos ya creados: cada uno sabe qué mostrar al tocarlo.
+function dashConectarClicks(rango, visitas, comps){
+  const hoyISO = new Date().toISOString().slice(0,10);
+
+  const alTocar = (chart, fn) => {
+    if(!chart) return;
+    chart.options.onClick = (ev, els) => { if(els && els.length) fn(els[0].index); };
+    chart.canvas.style.cursor = 'pointer';
+    chart.update('none');
+  };
+
+  // ritmo por mes
+  alTocar(DASH_CHARTS[0], i => {
+    const r = rango[i]; if(!r) return;
+    const k = dashClave(r);
+    dashDetalleVisitas(DASH_MESES[r.m]+' '+r.y, null,
+      visitas.filter(v => String(v.fecha).slice(0,7) === k));
+  });
+
+  // por especialista
+  const porPersona = {};
+  visitas.forEach(v=>{ const n=(v.responsable_nombre||'Sin asignar').trim()||'Sin asignar';
+    porPersona[n]=(porPersona[n]||0)+1; });
+  const gente = Object.keys(porPersona).sort((a,b)=>porPersona[b]-porPersona[a]).slice(0,8);
+  alTocar(DASH_CHARTS[1], i => {
+    const n = gente[i]; if(!n) return;
+    dashDetalleVisitas(n, null,
+      visitas.filter(v => ((v.responsable_nombre||'Sin asignar').trim()||'Sin asignar') === n));
+  });
+
+  // compromisos por estado
+  alTocar(DASH_CHARTS[2], i => {
+    const cerr = comps.filter(c=>c.cerrado);
+    const venc = comps.filter(c=>!c.cerrado && c.fecha_limite && c.fecha_limite < hoyISO);
+    const abie = comps.filter(c=>!c.cerrado && !(c.fecha_limite && c.fecha_limite < hoyISO));
+    dashDetalleCompromisos(['Compromisos cumplidos','Compromisos abiertos','Compromisos vencidos'][i],
+      [cerr, abie, venc][i] || []);
+  });
+
+  // territorio
+  const porLoc = {};
+  visitas.forEach(v=>{
+    let loc=(v.comuna||'').trim();
+    if(!loc){ const p=PROVEEDORES.find(x=>x._id===v.proveedor_id); loc=(p&&p.localidad)||'Sin localidad'; }
+    porLoc[loc]=(porLoc[loc]||0)+1;
+  });
+  const locs = Object.keys(porLoc).sort((a,b)=>porLoc[b]-porLoc[a]).slice(0,10);
+  alTocar(DASH_CHARTS[3], i => {
+    const l = locs[i]; if(!l) return;
+    dashDetalleVisitas(l, null, visitas.filter(v=>{
+      let loc=(v.comuna||'').trim();
+      if(!loc){ const p=PROVEEDORES.find(x=>x._id===v.proveedor_id); loc=(p&&p.localidad)||'Sin localidad'; }
+      return loc===l;
+    }));
+  });
+}
+
+// Los cuatro indicadores grandes también abren su detalle.
+function dashDetalleHero(cual){
+  const visitas = dashVisitasDelPeriodo();
+  const ids = new Set(visitas.map(v=>v.visita_id));
+  const comps = DASH_DATOS.compromisos.filter(c=>ids.has(c.visita_id));
+  const hoyISO = new Date().toISOString().slice(0,10);
+
+  if(cual==='visitas') return dashDetalleVisitas('Visitas realizadas', dashEtiquetaPeriodo(dashRango()), visitas);
+  if(cual==='compromisos') return dashDetalleCompromisos('Todos los compromisos', comps);
+  if(cual==='proveedores'){
+    const porProv = {};
+    visitas.forEach(v=>{ if(v.proveedor_id) (porProv[v.proveedor_id]=porProv[v.proveedor_id]||[]).push(v); });
+    const orden = Object.keys(porProv).sort((a,b)=>porProv[b].length-porProv[a].length);
+    return dashAbrirPanel('Proveedores visitados', orden.length+' proveedor(es)',
+      orden.map(pid=>{
+        const nom = dashNombreProv(pid);
+        const vs = porProv[pid];
+        const ult = vs.map(v=>v.fecha).sort().pop();
+        return `<div class="dd-item" onclick="dashIrAFicha('${pid}')">
+          <div class="dd-num">${vs.length}</div>
+          <div style="flex:1;min-width:0">
+            <div class="dd-t">${esc(nom || pid)}</div>
+            <div class="dd-m">última visita: ${esc(ult||'—')}</div>
+          </div><span class="dd-ir">›</span>
+        </div>`;
+      }).join('') || '<div class="dd-vacio">Sin visitas en el período.</div>');
+  }
+  if(cual==='contratos'){
+    const acuerdos = Object.values(DB.acuerdos||{}).flat()
+      .filter(a=>{ const f=a.fecha_fin||a.fin; return !f || f>=hoyISO; });
+    return dashAbrirPanel('Contratos vigentes', acuerdos.length+' contrato(s)',
+      acuerdos.length ? acuerdos.map(a=>`<div class="dd-item" ${a.proveedor_id?`onclick="dashIrAFicha('${a.proveedor_id}')"`:''}>
+        <div style="flex:1;min-width:0">
+          <div class="dd-t">${esc(a.proveedor || dashNombreProv(a.proveedor_id) || a.servicio || 'Contrato')}</div>
+          <div class="dd-m">${esc(a.servicio||'')}${a.os?' · OS '+esc(a.os):''}
+            ${a.fecha_fin?' · hasta '+esc(a.fecha_fin):''}</div>
+        </div>
+        <div class="dd-monto">${_clp(+a.monto_clp||+a.monto||0)}</div>
+      </div>`).join('') : '<div class="dd-vacio">Sin contratos vigentes.</div>');
+  }
 }

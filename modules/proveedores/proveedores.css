@@ -1056,3 +1056,36 @@ body.is-user .solo-admin{ display:none !important; }
 .dash-sinest{color:var(--text-muted);font-style:italic;font-size:.85rem;padding:30px 0;text-align:center}
 
 @media(max-width:900px){ .dash-fila{grid-template-columns:1fr} }
+
+
+/* ═══ DASHBOARD · PANEL DE DETALLE ═══
+   El detalle no está en pantalla: aparece al tocar un gráfico o un indicador,
+   así el dashboard se mantiene visual. */
+.dash-hero-c{cursor:pointer;transition:.14s}
+.dash-hero-c:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,105,115,.13);border-color:var(--primary-mid)}
+.dash-pista{float:right;font-family:'Barlow',sans-serif;font-weight:400;font-size:.68rem;color:var(--text-muted);text-transform:none;letter-spacing:0}
+.dd-fondo{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10040;opacity:0;pointer-events:none;transition:opacity .2s}
+.dd-fondo.abierto{opacity:1;pointer-events:auto}
+.dd-panel{position:fixed;top:0;right:0;bottom:0;width:440px;max-width:92vw;background:#fff;z-index:10041;transform:translateX(100%);transition:transform .24s ease;display:flex;flex-direction:column;box-shadow:-6px 0 28px rgba(0,0,0,.2)}
+.dd-panel.abierto{transform:translateX(0)}
+.dd-head{background:linear-gradient(135deg,#00778A,#005f6e);color:#fff;padding:17px 20px;display:flex;align-items:center;gap:12px}
+.dd-titulo{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.2rem;text-transform:uppercase;letter-spacing:.03em;line-height:1.1}
+.dd-sub{font-size:.76rem;opacity:.9;margin-top:2px}
+.dd-x{background:rgba(255,255,255,.18);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;flex-shrink:0}
+.dd-cuerpo{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px}
+.dd-vacio{text-align:center;padding:46px 20px;color:var(--text-muted);font-style:italic}
+.dd-item{display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:8px;cursor:pointer;transition:.12s}
+.dd-item:hover{border-color:var(--primary-mid);background:#f7fbfc}
+.dd-item.venc{border-color:#f0b4ac;background:#fffaf9}
+.dd-fecha{background:var(--primary-light);color:var(--primary);border-radius:9px;min-width:46px;padding:6px 4px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.2rem;line-height:1;flex-shrink:0}
+.dd-fecha span{display:block;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-top:1px}
+.dd-num{background:var(--primary);color:#fff;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;flex-shrink:0}
+.dd-est{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
+.dd-est.ok{background:#e6f6ec;color:#1a7a38}
+.dd-est.abierto{background:#fff3df;color:#b8780a}
+.dd-est.venc{background:#fdecea;color:#c0311b}
+.dd-t{font-weight:700;font-size:.9rem;overflow:hidden;text-overflow:ellipsis}
+.dd-m{font-size:.75rem;color:var(--text-muted);margin-top:2px}
+.dd-ir{color:var(--text-muted);font-size:1.3rem;flex-shrink:0}
+.dd-monto{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.95rem;color:var(--primary);white-space:nowrap}
+@media(max-width:599px){ .dd-panel{width:100%;max-width:100%} }
