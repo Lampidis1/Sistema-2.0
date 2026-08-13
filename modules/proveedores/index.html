@@ -17,7 +17,7 @@
 <!-- La ficha emergente es comun con MGI: vive en shared/ (CLAUDE.md Regla 8).
      Va ANTES de proveedores.css para que el modulo pueda ajustar detalles. -->
 <link rel="stylesheet" href="../../shared/css/ficha-modal.css?v=20260808c">
-<link rel="stylesheet" href="proveedores.css?v=20260809e">
+<link rel="stylesheet" href="proveedores.css?v=20260809g">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -92,7 +92,10 @@
     &#128202; Dashboard
   </button>
   <button class="nav-tab" onclick="switchPage('hoteleria',this)" data-page="hoteleria">
-    &#127968; Hoteler&#237;a <span class="tab-badge" id="badgeHabs">&#8212;</span>
+    &#127968; Habitabilidad <span class="tab-badge" id="badgeHabs">&#8212;</span>
+  </button>
+  <button class="nav-tab" onclick="switchPage('rca',this)" data-page="rca">
+    &#128203; Compromiso RCA
   </button>
   <button class="nav-tab" onclick="switchPage('acuerdos_dash',this)" data-page="acuerdos_dash">
     &#128196; Contratos <span class="tab-badge" id="badgeAcuerdos">&#8212;</span>
@@ -302,6 +305,11 @@
   <div class="dash-page" id="hoteleriaContent"></div>
 </div>
 
+<!-- PAGE COMPROMISO RCA -->
+<div class="page" id="page-rca">
+  <div class="dash-page" id="rcaContent"></div>
+</div>
+
 <!-- PAGE ACUERDOS DASHBOARD -->
 <div class="page" id="page-acuerdos_dash">
   <div class="dash-page" id="acuerdosDashContent"></div>
@@ -383,6 +391,85 @@
 <div class="toast" id="toast"></div>
 
 
+
+<!-- ░░ COMPROMISO RCA · CREAR / EDITAR EMPRESA ░░ -->
+<div id="rcaModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10030;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
+    <div class="rca-head">
+      <div class="rca-head-t" id="rcaTitulo">Nueva empresa contratista</div>
+      <button onclick="rcaCerrar()" class="rca-x">&#10005;</button>
+    </div>
+    <div class="rca-body">
+      <div class="form-field full"><label>Nombre de la empresa *</label><input id="rcaNombre" placeholder="Ej: Besalco Minería"></div>
+      <div class="edit-form">
+        <div class="form-field"><label>RUT</label><input id="rcaRut" placeholder="76.123.456-7"></div>
+        <div class="form-field"><label>N&deg; de contrato</label><input id="rcaNumContrato" placeholder="Ej: OS-2026-00123"></div>
+      </div>
+      <div class="rca-sec">Contacto</div>
+      <div class="edit-form">
+        <div class="form-field"><label>Nombre</label><input id="rcaContNombre"></div>
+        <div class="form-field"><label>Tel&eacute;fono</label><input id="rcaContFono" placeholder="+56 9 ..."></div>
+        <div class="form-field full"><label>Correo</label><input id="rcaContMail" type="email"></div>
+      </div>
+      <div class="rca-sec">Contrato</div>
+      <div class="edit-form">
+        <div class="form-field"><label>Administrador del contrato</label><input id="rcaAdmin"></div>
+        <div class="form-field"></div>
+        <div class="form-field"><label>Desde</label><input id="rcaDesde" type="date"></div>
+        <div class="form-field"><label>Hasta</label><input id="rcaHasta" type="date"></div>
+        <div class="form-field full"><label>Descripci&oacute;n breve del servicio</label><textarea id="rcaDesc" rows="2" placeholder="Qu&eacute; servicio presta la empresa"></textarea></div>
+      </div>
+      <div class="rca-sec">Monto y compromiso</div>
+      <div class="edit-form">
+        <div class="form-field"><label>Monto total del contrato (CLP)</label><input id="rcaMonto" type="number" min="0" step="1" oninput="rcaPreview()" placeholder="0"></div>
+        <div class="form-field"><label>% comprometido</label><input id="rcaPct" type="number" min="0" max="100" step="0.1" value="10" oninput="rcaPreview()"></div>
+      </div>
+      <div class="rca-calc" id="rcaCalc"></div>
+    </div>
+    <div class="rca-foot">
+      <button class="mini-btn danger" id="rcaBorrar" style="display:none" onclick="rcaBorrarEmpresa()">&#128465; Eliminar</button>
+      <div style="flex:1"></div>
+      <button class="btn-cancel" onclick="rcaCerrar()">Cancelar</button>
+      <button class="btn-save" onclick="rcaGuardar()">&#128190; Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ COMPROMISO RCA · DOCUMENTOS ░░ -->
+<div id="rcaDocsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10031;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:620px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
+    <div class="rca-head">
+      <div class="rca-head-t" id="rcaDocsTitulo">Documentos</div>
+      <button onclick="rcaCerrarDocs()" class="rca-x">&#10005;</button>
+    </div>
+    <div class="rca-body">
+      <div class="rca-subir">
+        <div class="edit-form">
+          <div class="form-field"><label>T&iacute;tulo del documento</label><input id="rcaDocTitulo" placeholder="Ej: Contrato firmado"></div>
+          <div class="form-field"><label>Tipo</label>
+            <select id="rcaDocTipo">
+              <option value="contrato">Contrato</option>
+              <option value="factura">Factura</option>
+              <option value="respaldo">Respaldo de compra</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+        </div>
+        <label class="rca-drop">
+          <span>&#128206;</span>
+          <span><b>Elegir archivo</b><br><span class="rca-drop-s">PDF o imagen · hasta 15 MB</span></span>
+          <input type="file" accept=".pdf,image/*" style="display:none" onchange="rcaSubirDoc(this)">
+        </label>
+      </div>
+      <div id="rcaDocsLista"></div>
+    </div>
+    <div class="rca-foot">
+      <div style="flex:1"></div>
+      <button class="mini-btn" onclick="rcaCerrarDocs()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ░░ DEPURAR BASE DE DATOS ░░ -->
 <div id="depModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10020;align-items:center;justify-content:center;padding:16px">
   <div style="background:#fff;border-radius:14px;max-width:920px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
@@ -427,12 +514,13 @@
   </div>
 </div>
 
-<script src="proveedores.js?v=20260809e"></script>
+<script src="proveedores.js?v=20260809g"></script>
 <script src="proveedores-programas.js?v=20260808"></script>
 <script src="proveedores-compromisos.js?v=20260808"></script>
 <script src="proveedores-agenda.js?v=20260808"></script>
 <script src="proveedores-pdf.js?v=20260809d"></script>
 <script src="proveedores-depurar.js?v=20260809b"></script>
+<script src="proveedores-rca.js?v=20260809a"></script>
 
 <!-- MODAL AYUDA SUPABASE -->
 <div id="syncHelpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center">
@@ -911,7 +999,7 @@
   <div class="mnav-secciones">
     <div class="mobile-nav-item" onclick="mobileGo('directorio')">Directorio</div>
     <div class="mobile-nav-item" onclick="mobileGo('dashboard')">Dashboard</div>
-    <div class="mobile-nav-item" onclick="mobileGo('hoteleria')">Hotelería</div>
+    <div class="mobile-nav-item" onclick="mobileGo('hoteleria')">Habitabilidad</div>
     <div class="mobile-nav-item" onclick="mobileGo('acuerdos_dash')">Contratos</div>
     <div class="mobile-nav-item" onclick="mobileGo('licitaciones_dir')">Licitaciones</div>
     <div class="mobile-nav-item" onclick="mobileGo('compromisos')">Compromisos</div>

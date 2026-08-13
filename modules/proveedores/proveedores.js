@@ -701,6 +701,7 @@ function switchPage(page, btn){
   if(btn) btn.classList.add('active');
   if(page==='dashboard') renderDashboard();
   if(page==='hoteleria') renderHoteleriaGlobal();
+  if(page==='rca') rcaCargar();
   if(page==='acuerdos_dash') renderAcuerdosDash();
   if(page==='programas_dash') renderProgramasDash();
   if(page==='kanban') renderKanban();
@@ -1724,64 +1725,146 @@ function renderDashboard(){
 }
 
 // ── HOTELERÍA GLOBAL ───────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// HABITABILIDAD (antes «Hotelería»)
+// Resumen macro del programa MGI + listado en tabla. Cubre los tres rubros:
+// hospedaje, lavandería y alimentación.
+//
+// Solo entran los proveedores del programa MGI (programa_mgi === true). Si
+// nadie lo ha marcado todavía, cae en la detección por rubro de siempre, para
+// no dejar la pantalla vacía de golpe.
+// ═══════════════════════════════════════════════════════════════════════════
+let HAB_RUBRO = 'Hotelería';   // pestaña activa
+
+function habEnProgramaMGI(p){
+  if(p.programa_mgi === true)  return true;
+  if(p.programa_mgi === false) return false;
+  return rubrosHabitabilidad(p).length > 0;   // sin decidir: como antes
+}
+function habProveedores(rubro){
+  return PROVEEDORES.filter(p => p.estado !== 'Eliminado'
+    && habEnProgramaMGI(p) && rubrosHabitabilidad(p).includes(rubro));
+}
+function setRubroHab(r){ HAB_RUBRO = r; renderHoteleriaGlobal(); }
+
 function renderHoteleriaGlobal(){
-  const el=document.getElementById('hoteleriaContent');
+  const el = document.getElementById('hoteleriaContent');
   if(!el) return;
-  if(!PROVEEDORES.length){ el.innerHTML='<div style="text-align:center;padding:60px;color:var(--text-muted)">Carga proveedores desde el Directorio primero.</div>'; return; }
-  const hotels=PROVEEDORES.filter(p=>esRubroHotel(p));
-  const totHabs=hotels.reduce((s,p)=>{const h=DB.hoteles[p._id]||{};return s+(h.total||0);},0);
-  const totOcup=hotels.reduce((s,p)=>{const h=DB.hoteles[p._id]||{};return s+(h.contratos||[]).reduce((ss,c)=>ss+ctHabs(c),0);},0);
+  if(!PROVEEDORES.length){
+    el.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-muted)">Carga proveedores desde el Directorio primero.</div>';
+    return;
+  }
 
-  const porLoc={};
-  hotels.forEach(p=>{ const loc=p.localidad||'Sin loc'; if(!porLoc[loc]) porLoc[loc]=[]; porLoc[loc].push(p); });
+  const RUBROS = ['Hotelería','Lavandería','Alimentación'];
+  const lista  = habProveedores(HAB_RUBRO);
 
-  el.innerHTML=`
-    <div class="dash-title">Mapa de Hoteleria Regional</div>
-    <div class="dash-stat-big" style="grid-template-columns:repeat(3,1fr)">
-      <div class="stat-big-card"><div class="stat-big-num">${hotels.length}</div><div class="stat-big-label">Establecimientos</div></div>
-      <div class="stat-big-card"><div class="stat-big-num">${totHabs}</div><div class="stat-big-label">Hab. totales</div></div>
-      <div class="stat-big-card"><div class="stat-big-num" style="color:var(--green)">${Math.max(0,totHabs-totOcup)}</div><div class="stat-big-label">Disponibles ahora</div></div>
+  // ── Macro resumen: solo del programa MGI ──
+  const cap = lista.reduce((a,p)=>{
+    const h = DB.hoteles[p._id] || {};
+    const simples = parseInt(h.simples)||0, dobles = parseInt(h.dobles)||0;
+    const habs = (h.total || simples + dobles);
+    const ocup = (h.contratos||[]).reduce((s,c)=>s+ctHabs(c),0);
+    a.habs += habs;
+    a.ocup += ocup;
+    // una doble puede ocuparse como simple → el máximo de camas es s + d*2
+    a.camas += simples + dobles*2;
+    a.camasOcup += (h.contratos||[]).reduce((s,c)=>s+ctCamas(c),0);
+    return a;
+  }, {habs:0, ocup:0, camas:0, camasOcup:0});
+
+  const conEst = lista.filter(p=>estPctProveedor(p._id, HAB_RUBRO) > 0);
+  const pctProm = conEst.length
+    ? Math.round(conEst.reduce((a,p)=>a+estPctProveedor(p._id,HAB_RUBRO),0)/conEst.length) : 0;
+
+  el.innerHTML = `
+    <div class="dash-title">Habitabilidad · Programa MGI</div>
+
+    <div class="hab-tabs">
+      ${RUBROS.map(r=>{
+        const n = habProveedores(r).length;
+        return `<button class="hab-tab ${r===HAB_RUBRO?'active':''}" onclick="setRubroHab('${r}')">
+          ${r==='Hotelería'?'🏨':r==='Lavandería'?'🧺':'🍽'} ${r} <span class="hab-tab-n">${n}</span>
+        </button>`;
+      }).join('')}
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin:6px 0 14px">
-      <input id="hotBuscar" oninput="renderHoteleriaGlobal()" placeholder="🔍 Buscar hotelería..." style="flex:1;min-width:200px;border:1.5px solid var(--border);border-radius:8px;padding:9px 13px;font-size:.9rem">
+
+    <div class="hab-kpis">
+      <div class="hab-kpi"><div class="hab-kpi-n">${lista.length}</div><div class="hab-kpi-l">Proveedores en MGI</div></div>
+      ${HAB_RUBRO==='Hotelería' ? `
+      <div class="hab-kpi"><div class="hab-kpi-n">${cap.habs}</div><div class="hab-kpi-l">Habitaciones habilitadas</div></div>
+      <div class="hab-kpi"><div class="hab-kpi-n" style="color:var(--green)">${Math.max(0,cap.habs-cap.ocup)}</div><div class="hab-kpi-l">Habitaciones libres</div></div>
+      <div class="hab-kpi"><div class="hab-kpi-n">${cap.camas}</div><div class="hab-kpi-l">Camas habilitadas</div></div>
+      <div class="hab-kpi"><div class="hab-kpi-n" style="color:var(--green)">${Math.max(0,cap.camas-cap.camasOcup)}</div><div class="hab-kpi-l">Camas disponibles</div></div>` : ''}
+      <div class="hab-kpi"><div class="hab-kpi-n" style="color:${pctProm>=80?'#1e7e34':pctProm>=50?'#b8860b':'#c0311b'}">${pctProm}%</div><div class="hab-kpi-l">Estandarización promedio</div></div>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0 12px">
+      <input id="hotBuscar" oninput="renderHoteleriaGlobal()" placeholder="🔍 Buscar…" style="flex:1;min-width:200px;border:1.5px solid var(--border);border-radius:8px;padding:9px 13px;font-size:.9rem">
       <select id="hotOrden" onchange="renderHoteleriaGlobal()" style="border:1.5px solid var(--border);border-radius:7px;padding:8px 10px;font-size:.82rem">
-        <option value="az">Nombre A → Z</option><option value="za">Nombre Z → A</option><option value="loc">Por localidad</option>
+        <option value="camas">Más camas disponibles</option>
+        <option value="est">Menor estandarización</option>
+        <option value="az">Nombre A → Z</option>
+        <option value="loc">Por localidad</option>
       </select>
     </div>
-    ${hotels.length===0?'<div style="text-align:center;padding:40px;color:var(--text-muted)">No hay proveedores de rubro hotelero cargados.</div>':''}
-    <div class="hot-fichas-grid">
-    ${(()=>{
-      const _q=(document.getElementById('hotBuscar')?.value||'').toLowerCase().trim();
-      const _ord=document.getElementById('hotOrden')?.value||'az';
-      let lista=hotels.filter(p=>{ if(!_q) return true; return [dispName(p),p.localidad,(p.rubrosNorm||[]).join(' ')].join(' ').toLowerCase().includes(_q); });
-      lista.sort((a,b)=>{ if(_ord==='loc'){const l=(a.localidad||'').localeCompare(b.localidad||'','es');if(l)return l;} const c=dispName(a).localeCompare(dispName(b),'es'); return _ord==='za'?-c:c; });
-      return lista.map(p=>{
-        const h=DB.hoteles[p._id]||{total:0,contratos:[]};
-        const ocup=(h.contratos||[]).reduce((s,c)=>s+ctHabs(c),0);
-        const lib=Math.max(0,(h.total||0)-ocup);
-        const pctP=h.total>0?Math.round(ocup/h.total*100):0;
-        const cs=DB.contactos[p._id]||[]; const cp=cs.find(c=>c.principal)||cs[0]||null;
-        const servicios=(h.servicios||[]).slice(0,5);
-        return `<div class="hot-ficha">
-          <div class="hot-ficha-h" onclick="abrirDesde('${p._id}','hoteleria')">
-            <div class="hot-ficha-loc">${esc(p.localidad||'')}</div>
-            <div class="hot-ficha-n">${esc(dispName(p))}</div>
-          </div>
-          <div class="hot-ficha-b">
-            <div class="hot-hab-row">
-              <div class="hot-hab-stat"><div class="hot-hab-num">${h.total||0}</div><div class="hot-hab-lbl">Total</div></div>
-              <div class="hot-hab-stat"><div class="hot-hab-num" style="color:var(--green)">${lib}</div><div class="hot-hab-lbl">Disponibles</div></div>
-              <div class="hot-hab-stat"><div class="hot-hab-num" style="color:var(--orange)">${ocup}</div><div class="hot-hab-lbl">Ocupadas</div></div>
-            </div>
-            ${h.total>0?`<div class="ocupacion-bar" style="height:6px;margin:8px 0"><div class="ocupacion-fill ${pctP>=90?'full':pctP>=60?'warn':''}" style="width:${pctP}%"></div></div>`:'<div style="font-size:.76rem;color:var(--text-muted);margin:6px 0">Sin habitaciones configuradas</div>'}
-            ${servicios.length?`<div class="hot-servs">${servicios.map(s=>`<span class="hot-serv">${esc(s)}</span>`).join('')}</div>`:''}
-            ${cp?`<div style="font-size:.78rem;color:var(--text-muted);margin-top:6px">👤 ${esc(cp.nombre||'')}${cp.fono?' · 📞 '+esc(cp.fono):''}</div>`:''}
-          </div>
-          <button class="hot-ficha-btn" onclick="abrirDesde('${p._id}','hoteleria')">🏨 Gestionar habitaciones y servicios</button>
-        </div>`;
-      }).join('');
-    })()}
-    </div>`;
+    ${habTablaHTML(lista)}`;
+}
+
+// Listado en tabla. Cada fila abre la misma ficha emergente del Directorio.
+function habTablaHTML(lista){
+  const q = (document.getElementById('hotBuscar')?.value||'').toLowerCase().trim();
+  const ord = document.getElementById('hotOrden')?.value || 'camas';
+  const esHotel = HAB_RUBRO === 'Hotelería';
+
+  let filas = lista.filter(p => !q ||
+    [dispName(p), p.localidad, p.direccion, (p.rubrosNorm||[]).join(' ')].join(' ').toLowerCase().includes(q))
+    .map(p => {
+      const h = DB.hoteles[p._id] || {};
+      const simples = parseInt(h.simples)||0, dobles = parseInt(h.dobles)||0;
+      const habs = (h.total || simples + dobles);
+      const ocup = (h.contratos||[]).reduce((s,c)=>s+ctHabs(c),0);
+      const camas = simples + dobles*2;
+      const camasOcup = (h.contratos||[]).reduce((s,c)=>s+ctCamas(c),0);
+      return { p, habs, habsLibres: Math.max(0,habs-ocup), camas,
+               camasLibres: Math.max(0,camas-camasOcup),
+               pct: estPctProveedor(p._id, HAB_RUBRO) };
+    });
+
+  filas.sort((a,b)=>
+      ord==='camas' ? b.camasLibres-a.camasLibres || dispName(a.p).localeCompare(dispName(b.p),'es')
+    : ord==='est'   ? a.pct-b.pct || dispName(a.p).localeCompare(dispName(b.p),'es')
+    : ord==='loc'   ? (a.p.localidad||'').localeCompare(b.p.localidad||'','es') || dispName(a.p).localeCompare(dispName(b.p),'es')
+    :                 dispName(a.p).localeCompare(dispName(b.p),'es'));
+
+  if(!filas.length) return '<div style="text-align:center;padding:40px;color:var(--text-muted)">Sin proveedores en este rubro dentro del programa MGI.</div>';
+
+  return `<div class="table-wrap"><table class="hab-tabla">
+    <thead><tr>
+      <th>Proveedor</th><th>Localidad</th>
+      ${esHotel?'<th class="num">Hab.<br>libres</th><th class="num">Camas<br>disponibles</th><th class="num">Instaladas</th>':''}
+      <th style="min-width:150px">Estandarización</th>
+      <th></th>
+    </tr></thead>
+    <tbody>${filas.map(f=>{
+      const col = f.pct>=80?'#1e7e34':f.pct>=50?'#b8860b':'#c0311b';
+      return `<tr onclick="abrirDesde('${f.p._id}','datos')" title="Abrir la ficha">
+        <td>
+          <div class="hab-n">${esc(dispName(f.p))}</div>
+          <div class="hab-d">${esc(f.p.direccion||'sin dirección')}</div>
+        </td>
+        <td>${esc(f.p.localidad||'—')}</td>
+        ${esHotel?`
+        <td class="num"><b>${f.habsLibres}</b></td>
+        <td class="num"><b style="color:var(--green)">${f.camasLibres}</b><div class="hab-sub">de ${f.camas}</div></td>
+        <td class="num sec">${f.habs}</td>`:''}
+        <td>
+          <div class="hab-barra"><div class="hab-barra-in" style="width:${f.pct}%;background:${col}"></div></div>
+          <div class="hab-pct" style="color:${col}">${f.pct}%</div>
+        </td>
+        <td class="num"><button class="mini-btn" onclick="event.stopPropagation();abrirEstandarizacion('${f.p._id}')" title="Ver estandarización">📏</button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
 }
 
 // ── NAVEGACIÓN DESDE DASHBOARD ─────────────────────────────────────────────

@@ -923,3 +923,72 @@ body.is-user .solo-admin{ display:none !important; }
 .dep-prov-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .dep-sospecha{background:#FFF8E6;border-top:1px solid #F2CE7A;padding:10px 13px;font-size:.84rem;color:#7a5a00}
 .dep-sospecha .dep-dup-btns{margin-top:7px}
+
+
+/* ═══ HABITABILIDAD (antes Hotelería) ═══ */
+.hab-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.hab-tab{background:#fff;border:1.5px solid var(--border);border-radius:9px;padding:9px 16px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.92rem;letter-spacing:.03em;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;gap:7px}
+.hab-tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.hab-tab-n{background:rgba(0,0,0,.12);border-radius:11px;padding:1px 8px;font-size:.76rem}
+.hab-tab.active .hab-tab-n{background:rgba(255,255,255,.25)}
+.hab-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px}
+.hab-kpi{background:#fff;border:1px solid var(--border);border-radius:11px;padding:14px;text-align:center}
+.hab-kpi-n{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.9rem;color:var(--primary);line-height:1}
+.hab-kpi-l{font-size:.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-top:3px;line-height:1.3}
+.hab-tabla{width:100%;border-collapse:collapse;font-size:.86rem;background:#fff}
+.hab-tabla th{background:var(--primary-light);color:var(--primary);text-align:left;padding:10px 13px;font-family:'Barlow Condensed',sans-serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.hab-tabla td{padding:10px 13px;border-top:1px solid var(--border);vertical-align:middle}
+.hab-tabla tbody tr{cursor:pointer}
+.hab-tabla tbody tr:hover td{background:#f7fbfc}
+.hab-tabla .num{text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem}
+.hab-tabla .sec{color:var(--text-muted);font-weight:400}
+.hab-n{font-weight:700;font-size:.92rem}
+.hab-d{font-size:.75rem;color:var(--text-muted);margin-top:1px}
+.hab-sub{font-size:.68rem;color:var(--text-muted);font-family:'Barlow',sans-serif}
+.hab-barra{height:8px;background:#e6eaec;border-radius:5px;overflow:hidden;min-width:110px}
+.hab-barra-in{height:100%;border-radius:5px;transition:width .3s}
+.hab-pct{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.86rem;margin-top:3px}
+
+
+/* ═══ COMPROMISO RCA ═══ */
+.rca-head{background:linear-gradient(135deg,#00778A,#005f6e);color:#fff;padding:16px 22px;display:flex;align-items:center;gap:12px}
+.rca-head-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.2rem;text-transform:uppercase;letter-spacing:.04em}
+.rca-x{margin-left:auto;background:rgba(255,255,255,.18);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;flex-shrink:0}
+.rca-body{padding:20px 22px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
+.rca-foot{border-top:1px solid var(--border);padding:12px 22px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fafbfc}
+.rca-foot .mini-btn{width:auto;min-width:0;padding:8px 14px}
+.rca-sec{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.8rem;text-transform:uppercase;letter-spacing:.07em;color:var(--primary);margin:16px 0 9px;padding-bottom:5px;border-bottom:1px solid var(--primary-light)}
+.rca-calc{background:var(--primary-light);border-radius:8px;padding:11px 14px;font-size:.9rem;color:var(--primary);margin-top:10px}
+.rca-vacio{text-align:center;padding:50px 20px;color:var(--text-muted);font-style:italic}
+.rca-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:15px;margin-top:16px}
+.rca-card{background:#fff;border:1.5px solid var(--border);border-radius:13px;overflow:hidden;display:flex;flex-direction:column}
+.rca-card-h{background:#f6f8f9;padding:13px 15px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.rca-n{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.12rem;color:var(--primary);line-height:1.15}
+.rca-sub{font-size:.75rem;color:var(--text-muted);margin-top:2px}
+.rca-vig{background:#E7F8EE;color:#12803c;border-radius:14px;padding:3px 10px;font-size:.7rem;font-weight:700;white-space:nowrap}
+.rca-vig.porvenc{background:#FFF3DF;color:#b8780a}
+.rca-vig.venc{background:#fdecea;color:#c0311b}
+.rca-card-b{padding:13px 15px;flex:1}
+.rca-barra{height:9px;background:#e6eaec;border-radius:5px;overflow:hidden}
+.rca-barra-in{height:100%;border-radius:5px;transition:width .3s}
+.rca-avance-t{font-size:.8rem;color:var(--text-muted);margin-top:5px}
+.rca-montos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.rca-montos div{background:var(--bg2);border-radius:8px;padding:8px;text-align:center}
+.rca-montos span{display:block;font-size:.64rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em}
+.rca-montos b{font-family:'Barlow Condensed',sans-serif;font-size:.98rem;color:var(--text)}
+.rca-desc{font-size:.82rem;color:var(--text-light);line-height:1.5;margin-bottom:8px}
+.rca-meta{font-size:.76rem;color:var(--text-muted);line-height:1.6}
+.rca-docs-n{font-size:.78rem;color:var(--primary);margin-top:8px;font-weight:600}
+.rca-card-f{border-top:1px solid var(--border);padding:10px 15px;display:flex;gap:7px;background:#fafdfd}
+.rca-card-f .mini-btn{width:auto;min-width:0;padding:7px 13px;flex:1}
+.rca-subir{background:#f7fafa;border:1px solid var(--border);border-radius:11px;padding:14px;margin-bottom:16px}
+.rca-drop{display:flex;align-items:center;gap:13px;border:2px dashed #a8c8ce;border-radius:10px;padding:16px;cursor:pointer;background:#fff;margin-top:10px}
+.rca-drop:hover{border-color:var(--primary);background:var(--primary-light)}
+.rca-drop span:first-child{font-size:1.7rem}
+.rca-drop-s{font-size:.75rem;color:var(--text-muted)}
+.rca-doc{display:flex;align-items:center;gap:11px;border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:8px}
+.rca-doc.ok{background:#f6fbf8;border-color:#c9e9d5}
+.rca-doc-ico{font-size:1.4rem}
+.rca-doc-t{font-weight:700;font-size:.9rem}
+.rca-doc-s{font-size:.75rem;color:var(--text-muted);margin-top:1px;word-break:break-all}
+@media(max-width:599px){.rca-montos{grid-template-columns:1fr}}
