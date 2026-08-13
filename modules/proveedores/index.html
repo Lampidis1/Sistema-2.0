@@ -17,7 +17,7 @@
 <!-- La ficha emergente es comun con MGI: vive en shared/ (CLAUDE.md Regla 8).
      Va ANTES de proveedores.css para que el modulo pueda ajustar detalles. -->
 <link rel="stylesheet" href="../../shared/css/ficha-modal.css?v=20260808c">
-<link rel="stylesheet" href="proveedores.css?v=20260809j">
+<link rel="stylesheet" href="proveedores.css?v=20260813e">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -322,8 +322,8 @@
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;color:var(--primary);text-transform:uppercase;margin:0">📜 Licitaciones</h2>
       <span style="font-size:.82rem;color:var(--text-muted)" id="licDirCount"></span>
     </div>
-    <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:16px">Trazabilidad de procesos de licitación por proveedor. Busca un proveedor para ver o registrar sus licitaciones y el avance por hitos.</p>
-    <input id="licDirSearch" placeholder="🔍 Buscar proveedor por nombre..." oninput="renderLicitacionesDir()" style="width:100%;max-width:460px;border:1.5px solid var(--border);border-radius:9px;padding:11px 14px;font-size:.92rem;margin-bottom:18px">
+    <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:16px">Línea de tiempo de cada licitación sobre los hitos del proceso de Operaciones Centinela. Las menos avanzadas quedan arriba. Haz clic en una fila para abrir la ficha y registrar avance.</p>
+    <input id="licDirSearch" placeholder="🔍 Buscar por proveedor o licitación..." oninput="renderLicitacionesDir()" style="width:100%;max-width:460px;border:1.5px solid var(--border);border-radius:9px;padding:11px 14px;font-size:.92rem;margin-bottom:18px">
     <div id="licDirContent"></div>
   </div>
 </div>
@@ -529,7 +529,7 @@
   </div>
 </div>
 
-<script src="proveedores.js?v=20260809i"></script>
+<script src="proveedores.js?v=20260813a"></script>
 <script src="proveedores-programas.js?v=20260808"></script>
 <script src="proveedores-compromisos.js?v=20260808"></script>
 <script src="proveedores-agenda.js?v=20260808"></script>

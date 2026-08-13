@@ -1089,3 +1089,75 @@ body.is-user .solo-admin{ display:none !important; }
 .dd-ir{color:var(--text-muted);font-size:1.3rem;flex-shrink:0}
 .dd-monto{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.95rem;color:var(--primary);white-space:nowrap}
 @media(max-width:599px){ .dd-panel{width:100%;max-width:100%} }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LICITACIONES · LÍNEA DE TIEMPO
+   Cada fila es una licitación avanzando por los 5 hitos del proceso de
+   Operaciones Centinela. La grilla usa el mismo template en la cabecera y
+   en las filas para que los puntos queden bajo su hito.
+   ═════════════════════════════════════════════════════════════════════ */
+.lt-filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.lt-f{background:#fff;border:1.5px solid var(--border);border-radius:20px;
+      padding:7px 15px;font-size:.84rem;cursor:pointer;color:var(--text-muted);
+      font-weight:600;transition:.15s}
+.lt-f:hover{border-color:var(--primary)}
+.lt-f.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.lt-f span{opacity:.75;font-weight:700;margin-left:3px}
+
+/* El marco y el redondeo van en el contenedor que scrollea: así recorta
+   cualquier resto que pase por debajo de la columna fija. */
+.lt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:#fff;
+         border:1px solid var(--border);border-radius:12px}
+/* La tabla no lleva marco propio: rompería el sticky de la 1ª columna. */
+.lt-tabla{min-width:760px;background:#fff}
+
+.lt-cab,.lt-fila{display:grid;grid-template-columns:230px 1fr;align-items:stretch}
+.lt-cab{background:var(--bg-soft,#f7f8f9);border-bottom:1.5px solid var(--border);
+        grid-template-columns:230px repeat(5,1fr)}
+.lt-cab-prov{padding:12px 14px;font-size:.78rem;font-weight:700;
+             text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted)}
+.lt-cab-h{padding:12px 8px;font-size:.72rem;line-height:1.25;text-align:center;
+          color:var(--text-muted);font-weight:600;position:relative}
+.lt-cab-n{display:block;width:20px;height:20px;line-height:20px;margin:0 auto 4px;
+          border-radius:50%;background:var(--primary);color:#fff;font-weight:700;font-size:.7rem}
+.lt-cab-c{display:inline-block;margin-top:4px;background:#F2A900;color:#3a2c00;
+          border-radius:9px;padding:1px 7px;font-size:.68rem;font-weight:700}
+
+.lt-fila{--bg:#fff;background:var(--bg);border-bottom:1px solid var(--border);
+         cursor:pointer;transition:background .12s}
+.lt-fila:last-child{border-bottom:none}
+.lt-fila:hover{--bg:#f4fbfb}
+.lt-fila.adj{--bg:#f4fbf5}
+.lt-fila.perd{--bg:#fdf6f5;opacity:.85}
+
+/* La columna del nombre queda fija: al deslizar los hitos en el teléfono
+   hay que seguir viendo de qué licitación es la fila. */
+.lt-prov{padding:12px 14px;min-width:0;position:sticky;left:0;z-index:2;
+         background:var(--bg);border-right:1px solid var(--border);
+         display:flex;flex-direction:column;justify-content:center}
+.lt-cab-prov{position:sticky;left:0;z-index:3;background:var(--bg-soft,#f7f8f9);
+             border-right:1px solid var(--border);display:flex;align-items:center}
+.lt-prov-n{font-weight:700;font-size:.9rem;color:var(--text);
+           white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lt-prov-l{font-size:.78rem;color:var(--text-muted);margin-top:1px;
+           white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lt-prov-e{font-size:.74rem;font-weight:700;margin-top:3px}
+
+/* la pista: la línea de fondo y encima los 5 puntos, uno por hito */
+.lt-pista{position:relative;display:grid;grid-template-columns:repeat(5,1fr);
+          align-items:center;padding:14px 0}
+.lt-linea{position:absolute;left:10%;right:10%;top:50%;height:4px;
+          transform:translateY(-50%);background:var(--border);border-radius:2px}
+.lt-avance{height:100%;border-radius:2px;transition:width .3s}
+.lt-punto{position:relative;justify-self:center;width:26px;height:26px;
+          border-radius:50%;display:flex;align-items:center;justify-content:center;
+          font-size:.72rem;font-weight:700;background:#fff;color:var(--text-muted);
+          border:2px solid var(--border)}
+.lt-punto.ok{background:var(--c);border-color:var(--c);color:#fff}
+.lt-punto.actual{box-shadow:0 0 0 4px rgba(242,169,0,.28)}
+
+@media(max-width:599px){
+  .lt-tabla{min-width:640px}
+  .lt-cab,.lt-fila,.lt-cab{grid-template-columns:150px 1fr}
+  .lt-cab{grid-template-columns:150px repeat(5,1fr)}
+}

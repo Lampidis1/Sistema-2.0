@@ -2273,27 +2273,115 @@ function actualizarBadgeLicitaciones(){
 }
 
 // ── Directorio buscador de Licitaciones (ventana propia) ──
+// ═══════════════════════════════════════════════════════════════════════════
+// LICITACIONES · LÍNEA DE TIEMPO
+// Un listado vertical no dice en qué etapa va cada proceso. Acá cada
+// licitación es una fila que avanza por los hitos de Operaciones Centinela
+// (LIC_HITOS), así se ve de un vistazo dónde está cada una y cuáles están
+// trancadas en la misma etapa.
+// ═══════════════════════════════════════════════════════════════════════════
+let LIC_FILTRO = 'activas';   // activas | adjudicadas | perdidas | todas
+
+function licSetFiltro(f){ LIC_FILTRO = f; renderLicitacionesDir(); }
+
+// En qué hito va: el último marcado como hecho.
+function licEtapaActual(l){
+  const hitos = l.hitos || [];
+  let ultimo = -1;
+  LIC_HITOS.forEach((h,i)=>{ const x=hitos.find(y=>y.k===h.k); if(x&&x.hecho) ultimo=i; });
+  return ultimo;   // -1 = todavía no parte
+}
+function licCerrada(l){
+  const ef=(l.estado_final||'').toLowerCase();
+  return ef.includes('adjudic') || ef.includes('perd');
+}
+function licAdjudicada(l){ return (l.estado_final||'').toLowerCase().includes('adjudic'); }
+
 function renderLicitacionesDir(){
   const cont=document.getElementById('licDirContent'); if(!cont) return;
   const q=(document.getElementById('licDirSearch')?.value||'').toLowerCase().trim();
-  // proveedores que tienen licitaciones
-  const conLic=PROVEEDORES.filter(p=>{ const lics=(DB.licitaciones&&DB.licitaciones[p._id])||[]; return lics.length>0; });
-  const filtrados=conLic.filter(p=>{ if(!q) return true; return (dispName(p)||'').toLowerCase().includes(q) || (p.razon_social||'').toLowerCase().includes(q); });
-  const cnt=document.getElementById('licDirCount'); if(cnt) cnt.textContent=filtrados.length+' proveedor'+(filtrados.length===1?'':'es')+' con licitaciones';
-  if(!filtrados.length){ cont.innerHTML='<div class="sin-visitas">'+(conLic.length?'Sin resultados para la búsqueda.':'Aún no hay proveedores con licitaciones registradas. Abre la ficha de un proveedor → pestaña Licitaciones para registrar la primera.')+'</div>'; return; }
-  let h='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px">';
-  filtrados.forEach(p=>{
-    const lics=DB.licitaciones[p._id]||[];
-    const adj=lics.filter(l=>(l.estado_final||'').toLowerCase().includes('adjudic')).length;
-    h+='<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.05)" onclick="licAbrirProv(\''+p._id+'\')">';
-    h+='<div style="font-weight:700;font-size:.95rem;color:var(--primary)">'+esc(dispName(p))+'</div>';
-    h+='<div style="font-size:.78rem;color:var(--text-muted);margin-top:3px">'+esc(p.localidad||'')+'</div>';
-    h+='<div style="display:flex;gap:12px;margin-top:10px;font-size:.78rem">';
-    h+='<span><b style="color:var(--primary);font-size:1.05rem">'+lics.length+'</b> licitaciones</span>';
-    if(adj) h+='<span><b style="color:#1e7e34;font-size:1.05rem">'+adj+'</b> adjudicadas</span>';
-    h+='</div></div>';
+
+  // se aplana: cada licitación con su proveedor al lado
+  let filas=[];
+  PROVEEDORES.forEach(p=>{
+    ((DB.licitaciones&&DB.licitaciones[p._id])||[]).forEach(l=>{
+      filas.push({p, l, etapa: licEtapaActual(l)});
+    });
   });
-  h+='</div>';
+
+  const total=filas.length;
+  const adjud=filas.filter(f=>licAdjudicada(f.l)).length;
+  const perd =filas.filter(f=>!licAdjudicada(f.l) && licCerrada(f.l)).length;
+  const activ=filas.filter(f=>!licCerrada(f.l)).length;
+
+  if(LIC_FILTRO==='activas')      filas=filas.filter(f=>!licCerrada(f.l));
+  else if(LIC_FILTRO==='adjudicadas') filas=filas.filter(f=>licAdjudicada(f.l));
+  else if(LIC_FILTRO==='perdidas')    filas=filas.filter(f=>!licAdjudicada(f.l)&&licCerrada(f.l));
+
+  if(q) filas=filas.filter(f=>((dispName(f.p)||'')+' '+(f.l.nombre||'')).toLowerCase().includes(q));
+
+  // las más atrasadas primero: menos avance arriba
+  filas.sort((a,b)=> a.etapa-b.etapa || (dispName(a.p)||'').localeCompare(dispName(b.p)||'','es'));
+
+  const cnt=document.getElementById('licDirCount');
+  if(cnt) cnt.textContent = filas.length+(filas.length===1?' licitación':' licitaciones');
+
+  // cuántas hay paradas en cada hito (solo las abiertas)
+  const porEtapa = LIC_HITOS.map((h,i)=>
+    filas.filter(f=>!licCerrada(f.l) && f.etapa===i-1).length);
+
+  let h=`
+    <div class="lt-filtros">
+      ${[['activas','En curso',activ],['adjudicadas','Adjudicadas',adjud],['perdidas','Perdidas',perd],['todas','Todas',total]]
+        .map(([k,t,n])=>`<button class="lt-f ${LIC_FILTRO===k?'active':''}" onclick="licSetFiltro('${k}')">${t} <span>${n}</span></button>`).join('')}
+    </div>`;
+
+  if(!filas.length){
+    cont.innerHTML = h + '<div class="sin-visitas">'+(total
+      ? 'Sin licitaciones en este filtro.'
+      : 'Aún no hay licitaciones registradas. Abre la ficha de un proveedor → pestaña Licitaciones.')+'</div>';
+    return;
+  }
+
+  // Encabezado: los hitos del proceso, con cuántas están detenidas en cada uno
+  h+=`<div class="lt-wrap"><div class="lt-tabla">
+    <div class="lt-cab">
+      <div class="lt-cab-prov">Licitación</div>
+      ${LIC_HITOS.map((x,i)=>`<div class="lt-cab-h">
+        <span class="lt-cab-n">${i+1}</span>${esc(x.label)}
+        ${porEtapa[i]?`<span class="lt-cab-c" title="en curso, detenidas antes de este hito">${porEtapa[i]}</span>`:''}
+      </div>`).join('')}
+    </div>`;
+
+  h+=filas.map(({p,l,etapa})=>{
+    const cerrada=licCerrada(l), adj=licAdjudicada(l);
+    // La línea va del centro del 1er punto al del último, así que el avance
+    // se mide en tramos entre puntos, no en quintos.
+    const pct = etapa<=0 ? 0 : Math.round(etapa/(LIC_HITOS.length-1)*100);
+    const col = adj?'#1e7e34' : (cerrada?'#c0311b':'#F2A900');
+    return `<div class="lt-fila ${cerrada?(adj?'adj':'perd'):''}" onclick="abrirDesde('${p._id}','licitaciones')" title="Abrir la ficha">
+      <div class="lt-prov">
+        <div class="lt-prov-n">${esc(dispName(p))}</div>
+        <div class="lt-prov-l">${esc(l.nombre||'Sin nombre')}</div>
+        <div class="lt-prov-e" style="color:${col}">${adj?'✓ Adjudicada':cerrada?'✗ Perdida':(etapa<0?'Por iniciar':'En '+esc(LIC_HITOS[etapa].label))}</div>
+      </div>
+      <div class="lt-pista">
+        <div class="lt-linea"><div class="lt-avance" style="width:${pct}%;background:${col}"></div></div>
+        ${LIC_HITOS.map((x,i)=>{
+          const hecho = etapa>=i;
+          const actual = etapa===i && !cerrada;
+          const ht=(l.hitos||[]).find(y=>y.k===x.k);
+          return `<div class="lt-punto ${hecho?'ok':''} ${actual?'actual':''}"
+            style="${hecho?`--c:${col}`:''}"
+            title="${esc(x.label)}${ht&&ht.comentario?' — '+esc(ht.comentario):''}">
+            ${hecho?'✓':i+1}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  h+='</div></div>';
   cont.innerHTML=h;
 }
 // Ventana emergente con las licitaciones del proveedor (título = nombre proveedor)
