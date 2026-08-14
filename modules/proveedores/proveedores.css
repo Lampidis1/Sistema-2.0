@@ -1170,3 +1170,29 @@ body.is-user .solo-admin{ display:none !important; }
                    cursor:pointer;font-family:inherit}
 .lt-contrato.falta:hover{background:#d99700;color:#fff}
 .ac-de-lic{font-size:.74rem;color:#1e7e34;font-weight:600;margin-top:2px}
+
+/* ═══ LISTAS DEL DIRECTORIO (Gestión Interna) ═══════════════════════════ */
+.cat-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;max-width:900px}
+.cat-col{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px}
+.cat-col-h{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;
+           color:var(--primary);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.cat-n{background:var(--primary);color:#fff;border-radius:10px;padding:1px 8px;font-size:.75rem}
+.cat-ayuda{font-size:.78rem;color:var(--text-muted);line-height:1.5;margin:6px 0 12px}
+.cat-add{display:flex;gap:7px;margin-bottom:12px}
+.cat-add input{flex:1;min-width:0;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:.86rem}
+.cat-add button{background:var(--primary);color:#fff;border:none;border-radius:8px;padding:8px 13px;
+                font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;white-space:nowrap}
+.cat-lista{display:flex;flex-direction:column;gap:6px}
+.cat-item{display:flex;align-items:center;gap:8px;background:#f7fafa;border:1px solid var(--border);
+          border-radius:8px;padding:8px 10px}
+.cat-v{flex:1;min-width:0;font-size:.88rem;font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.cat-uso{font-size:.72rem;color:var(--text-muted);white-space:nowrap}
+.cat-x{background:none;border:none;color:#c0311b;font-size:1rem;cursor:pointer;padding:0 2px;line-height:1}
+.cat-vacio{font-size:.82rem;color:var(--text-muted);font-style:italic;padding:6px 0}
+/* Controles en la ficha */
+.cat-checks{display:flex;flex-wrap:wrap;gap:8px}
+.cat-check{display:flex;align-items:center;gap:6px;background:#f7fafa;border:1.5px solid var(--border);
+           border-radius:18px;padding:6px 12px;font-size:.85rem;cursor:pointer}
+.cat-check input{width:auto;margin:0}
+.cat-check:has(input:checked){background:var(--primary);border-color:var(--primary);color:#fff}
+.cat-sin{font-size:.78rem;color:var(--text-muted);font-style:italic;margin-top:5px}

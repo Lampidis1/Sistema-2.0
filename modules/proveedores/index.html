@@ -17,7 +17,7 @@
 <!-- La ficha emergente es comun con MGI: vive en shared/ (CLAUDE.md Regla 8).
      Va ANTES de proveedores.css para que el modulo pueda ajustar detalles. -->
 <link rel="stylesheet" href="../../shared/css/ficha-modal.css?v=20260808c">
-<link rel="stylesheet" href="proveedores.css?v=20260813f">
+<link rel="stylesheet" href="proveedores.css?v=20260814a">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -205,6 +205,7 @@
       <div class="sb-section"><div class="sb-title">Rubro</div><div id="rubroFilters"></div></div>
       <div class="sb-section"><div class="sb-title">Agrupación Gremial</div><div id="agrupFilters"></div></div>
       <div class="sb-section"><div class="sb-title">Servicios con Antofagasta Minerals</div><div id="amFilters"></div></div>
+      <div class="sb-section"><div class="sb-title">⭐ Programa MGI</div><div id="mgiFilters"></div></div>
       <div class="sb-section"><div class="sb-title">⛏ Asignado a faena minera</div><div id="faenaMineraFilters"></div></div>
       <div class="sb-section"><div class="sb-title">📐 Rango de trabajos</div><div id="rangoFilters"></div></div>
       <div class="sb-section">
@@ -356,6 +357,8 @@
       <div class="kb-group-title">🤝 Red y Abastecimiento</div>
       <button class="kb-nav" data-board="contactos"     onclick="kbSelect('contactos',this)">👥 Contactos</button>
       <button class="kb-nav" data-board="prov_locales"  onclick="kbSelect('prov_locales',this)">🏪 Proveedores Locales</button>
+      <div class="kb-group-title">🗂 Configuración</div>
+      <button class="kb-nav" data-board="listas" onclick="kbSelect('listas',this)">🗂 Listas del directorio</button>
       <div class="kb-group-title">📊 Resumen</div>
       <button class="kb-nav" data-board="dashboard"     onclick="kbSelect('dashboard',this)">📈 Dashboard Kanban</button>
     </div>
@@ -529,7 +532,8 @@
   </div>
 </div>
 
-<script src="proveedores.js?v=20260813b"></script>
+<script src="proveedores.js?v=20260814a"></script>
+<script src="proveedores-catalogos.js?v=20260814a"></script>
 <script src="proveedores-programas.js?v=20260808"></script>
 <script src="proveedores-compromisos.js?v=20260808"></script>
 <script src="proveedores-agenda.js?v=20260808"></script>

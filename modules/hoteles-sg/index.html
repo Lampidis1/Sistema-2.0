@@ -12,8 +12,11 @@
      OpenStreetMap — ver docs/modulos/hoteles-sg.md sobre ese punto. -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- SheetJS: exportar a Excel la seleccion de hospedajes. Ya es una de las
+     librerias del sistema (CLAUDE.md §7), fijada a version exacta. -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="../../shared/css/ficha-modal.css?v=20260808f">
-<link rel="stylesheet" href="hoteles-sg.css?v=20260809c">
+<link rel="stylesheet" href="hoteles-sg.css?v=20260814a">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/). -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
 </head>
@@ -33,13 +36,13 @@
   <div class="kpis" id="kpis"></div>
 
   <div class="tabs">
-    <button class="tab-b active" id="tab_disp"  onclick="setVista('disponibles')">🛏 Disponibles</button>
-    <button class="tab-b"        id="tab_mapa"  onclick="setVista('mapa')">📍 Mapa</button>
+    <button class="tab-b active" id="tab_mapa"  onclick="setVista('mapa')">📍 Mapa</button>
+    <button class="tab-b"        id="tab_disp"  onclick="setVista('disponibles')">🛏 Disponibles</button>
     <button class="tab-b"        id="tab_todos" onclick="setVista('todos')">📋 Todos por empresa</button>
   </div>
 
   <!-- 1 · DISPONIBLES -->
-  <section id="vDisponibles">
+  <section id="vDisponibles" style="display:none">
     <div class="barra">
       <input class="buscar" id="q" placeholder="🔍 Buscar por nombre o dirección…" oninput="render()">
       <div class="seg">
@@ -51,7 +54,7 @@
   </section>
 
   <!-- 2 · MAPA -->
-  <section id="vMapa" style="display:none">
+  <section id="vMapa">
     <div class="nota">Se marcan los hospedajes con habitaciones registradas y ubicación conocida. Toca un punto para ver el detalle.</div>
     <div id="mapa"></div>
     <!-- Tabla de lo que esta marcado en el mapa: cada fila corresponde a un pin -->
@@ -76,6 +79,6 @@
   <div class="modal" id="fichaBox"></div>
 </div>
 
-<script src="hoteles-sg.js?v=20260809c"></script>
+<script src="hoteles-sg.js?v=20260814a"></script>
 </body>
 </html>

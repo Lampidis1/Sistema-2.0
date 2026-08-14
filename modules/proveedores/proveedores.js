@@ -118,6 +118,7 @@ async function loadDB(){
 let pendingFiles = [];
 let activeLocalidades = new Set(), activeFacturacion = new Set(), activeRubros = new Set(), activeFaenaMinera = new Set();
 let activeAgrup = new Set(), activeAM = new Set(), activeRango = new Set();
+let activeMGI = new Set();   // 'si' | 'no' — participación en el programa MGI
 let filterEditedOnly = false;
 let currentView = 'cards';
 let chartsInit = false, chartInst = {};
@@ -488,6 +489,27 @@ function buildFilters() {
     {key:'antucoya', label:'ANT · Antucoya', campo:'pub_antucoya'},
     {key:'zaldivar', label:'CMZ · Zaldívar', campo:'pub_zaldivar'}
   ];
+  // Programa MGI: quiénes participan del programa de habitabilidad
+  const mgif=document.getElementById('mgiFilters');
+  if(mgif){ mgif.innerHTML='';
+    const rubroLbl={hoteleria:'🏨 Hotelería',lavanderia:'🧺 Lavandería',alimentacion:'🍽 Alimentación'};
+    const nSi=PROVEEDORES.filter(p=>p.programa_mgi===true).length;
+    const opciones=[{k:'si',label:'⭐ Participa del programa MGI',cnt:nSi},
+                    {k:'no',label:'Fuera del programa',cnt:PROVEEDORES.length-nSi}];
+    opciones.forEach(o=>{
+      const c=document.createElement('div'); c.className='filter-chip';
+      c.innerHTML=`<span class="rubro-txt">${o.label}</span><span class="chip-count">${o.cnt}</span>`;
+      c.onclick=()=>toggleSet(activeMGI,o.k,c,applyFilters); mgif.appendChild(c);
+    });
+    // Dentro del programa, por rubro
+    Object.keys(rubroLbl).forEach(r=>{
+      const cnt=PROVEEDORES.filter(p=>p.programa_mgi===true&&(p.programa_mgi_rubro||'hoteleria')===r).length;
+      if(!cnt) return;
+      const c=document.createElement('div'); c.className='filter-chip';
+      c.innerHTML=`<span class="rubro-txt" style="padding-left:10px">${rubroLbl[r]}</span><span class="chip-count">${cnt}</span>`;
+      c.onclick=()=>toggleSet(activeMGI,'r:'+r,c,applyFilters); mgif.appendChild(c);
+    });
+  }
   const fmf=document.getElementById('faenaMineraFilters'); if(fmf){ fmf.innerHTML='';
     faenas.forEach(f=>{
       const cnt=PROVEEDORES.filter(p=>p[f.campo]).length;
@@ -552,6 +574,15 @@ function applyFilters() {
       if(activeFaenaMinera.has('zaldivar')&&p.pub_zaldivar) ok=true;
       if(!ok) return false;
     }
+    if(activeMGI.size){
+      const enMGI=p.programa_mgi===true;
+      const rub='r:'+(p.programa_mgi_rubro||'hoteleria');
+      let ok=false;
+      if(activeMGI.has('si')&&enMGI) ok=true;
+      if(activeMGI.has('no')&&!enMGI) ok=true;
+      if(enMGI&&activeMGI.has(rub)) ok=true;
+      if(!ok) return false;
+    }
     if(activeFacturacion.size&&!activeFacturacion.has(p.facturar)) return false;
     if(activeRubros.size&&!p.rubrosNorm.some(r=>activeRubros.has(r))) return false;
     if(activeAgrup.size&&!activeAgrup.has(p.agrupacion||'Sin información')) return false;
@@ -577,7 +608,7 @@ function applyFilters() {
   document.getElementById('viewTable').style.display=(!empty&&currentView==='table')?'block':'none';
   const va=document.getElementById('viewAgenda'); if(va) va.style.display=(!empty&&currentView==='agenda')?'block':'none';
 }
-function clearFilters(){activeLocalidades.clear(); activeFaenaMinera.clear();activeFacturacion.clear();activeRubros.clear();activeAgrup.clear();activeAM.clear();filterEditedOnly=false;document.getElementById('searchInput').value='';var _smb=document.getElementById('searchInputMobile');if(_smb)_smb.value='';document.querySelectorAll('.loc-chip,.fact-row,.filter-chip').forEach(el=>el.classList.remove('active'));document.getElementById('chipEdited').classList.remove('active');applyFilters();}
+function clearFilters(){activeLocalidades.clear(); activeFaenaMinera.clear();activeMGI.clear();activeFacturacion.clear();activeRubros.clear();activeAgrup.clear();activeAM.clear();filterEditedOnly=false;document.getElementById('searchInput').value='';var _smb=document.getElementById('searchInputMobile');if(_smb)_smb.value='';document.querySelectorAll('.loc-chip,.fact-row,.filter-chip').forEach(el=>el.classList.remove('active'));document.getElementById('chipEdited').classList.remove('active');applyFilters();}
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function amBadge(v){
@@ -993,7 +1024,8 @@ function openEditModal(id){
         <div class="form-field full"><label>Actividad Principal (separar con coma)</label><input id="ef_act_principal" value="${esc(p.actividad_principal||'')}"></div>
         <div class="form-field full"><label>Descripción General de la Empresa</label><textarea id="ef_desc" rows="4" placeholder="Describe a la empresa: servicios, capacidades, experiencia...">${esc(p.descripcion)}</textarea></div>
         <div class="form-field full"><label>📝 Notas y Comentarios <span style="font-weight:400;color:var(--text-muted);font-size:.8rem">(observaciones internas que quedan en la ficha)</span></label><textarea id="ef_notas" rows="3" placeholder="Comentarios, observaciones, recordatorios sobre este proveedor...">${esc(p.notas_ficha||'')}</textarea></div>
-        <div class="form-field full"><label>Plataformas Mineras (separar con coma)</label><input id="ef_plataformas" value="${esc(p.plataformas||'')}"></div>
+        <div class="form-field full"><label>Plataformas Mineras</label>
+          <div id="ef_plataformas_box">${catCheckboxesPlataformas(p.plataformas)}</div></div>
         <div class="form-field">
           <label>Categoría SII</label>
           <select id="ef_cat">
@@ -1010,7 +1042,7 @@ function openEditModal(id){
         </div>
         <div class="form-field">
           <label>Agrupación Gremial</label>
-          <input id="ef_agrupacion" value="${esc(p.agrupacion||'')}" placeholder="Ej: Cámara de Comercio Calama">
+          ${catSelectAgrupacion(p.agrupacion)}
         </div>
         <div class="form-field">
           <label>Estado Registro</label>
@@ -1116,11 +1148,12 @@ function saveEdit(id){
   p.actividad_principal= document.getElementById('ef_act_principal')?.value.trim()||'';
   p.descripcion        = document.getElementById('ef_desc').value.trim();
   p.notas_ficha        = (document.getElementById('ef_notas')?.value||'').trim();
-  p.plataformas        = document.getElementById('ef_plataformas')?.value.trim()||'';
+  const _plat          = catLeerPlataformas();
+  p.plataformas        = _plat!==null ? _plat : (document.getElementById('ef_plataformas')?.value.trim()||'');
   p.categoria_sii      = document.getElementById('ef_cat').value;
   p.facturar           = document.getElementById('ef_facturar').value;
   p.estado             = document.getElementById('ef_estado').value;
-  p.agrupacion         = document.getElementById('ef_agrupacion').value.trim();
+  p.agrupacion         = (document.getElementById('ef_agrupacion')?.value||'').trim();
   p.servicio_am        = document.getElementById('ef_servicio_am').value;
   p.rango_trabajos     = document.getElementById('ef_rango')?.value||'';
   p.pub_centinela      = !!document.getElementById('ef_pub_cen')?.checked;
@@ -3367,6 +3400,7 @@ async function cargarDesdeNube(){
     DB._cloudSource = true;
     await saveDB();
     await cargarProgramasCatalogo();
+    await cargarCatalogoListas();
     initApp();
 
     const n = PROVEEDORES.length;
@@ -3962,6 +3996,7 @@ function kbSelect(board, btn){
   document.querySelectorAll('.kb-nav').forEach(b=>b.classList.toggle('active', b.dataset.board===board));
   if(board==='planer') return giCargarPlaner();   // pendientes del Planer
   if(board==='rca') return renderRCA();
+  if(board==='listas') return renderCatalogoListas();
   if(board==='dashboard') return renderKbDashboard();
   if(board==='reclamos') return renderReclamosFiltro();
   renderBoard(board);

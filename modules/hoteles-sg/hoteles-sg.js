@@ -17,7 +17,7 @@
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 let DATOS = [];
-let VISTA = 'disponibles';
+let VISTA = 'mapa';   // el mapa es lo primero que se ve
 let MODO = 'fichas';
 let MAPA = null;
 let MARCADORES = [];
@@ -35,6 +35,7 @@ async function cargar() {
     DATOS = (data || []).sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'));
     pintarKpis();
     render();
+    abrirDesdeEnlace();
   } catch (e) {
     cont.innerHTML = '<div class="cargando">No se pudo cargar la disponibilidad: ' + esc(e.message) + '</div>';
   }
@@ -263,6 +264,45 @@ function renderMapa() {
 // Los pines muestran un número: esta tabla dice de quién es cada uno. Va
 // ordenada de más a menos disponibilidad, así lo útil queda arriba. Al tocar
 // una fila el mapa vuela a ese pin y lo abre.
+//
+// La primera columna es una casilla: lo marcado se baja a Excel con el
+// detalle de baños y contacto, que es como se piden los hospedajes.
+let SELECCION = new Set();
+
+function selToggle(id, ev){
+  if(ev) ev.stopPropagation();
+  if(SELECCION.has(id)) SELECCION.delete(id); else SELECCION.add(id);
+  selPintarBarra();
+}
+function selTodos(chk){
+  const vis = disponibles().filter(h => h.lat && h.lng).map(h => h.id);
+  if(chk) vis.forEach(id => SELECCION.add(id)); else vis.forEach(id => SELECCION.delete(id));
+  renderMapa();
+}
+function selLimpiar(){ SELECCION.clear(); renderMapa(); }
+
+function selPintarBarra(){
+  const n = SELECCION.size;
+  const b = document.getElementById('selBarra');
+  if (!b) return;
+  b.className = n ? 'sel-barra activa' : 'sel-barra';
+  const camas = DATOS.filter(h => SELECCION.has(h.id)).reduce((s, h) => s + h.camas_max, 0);
+  b.innerHTML = n
+    ? `<div class="sel-txt"><b>${n}</b> hospedaje${n === 1 ? '' : 's'} seleccionado${n === 1 ? '' : 's'}
+         · <b>${camas}</b> camas disponibles</div>
+       <div class="sel-btns">
+         <button class="sel-b2" onclick="selLimpiar()">Quitar selección</button>
+         <button class="sel-b1" onclick="exportarSeleccion()">⬇ Descargar Excel</button>
+       </div>`
+    : '<div class="sel-txt sel-vacio">Marca los hospedajes que necesitas para descargarlos en Excel.</div>';
+  // la casilla del encabezado refleja si están todos marcados
+  const todos = document.getElementById('selTodos');
+  if (todos){
+    const vis = disponibles().filter(h => h.lat && h.lng);
+    todos.checked = vis.length > 0 && vis.every(h => SELECCION.has(h.id));
+  }
+}
+
 function pintarTablaMapa(lista) {
   const cont = document.getElementById('tablaMapa');
   if (!lista.length) { cont.innerHTML = ''; return; }
@@ -270,29 +310,82 @@ function pintarTablaMapa(lista) {
     || a.nombre.localeCompare(b.nombre, 'es'));
   const totalHab = orden.reduce((s, h) => s + h.hab_disponibles, 0);
   const totalCam = orden.reduce((s, h) => s + h.camas_max, 0);
+  const totalIns = orden.reduce((s, h) => s + h.camas_instaladas, 0);
 
   cont.innerHTML = `
     <div class="tm-t">📍 ${orden.length} hospedajes marcados en el mapa</div>
+    <div class="sel-barra" id="selBarra"></div>
     <div class="tabla-wrap"><table class="tabla tabla-mapa">
       <thead><tr>
+        <th class="num"><input type="checkbox" id="selTodos" onclick="selTodos(this.checked)" title="Seleccionar todos"></th>
         <th class="num">Pin</th><th>Hospedaje</th><th>Dirección</th>
-        <th class="num">Hab. libres</th><th class="num">Camas</th><th class="num">Instaladas</th>
+        <th class="num">Simples</th><th class="num">Dobles</th>
+        <th class="num">Camas instaladas</th><th class="num">Camas disponibles</th>
       </tr></thead>
-      <tbody>${orden.map(h => `<tr onclick="irAlPin('${h.id}')" title="Ver en el mapa">
+      <tbody>${orden.map(h => `<tr onclick="irAlPin('${h.id}')" title="Ver en el mapa" class="${SELECCION.has(h.id) ? 'sel' : ''}">
+        <td class="num"><input type="checkbox" ${SELECCION.has(h.id) ? 'checked' : ''}
+            onclick="selToggle('${h.id}',event)" title="Incluir en el Excel"></td>
         <td class="num"><span class="tm-pin">${h.hab_disponibles}</span></td>
         <td><b>${esc(h.nombre)}</b></td>
         <td>${esc(h.direccion || '—')}</td>
-        <td class="num"><b>${h.hab_disponibles}</b></td>
+        <td class="num">${h.hab_simples}</td>
+        <td class="num">${h.hab_dobles}</td>
+        <td class="num sec">${h.camas_instaladas}</td>
         <td class="num"><b>${h.camas_max}</b></td>
-        <td class="num sec">${h.hab_total}</td>
       </tr>`).join('')}</tbody>
       <tfoot><tr>
-        <td></td><td colspan="2"><b>Total marcado en el mapa</b></td>
-        <td class="num"><b>${totalHab}</b></td>
+        <td></td><td></td><td colspan="2"><b>Total marcado en el mapa</b></td>
+        <td class="num"><b>${orden.reduce((s, h) => s + h.hab_simples, 0)}</b></td>
+        <td class="num"><b>${orden.reduce((s, h) => s + h.hab_dobles, 0)}</b></td>
+        <td class="num sec">${totalIns}</td>
         <td class="num"><b>${totalCam}</b></td>
-        <td></td>
       </tr></tfoot>
-    </table></div>`;
+    </table></div>
+    <div class="tm-nota">Habitaciones libres ahora: ${totalHab}. Una habitación doble puede ocuparse
+      como simple, por eso las camas disponibles son simples + dobles × 2.</div>`;
+  selPintarBarra();
+}
+
+// ── EXCEL DE LA SELECCIÓN ───────────────────────────────────────────────────
+// Se arma en el navegador con SheetJS; no pasa por ningún servidor.
+// El link de la última columna abre la ficha del hospedaje en esta misma
+// página (con sus fotos), lista para imprimir o guardar como PDF.
+function fichaURL(id){
+  return location.origin + location.pathname + '#h=' + id;
+}
+
+function exportarSeleccion(){
+  const sel = DATOS.filter(h => SELECCION.has(h.id));
+  if (!sel.length) return;
+  const filas = sel
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+    .map(h => ({
+      'Nombre del hostal': h.nombre || '',
+      'Dirección': h.direccion || '',
+      'Nombre contacto': h.contacto || '',
+      'Teléfono': h.fono || '',
+      'Correo': h.correo || '',
+      'Hab. simples con baño privado': h.simples_privado || 0,
+      'Hab. dobles con baño privado': h.dobles_privado || 0,
+      'Hab. simples con baño compartido': h.simples_compartido || 0,
+      'Hab. dobles con baño compartido': h.dobles_compartido || 0,
+      'Camas instaladas': h.camas_instaladas || 0,
+      'Camas disponibles': h.camas_max || 0,
+      'Ficha con fotos': fichaURL(h.id),
+    }));
+  const ws = XLSX.utils.json_to_sheet(filas);
+  ws['!cols'] = [{ wch: 30 }, { wch: 32 }, { wch: 24 }, { wch: 17 }, { wch: 30 },
+                 { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+                 { wch: 12 }, { wch: 12 }, { wch: 46 }];
+  // la última columna, como enlace en el que se puede hacer clic
+  filas.forEach((f, i) => {
+    const c = XLSX.utils.encode_cell({ r: i + 1, c: 11 });
+    if (ws[c]) ws[c].l = { Target: f['Ficha con fotos'], Tooltip: 'Abrir la ficha del hospedaje' };
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Hospedajes');
+  const hoy = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, 'Hospedajes_Sierra_Gorda_' + hoy + '.xlsx');
 }
 
 // Centra el mapa en un hospedaje y abre su globo.
@@ -339,7 +432,10 @@ function verFicha(id) {
         <div class="modal-title">${esc(h.nombre)}</div>
         <div class="modal-subtitle">${esc(h.direccion || 'Dirección no registrada')}</div>
       </div>
-      <div class="modal-header-right"><button class="modal-close" onclick="cerrarFicha()">×</button></div>
+      <div class="modal-header-right">
+        <button class="ficha-btn imprimir" onclick="window.print()" title="Imprimir o guardar como PDF">🖨 PDF</button>
+        <button class="modal-close" onclick="cerrarFicha()">×</button>
+      </div>
     </div>
     <div class="modal-body">
       <div class="dcf-layout">
@@ -359,6 +455,7 @@ function verFicha(id) {
           ${!h.fono && !h.correo ? '<div style="font-size:.85rem;color:var(--text-muted)">Sin datos de contacto registrados.</div>' : ''}
           ${hermanos.length ? `<div class="dcf-sec-t" style="margin-top:18px">Otros hospedajes de la misma empresa</div>
             ${hermanos.map(x => `<div class="dcf-giro" style="cursor:pointer" onclick="verFicha('${x.id}')">• ${esc(x.nombre)} ${x.hab_total ? `<span style="color:var(--text-muted)">(${x.hab_total} hab)</span>` : ''}</div>`).join('')}` : ''}
+          ${fotosHTML(h)}
           ${h.lat && h.lng ? `<div class="dcf-sec-t" style="margin-top:18px">Ubicación</div>
             <button class="ficha-btn" style="width:auto;padding:8px 16px" onclick="cerrarFicha();setVista('mapa');setTimeout(()=>MAPA.setView([${h.lat},${h.lng}],18),150)">📍 Ver en el mapa</button>` : ''}
         </div>
@@ -367,3 +464,24 @@ function verFicha(id) {
   document.getElementById('fichaOv').classList.add('open');
 }
 function cerrarFicha() { document.getElementById('fichaOv').classList.remove('open'); }
+
+// Fotos de la ficha (las carga el equipo desde el sistema interno). Se
+// muestran acá y son lo que hace útil imprimir la ficha como PDF.
+function fotosHTML(h){
+  let fs = h.fotos;
+  if (typeof fs === 'string') { try { fs = JSON.parse(fs || '[]'); } catch (e) { fs = []; } }
+  if (!Array.isArray(fs) || !fs.length) return '';
+  const urls = fs.map(f => typeof f === 'string' ? f : (f && (f.url || f.src))).filter(Boolean);
+  if (!urls.length) return '';
+  return `<div class="dcf-sec-t" style="margin-top:18px">Fotos del hospedaje</div>
+    <div class="fotos">${urls.map(u => `<img src="${esc(u)}" alt="Foto del hospedaje" loading="lazy">`).join('')}</div>`;
+}
+
+// Enlace directo a una ficha: es lo que lleva la última columna del Excel.
+function abrirDesdeEnlace(){
+  const m = /#h=([^&]+)/.exec(location.hash || '');
+  if (!m) return;
+  const id = decodeURIComponent(m[1]);
+  if (DATOS.some(x => x.id === id)) verFicha(id);
+}
+window.addEventListener('hashchange', abrirDesdeEnlace);
