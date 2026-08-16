@@ -71,3 +71,33 @@ módulo. Los dos se revisan juntos.
 Media-alta: condiciones de alojamiento de trabajadores identificados y
 evaluaciones de proveedores. Los documentos adjuntos pueden contener
 información contractual.
+
+
+## Columnas de la planilla
+
+Son 29. Nadie las usa todas a la vez: para la llamada semanal bastan nueve, y
+con las otras 20 en pantalla hay que ir y volver con el scroll horizontal para
+anotar un dato.
+
+El botón **🧩 Columnas** abre un panel con cuatro vistas armadas:
+
+| Vista | Para qué |
+|---|---|
+| 📞 **Llamada semanal** | A quién llamo, a qué número, cuánto le queda y cuándo vuelvo a llamar |
+| 🛏 **Capacidad** | Habitaciones por tipo de baño, totales y camas |
+| 👥 **Contactos** | Encargado y dueño, con sus correos y teléfonos |
+| **Todas** | Las 29 |
+
+Además cada columna se puede marcar o desmarcar por separado. La elección se
+guarda en `localStorage` (`am_mgi_columnas`) y se recuerda entre sesiones: es
+una preferencia de interfaz, no un dato de nadie (CLAUDE.md Regla 5).
+
+> El **Establecimiento** no se puede ocultar: sin él no se sabe qué línea se
+> está editando. Aparece en el panel deshabilitado.
+
+### Dónde se define
+
+`PLAN_COLUMNAS` en `mgi-planilla.js`. El encabezado, las celdas y el panel
+salen de esa misma lista, así no se pueden desalinear. Para agregar una columna
+se agrega una entrada con su `k`, su título (`th`), cómo se dibuja la celda
+(`td`) y a qué `grupo` pertenece en el panel.

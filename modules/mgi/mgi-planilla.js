@@ -28,6 +28,7 @@ let PLAN_FILTRO = 'todos';
 
 // ── Carga ───────────────────────────────────────────────────────────────────
 async function planCargar(){
+  planCargarColumnas();
   try{
     const {data,error}=await SB.from('hospedajes_mgi').select('*');
     if(error) throw error;
@@ -320,6 +321,148 @@ function planAgregar(){
   },80);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// COLUMNAS
+//
+// Son 26. Nadie las necesita todas a la vez: para la llamada semanal bastan
+// cinco, y con las otras 21 en pantalla hay que ir y volver con el scroll
+// horizontal para anotar un dato. De acá salen el encabezado, las celdas y el
+// panel para ocultarlas, así no se pueden desalinear entre sí.
+//
+// `grupo` es solo para ordenar el panel. `k` es la clave que se guarda en
+// localStorage (preferencia de interfaz, no dato de nadie — CLAUDE.md Regla 5).
+// ═══════════════════════════════════════════════════════════════════════════
+const PLAN_COLUMNAS = [
+  {k:'codigo_mgi', grupo:'Identificación', th:'Cód.<br>MGI', clase:'c-cod',
+   td:pid=>txt(pid,'codigo_mgi',52)},
+  {k:'nombre', grupo:'Identificación', th:'Establecimiento', clase:'c-nom', fija:true,
+   td:pid=>txt(pid,'nombre',190)+(planV(pid,'baja')
+     ? `<div class="pl-motivo" title="${esc(planV(pid,'baja_motivo')||'')}">fuera: ${esc((planV(pid,'baja_motivo')||'').slice(0,40))}</div>`
+     : '')},
+  {k:'direccion', grupo:'Identificación', th:'Dirección', td:pid=>txt(pid,'direccion',170)},
+  {k:'participa', grupo:'Identificación', th:'Participa 2026',
+   td:pid=>sel(pid,'participa',['SI','NO','En reparación','Dirección inexistente',
+     'Casa arrendada, no a trabajadores','Construirán más adelante','No contesta'])},
+  {k:'rut', grupo:'Identificación', th:'RUT', td:pid=>txt(pid,'rut',110)},
+
+  {k:'enc_nombre', grupo:'Contactos', th:'Encargado', td:pid=>txt(pid,'enc_nombre',150)},
+  {k:'enc_correo', grupo:'Contactos', th:'Correo encargado', td:pid=>txt(pid,'enc_correo',190)},
+  {k:'enc_fono',   grupo:'Contactos', th:'Teléfono encargado', td:pid=>txt(pid,'enc_fono',120)},
+  {k:'due_nombre', grupo:'Contactos', th:'Dueño', td:pid=>txt(pid,'due_nombre',150)},
+  {k:'due_correo', grupo:'Contactos', th:'Correo dueño', td:pid=>txt(pid,'due_correo',190)},
+  {k:'due_fono',   grupo:'Contactos', th:'Teléfono dueño', td:pid=>txt(pid,'due_fono',120)},
+
+  {k:'simples_priv', grupo:'Capacidad', th:'Simples<br>baño priv.', num:true, td:pid=>num(pid,'simples_priv')},
+  {k:'simples_comp', grupo:'Capacidad', th:'Simples<br>baño comp.', num:true, td:pid=>num(pid,'simples_comp')},
+  {k:'dobles_priv',  grupo:'Capacidad', th:'Dobles<br>baño priv.',  num:true, td:pid=>num(pid,'dobles_priv')},
+  {k:'dobles_comp',  grupo:'Capacidad', th:'Dobles<br>baño comp.',  num:true, td:pid=>num(pid,'dobles_comp')},
+  {k:'hab_totales',  grupo:'Capacidad', th:'Hab.<br>totales', num:true, calc:true,
+   td:pid=>`<span id="plTot_${pid}">${planTotalHab(pid)}</span>`},
+  {k:'cap_maxima',   grupo:'Capacidad', th:'Capacidad<br>máxima', num:true, calc:true,
+   td:pid=>`<span id="plCap_${pid}">${planCapMax(pid)}</span>`},
+  {k:'camas_instaladas', grupo:'Capacidad', th:'Camas<br>instaladas', num:true,
+   td:pid=>num(pid,'camas_instaladas')},
+
+  {k:'eecc_hospeda', grupo:'Ocupación', th:'Empresa colaboradora', td:pid=>txt(pid,'eecc_hospeda',180)},
+  {k:'es_eecc_mcen', grupo:'Ocupación', th:'¿EECC de MCEN?', td:pid=>sel(pid,'es_eecc_mcen',['Si','No','No sabe'])},
+  {k:'contrato_inicio', grupo:'Ocupación', th:'Contrato desde', td:pid=>fecha(pid,'contrato_inicio')},
+  {k:'contrato_fin',    grupo:'Ocupación', th:'Contrato hasta', td:pid=>fecha(pid,'contrato_fin')},
+  {k:'arrendado_completo', grupo:'Ocupación', th:'¿Arrendado<br>completo?',
+   td:pid=>`<select class="pl-in sel" onchange="planSet('${pid}','arrendado_completo',this.value==='Si')">
+      <option value="No" ${!planV(pid,'arrendado_completo')?'selected':''}>No</option>
+      <option value="Si" ${planV(pid,'arrendado_completo')?'selected':''}>Sí</option></select>`},
+  {k:'hab_disponibles',   grupo:'Ocupación', th:'Hab.<br>disponibles', num:true, td:pid=>num(pid,'hab_disponibles')},
+  {k:'n_hospedados',      grupo:'Ocupación', th:'Nº<br>hospedados', num:true, td:pid=>num(pid,'n_hospedados')},
+  {k:'camas_disponibles', grupo:'Ocupación', th:'Camas<br>disponibles', num:true, td:pid=>num(pid,'camas_disponibles')},
+  {k:'al_dia_pagos',      grupo:'Ocupación', th:'¿Al día<br>con pagos?', td:pid=>sel(pid,'al_dia_pagos',['Si','No','No sabe'])},
+
+  {k:'volver_a_llamar', grupo:'Seguimiento', th:'Volver a llamar', clase:'c-llam',
+   td:pid=>`<div id="plLlam_${pid}">${planLlamarHTML(pid)}</div>${fecha(pid,'volver_a_llamar')}`},
+  {k:'notas', grupo:'Seguimiento', th:'Notas', clase:'c-not', td:pid=>txt(pid,'notas',220)},
+];
+
+// Vistas armadas para lo que se hace de verdad. La llamada semanal es cinco
+// columnas: a quién llamo, a qué número, cuánto le queda y cuándo vuelvo.
+const PLAN_VISTAS = {
+  llamada:   {n:'📞 Llamada semanal', cols:['codigo_mgi','nombre','enc_nombre','enc_fono',
+              'arrendado_completo','hab_disponibles','camas_disponibles','volver_a_llamar','notas']},
+  capacidad: {n:'🛏 Capacidad', cols:['codigo_mgi','nombre','direccion','simples_priv','simples_comp',
+              'dobles_priv','dobles_comp','hab_totales','cap_maxima','camas_instaladas']},
+  contactos: {n:'👥 Contactos', cols:['codigo_mgi','nombre','direccion','rut','enc_nombre','enc_correo',
+              'enc_fono','due_nombre','due_correo','due_fono']},
+  todas:     {n:'Todas', cols:null},
+};
+
+let PLAN_OCULTAS = new Set();
+const PLAN_LS = 'am_mgi_columnas';
+
+function planCargarColumnas(){
+  try{
+    const g=localStorage.getItem(PLAN_LS);
+    if(g) PLAN_OCULTAS=new Set(JSON.parse(g));
+  }catch(e){}
+}
+function planGuardarColumnas(){
+  try{ localStorage.setItem(PLAN_LS, JSON.stringify([...PLAN_OCULTAS])); }catch(e){}
+}
+// El nombre no se puede esconder: sin él no se sabe qué línea se está editando.
+const planColVisible = k => k==='nombre' || !PLAN_OCULTAS.has(k);
+
+function planToggleCol(k){
+  if(k==='nombre') return;
+  if(PLAN_OCULTAS.has(k)) PLAN_OCULTAS.delete(k); else PLAN_OCULTAS.add(k);
+  planGuardarColumnas(); planRender(); planAbrirColumnas(true);
+}
+function planVista(v){
+  const cfg=PLAN_VISTAS[v]; if(!cfg) return;
+  PLAN_OCULTAS = cfg.cols
+    ? new Set(PLAN_COLUMNAS.map(c=>c.k).filter(k=>!cfg.cols.includes(k)))
+    : new Set();
+  planGuardarColumnas(); planRender(); planAbrirColumnas(true);
+}
+// Qué vista está puesta, si es que calza con alguna
+function planVistaActual(){
+  for(const v of Object.keys(PLAN_VISTAS)){
+    const cfg=PLAN_VISTAS[v];
+    const esperado=cfg.cols
+      ? PLAN_COLUMNAS.map(c=>c.k).filter(k=>!cfg.cols.includes(k))
+      : [];
+    if(esperado.length===PLAN_OCULTAS.size && esperado.every(k=>PLAN_OCULTAS.has(k))) return v;
+  }
+  return null;
+}
+
+function planAbrirColumnas(mantener){
+  const p=document.getElementById('plCols');
+  if(!p) return;
+  if(!mantener && p.classList.contains('abierto')){ p.classList.remove('abierto'); return; }
+  const actual=planVistaActual();
+  const grupos={};
+  PLAN_COLUMNAS.forEach(c=>{ (grupos[c.grupo]=grupos[c.grupo]||[]).push(c); });
+  p.innerHTML=`
+    <div class="plc-vistas">
+      ${Object.keys(PLAN_VISTAS).map(v=>`<button class="plc-v ${actual===v?'active':''}"
+         onclick="planVista('${v}')">${PLAN_VISTAS[v].n}</button>`).join('')}
+    </div>
+    <div class="plc-grupos">
+      ${Object.keys(grupos).map(g=>`<div class="plc-g">
+        <div class="plc-gt">${esc(g)}</div>
+        ${grupos[g].map(c=>`<label class="plc-i ${c.fija?'fija':''}">
+          <input type="checkbox" ${planColVisible(c.k)?'checked':''} ${c.fija?'disabled':''}
+                 onchange="planToggleCol('${c.k}')">
+          <span>${c.th.replace(/<br>/g,' ')}</span></label>`).join('')}
+      </div>`).join('')}
+    </div>
+    <div class="plc-pie">${PLAN_COLUMNAS.length-PLAN_OCULTAS.size} de ${PLAN_COLUMNAS.length} columnas a la vista</div>`;
+  p.classList.add('abierto');
+}
+function planCerrarColumnas(e){
+  const p=document.getElementById('plCols');
+  if(p && p.classList.contains('abierto') && !p.contains(e.target) &&
+     !(e.target.closest && e.target.closest('.pl-cols-btn'))) p.classList.remove('abierto');
+}
+document.addEventListener('click', planCerrarColumnas);
+
 // ── Render ──────────────────────────────────────────────────────────────────
 const PLAN_ETIQ={codigo_mgi:'código MGI',participa:'participación',rut:'RUT',nombre:'nombre',
   direccion:'dirección',enc_nombre:'encargado',enc_correo:'correo encargado',enc_fono:'teléfono encargado',
@@ -376,6 +519,11 @@ function planRender(){
          ['llamar','Por llamar'],['baja','Fuera del conteo']]
         .map(([k,t])=>`<button class="pl-f ${PLAN_FILTRO===k?'active':''}" onclick="planSetFiltro('${k}')">${t}</button>`).join('')}
       <span class="pl-sep"></span>
+      <div class="pl-cols-wrap">
+        <button class="pl-imp pl-cols-btn" onclick="planAbrirColumnas()">🧩 Columnas
+          <span class="pl-cols-n">${PLAN_COLUMNAS.length-PLAN_OCULTAS.size}/${PLAN_COLUMNAS.length}</span></button>
+        <div class="plc-panel" id="plCols"></div>
+      </div>
       <button class="pl-add" onclick="planAgregar()">➕ Agregar hospedaje</button>
       <button class="pl-imp" onclick="impAbrir()">⬆ Importar Excel</button>
       <button class="pl-imp" onclick="planExportar()">⬇ Excel</button>
@@ -387,27 +535,14 @@ function planRender(){
     planBarra(); return;
   }
 
-  h+=`<div class="pl-wrap"><table class="pl-tabla"><thead>
-    <tr>
+  // La tabla se arma desde PLAN_COLUMNAS: el encabezado, las celdas y el panel
+  // de "Columnas" salen de la misma lista, así no se pueden desalinear.
+  const visibles = PLAN_COLUMNAS.filter(c => planColVisible(c.k));
+
+  h+=`<div class="pl-wrap"><table class="pl-tabla"><thead><tr>
       <th class="c-acc"></th>
-      <th class="c-cod">Cód.<br>MGI</th>
-      <th class="c-nom">Establecimiento</th>
-      <th>Dirección</th>
-      <th>Participa 2026</th>
-      <th>RUT</th>
-      <th>Encargado</th><th>Correo encargado</th><th>Teléfono encargado</th>
-      <th>Dueño</th><th>Correo dueño</th><th>Teléfono dueño</th>
-      <th class="num">Simples<br>baño priv.</th><th class="num">Simples<br>baño comp.</th>
-      <th class="num">Dobles<br>baño priv.</th><th class="num">Dobles<br>baño comp.</th>
-      <th class="num calc">Hab.<br>totales</th><th class="num calc">Capacidad<br>máxima</th>
-      <th class="num">Camas<br>instaladas</th>
-      <th>Empresa colaboradora</th><th>¿EECC de MCEN?</th>
-      <th>Contrato desde</th><th>Contrato hasta</th>
-      <th>¿Arrendado<br>completo?</th>
-      <th class="num">Hab.<br>disponibles</th><th class="num">Nº<br>hospedados</th>
-      <th class="num">Camas<br>disponibles</th>
-      <th>¿Al día<br>con pagos?</th>
-      <th>Volver a llamar</th><th class="c-not">Notas</th>
+      ${visibles.map(c=>`<th class="${c.clase||''} ${c.num?'num':''} ${c.calc?'calc':''}"
+           data-c="${c.k}">${c.th}</th>`).join('')}
     </tr></thead><tbody>`;
 
   h+=filas.map(p=>{
@@ -423,31 +558,8 @@ function planRender(){
           ? `<button class="pl-baja" onclick="planReactivar('${pid}')" title="${esc(planV(pid,'baja_motivo')||'')}">↩</button>`
           : `<button class="pl-baja" onclick="planDarBaja('${pid}')" title="Sacar del conteo">✕</button>`}
       </td>
-      <td class="c-cod">${txt(pid,'codigo_mgi',52)}</td>
-      <td class="c-nom">${txt(pid,'nombre',190)}${baja?`<div class="pl-motivo" title="${esc(planV(pid,'baja_motivo')||'')}">fuera: ${esc((planV(pid,'baja_motivo')||'').slice(0,40))}</div>`:''}</td>
-      <td>${txt(pid,'direccion',170)}</td>
-      <td>${sel(pid,'participa',['SI','NO','En reparación','Dirección inexistente','Casa arrendada, no a trabajadores','Construirán más adelante','No contesta'])}</td>
-      <td>${txt(pid,'rut',110)}</td>
-      <td>${txt(pid,'enc_nombre',150)}</td><td>${txt(pid,'enc_correo',190)}</td><td>${txt(pid,'enc_fono',120)}</td>
-      <td>${txt(pid,'due_nombre',150)}</td><td>${txt(pid,'due_correo',190)}</td><td>${txt(pid,'due_fono',120)}</td>
-      <td class="num">${num(pid,'simples_priv')}</td><td class="num">${num(pid,'simples_comp')}</td>
-      <td class="num">${num(pid,'dobles_priv')}</td><td class="num">${num(pid,'dobles_comp')}</td>
-      <td class="num calc" id="plTot_${pid}">${planTotalHab(pid)}</td>
-      <td class="num calc" id="plCap_${pid}">${planCapMax(pid)}</td>
-      <td class="num">${num(pid,'camas_instaladas')}</td>
-      <td>${txt(pid,'eecc_hospeda',180)}</td>
-      <td>${sel(pid,'es_eecc_mcen',['Si','No','No sabe'])}</td>
-      <td>${fecha(pid,'contrato_inicio')}</td><td>${fecha(pid,'contrato_fin')}</td>
-      <td>${`<select class="pl-in sel" onchange="planSet('${pid}','arrendado_completo',this.value==='Si')">
-              <option value="No" ${!planV(pid,'arrendado_completo')?'selected':''}>No</option>
-              <option value="Si" ${planV(pid,'arrendado_completo')?'selected':''}>Sí</option>
-            </select>`}</td>
-      <td class="num">${num(pid,'hab_disponibles')}</td>
-      <td class="num">${num(pid,'n_hospedados')}</td>
-      <td class="num">${num(pid,'camas_disponibles')}</td>
-      <td>${sel(pid,'al_dia_pagos',['Si','No','No sabe'])}</td>
-      <td class="c-llam"><div id="plLlam_${pid}">${planLlamarHTML(pid)}</div>${fecha(pid,'volver_a_llamar')}</td>
-      <td class="c-not">${txt(pid,'notas',220)}</td>
+      ${visibles.map(c=>`<td class="${c.clase||''} ${c.num?'num':''} ${c.calc?'calc':''}"
+           data-c="${c.k}">${c.td(pid,p)}</td>`).join('')}
     </tr>`;
   }).join('');
 
