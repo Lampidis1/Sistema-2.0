@@ -158,3 +158,12 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text)}
   .modal{box-shadow:none;max-height:none;width:100%}
   .fotos img{height:150px}
 }
+
+/* ── Confianza del dato ────────────────────────────────────────────────────
+   La disponibilidad la levanta el equipo MGI por teléfono. Lo que todavía no
+   se confirma se marca: quien busca cama tiene que saber a qué atenerse. */
+.actualizado{font-size:.8rem;color:#5c6b72;margin:-4px 0 14px;line-height:1.5}
+.sin-conf{color:#b86000;font-weight:600}
+.sin-conf-chip{display:inline-block;background:#fff3cd;color:#8a6100;border:1px solid #f0d9a0;
+               border-radius:11px;padding:1px 8px;font-size:.68rem;font-weight:700;
+               vertical-align:middle;white-space:nowrap}

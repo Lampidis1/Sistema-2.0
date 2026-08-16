@@ -138,3 +138,39 @@ Para corregir una ubicación a mano: editar `lat`/`lng` del proveedor.
 De Proveedores. Un hospedaje aparece acá cuando tiene marcado **Programa MGI
 Habitabilidad** con sección *Hotelería*, está en Sierra Gorda, y tiene
 habitaciones cargadas en MGI.
+
+
+## De dónde sale la disponibilidad
+
+**El dato manda desde la planilla de MGI, no desde los contratos.**
+
+Hasta el 16-08-2026 la página calculaba disponible = instalado − lo
+comprometido en `hoteleria.contratos_json`. Pero solo 1 de 67 hospedajes tiene
+contratos cargados: nadie los carga uno por uno. El resultado era que la página
+mostraba **60 hospedajes con disponibilidad y 1.124 camas libres** cuando el
+levantamiento telefónico de MGI decía que **46 de 73 estaban en cero**.
+
+La vista `hoteles_sg_publico` resuelve ahora en este orden:
+
+| # | Condición | Resultado |
+|---|---|---|
+| 1 | dado de baja del programa (`hospedajes_mgi.baja`) | no aparece |
+| 2 | no participa del programa del año | no aparece |
+| 3 | `arrendado_completo` | 0 disponibles |
+| 4 | `hab_disponibles` declarado por MGI | ese número |
+| 5 | nada declarado | cálculo por contratos (el de antes) |
+
+Por eso **lo que MGI edita en su planilla se ve de inmediato en esta página**.
+Es el mismo dato, no una copia.
+
+### `confirmado`: la página dice qué sabe y qué no
+
+Un hospedaje que nadie ha llamado no puede mostrarse igual que uno confirmado
+ayer — quien busca cama llamaría en vano. La vista expone dos campos:
+
+- `actualizado` — cuándo lo levantó MGI
+- `confirmado` — `false` si nunca se verificó y el número sale solo de la
+  capacidad instalada
+
+En pantalla, los no confirmados llevan la etiqueta **«sin confirmar»** y bajo
+los KPI se indica la fecha del último levantamiento.

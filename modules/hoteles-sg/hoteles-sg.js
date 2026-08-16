@@ -68,11 +68,34 @@ function pintarKpis() {
   const d = disponibles();
   const habs = d.reduce((s, h) => s + h.hab_disponibles, 0);
   const camas = d.reduce((s, h) => s + h.camas_max, 0);
+  const porConfirmar = DATOS.filter(h => !h.confirmado).length;
   document.getElementById('kpis').innerHTML = `
     <div class="kpi"><div class="kpi-n">${d.length}</div><div class="kpi-l">Hospedajes con disponibilidad</div></div>
     <div class="kpi"><div class="kpi-n">${habs}</div><div class="kpi-l">Habitaciones libres</div></div>
     <div class="kpi"><div class="kpi-n">${camas}</div><div class="kpi-l">Camas disponibles</div></div>
     <div class="kpi"><div class="kpi-n">${DATOS.length}</div><div class="kpi-l">En el programa MGI</div></div>`;
+  // De cuándo es el dato: "25 disponibles" sin fecha no dice nada.
+  const fechas = DATOS.map(h => h.actualizado).filter(Boolean).sort();
+  const pie = document.getElementById('actualizado');
+  if (pie) {
+    pie.innerHTML = fechas.length
+      ? `Disponibilidad levantada por el equipo MGI · última actualización
+         <b>${fmtFecha(fechas[fechas.length - 1])}</b>` +
+        (porConfirmar ? ` · <span class="sin-conf">${porConfirmar} hospedaje${porConfirmar === 1 ? '' : 's'}
+         sin confirmar</span>` : '')
+      : 'La disponibilidad todavía no ha sido confirmada por el equipo MGI.';
+  }
+}
+function fmtFecha(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return String(iso).slice(0, 10);
+  return d.toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+// Un hospedaje que nadie ha llamado no puede mostrarse igual que uno confirmado
+// ayer: quien busca cama llamaría en vano.
+function marcaConfirmacion(h) {
+  return h.confirmado ? '' : '<span class="sin-conf-chip" title="La capacidad está registrada, pero el equipo MGI todavía no confirma cuántas habitaciones quedan libres">sin confirmar</span>';
 }
 
 function setVista(v) {
@@ -121,7 +144,7 @@ function renderDisponibles() {
         <th class="orden num" onclick="ordenarPor('hab_total')">Instaladas${flecha('hab_total')}</th>
       </tr></thead>
       <tbody>${d.map(h => `<tr onclick="verFicha('${h.id}')">
-        <td><b>${esc(h.nombre)}</b></td>
+        <td><b>${esc(h.nombre)}</b> ${marcaConfirmacion(h)}</td>
         <td>${esc(h.direccion || '—')}</td>
         <td>${contactoHTML(h)}</td>
         <td class="num"><b>${h.hab_disponibles}</b></td>
@@ -133,7 +156,7 @@ function renderDisponibles() {
   cont.innerHTML = '<div class="fichas">' + d.map(h => `
     <article class="ficha" onclick="verFicha('${h.id}')">
       <div class="ficha-h">
-        <div class="ficha-n">${esc(h.nombre)}</div>
+        <div class="ficha-n">${esc(h.nombre)} ${marcaConfirmacion(h)}</div>
         <div class="ficha-d">📍 ${esc(h.direccion || 'Dirección no registrada')}</div>
       </div>
       <div class="ficha-b">
@@ -326,7 +349,7 @@ function pintarTablaMapa(lista) {
         <td class="num"><input type="checkbox" ${SELECCION.has(h.id) ? 'checked' : ''}
             onclick="selToggle('${h.id}',event)" title="Incluir en el Excel"></td>
         <td class="num"><span class="tm-pin">${h.hab_disponibles}</span></td>
-        <td><b>${esc(h.nombre)}</b></td>
+        <td><b>${esc(h.nombre)}</b> ${marcaConfirmacion(h)}</td>
         <td>${esc(h.direccion || '—')}</td>
         <td class="num">${h.hab_simples}</td>
         <td class="num">${h.hab_dobles}</td>
@@ -440,7 +463,7 @@ function verFicha(id) {
     <div class="modal-body">
       <div class="dcf-layout">
         <div class="dcf-left">
-          <div class="dcf-sec-t">Disponibilidad ahora</div>
+          <div class="dcf-sec-t">Disponibilidad ${h.confirmado?'al '+fmtFecha(h.actualizado):'(sin confirmar)'}</div>
           <div class="dcf-item"><span class="dcf-ico">🛏</span><div><div class="dcf-l">Simples libres</div><div class="dcf-v">${h.hab_simples}</div></div></div>
           <div class="dcf-item"><span class="dcf-ico">🛏</span><div><div class="dcf-l">Dobles libres</div><div class="dcf-v">${h.hab_dobles}</div></div></div>
           <div class="dcf-item"><span class="dcf-ico">✅</span><div><div class="dcf-l">Habitaciones libres</div><div class="dcf-v"><b>${h.hab_disponibles}</b></div></div></div>
