@@ -15,7 +15,19 @@ async function _movilOnAcceso(user){
 }
 
 // ═══════════ NAVEGACIÓN ═══════════
-function movTab(p,btn){ document.querySelectorAll('.page').forEach(x=>x.classList.remove('active')); document.getElementById('page-'+p).classList.add('active'); document.querySelectorAll('.tabbar button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); if(p==='listado')renderListado(); if(p==='cuestionario')refrescarCuestionarioActual(); window.scrollTo(0,0); }
+// Hay dos juegos de pestañas: la barra de arriba (escritorio y tableta) y la
+// barra inferior estilo app (teléfono). Solo una se ve a la vez, pero las dos
+// se marcan, para que al girar el equipo o cambiar de tamaño quede coherente.
+function movTab(p,btn){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.tabbar button, .navtabs button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.p===p);
+  });
+  if(p==='listado')renderListado();
+  if(p==='cuestionario')refrescarCuestionarioActual();
+  window.scrollTo(0,0);
+}
 
 // ═══════════ ESTADO DE CAPTURA ═══════════
 let ACTUAL=null;      // registro en edición {cv_id,...}

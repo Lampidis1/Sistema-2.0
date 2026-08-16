@@ -11,7 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="movil.css">
+<link rel="stylesheet" href="movil.css?v=20260816a">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -51,21 +51,31 @@
 <!-- APP -->
 <div id="app" class="hidden">
   <header>
+    <img src="../../shared/assets/logo-amsa-873.png" alt="Antofagasta Minerals" class="h-logo">
+    <div class="h-sep"></div>
     <div>
-      <div class="ht">Oficina Móvil</div>
-      <div class="hs">Apresto laboral · AM</div>
+      <div class="ht"><span class="ht-largo">Oficina Móvil de Empleo</span><span class="ht-corto">Oficina Móvil</span></div>
+      <div class="hs">Apresto laboral en terreno</div>
     </div>
     <div class="sp">
-      <span id="hUser" style="font-size:.72rem;opacity:.9"></span>
-      <a href="../../index.html">⌂</a>
+      <span id="hUser" class="h-user"></span>
+      <a href="../../index.html" class="h-home">⌂ Inicio</a>
       <button onclick="salir()">Salir</button>
     </div>
   </header>
 
+  <!-- Pestañas de arriba: escritorio y tableta. En teléfono manda la barra
+       inferior, que se alcanza con el pulgar. -->
+  <nav class="navtabs">
+    <button class="active" data-p="captura" onclick="movTab('captura',this)">👤 Captura</button>
+    <button data-p="cuestionario" onclick="movTab('cuestionario',this)">📋 Cuestionario</button>
+    <button data-p="listado" onclick="movTab('listado',this)">📇 Levantados</button>
+  </nav>
+
   <main>
     <!-- PÁGINA: CAPTURA -->
     <div class="page active" id="page-captura">
-      <div class="card">
+      <div class="card card-ancho">
         <div class="sec-t">🔎 Buscar o crear</div>
         <div class="rut-warn" id="rutWarn"></div>
         <div class="fld"><label>RUT (buscar si ya existe)</label>
@@ -77,6 +87,7 @@
         </div>
       </div>
 
+      <div class="cols">
       <div class="card">
         <div class="sec-t">👤 Datos personales</div>
         <div class="g2">
@@ -121,8 +132,9 @@
         <div class="fld"><label>Certificaciones</label><textarea id="fCertif" placeholder="Uno por línea"></textarea></div>
         <div class="fld"><label>Observaciones</label><textarea id="fObs"></textarea></div>
       </div>
+      </div><!-- /.cols -->
 
-      <div class="btn-row">
+      <div class="btn-row btn-row-final">
         <button class="btn" onclick="guardarRegistro()">💾 Guardar</button>
         <button class="btn gold" onclick="exportarCVactual()">📄 CV PDF</button>
       </div>
@@ -171,5 +183,5 @@
   onAcceso: function(user){ return _movilOnAcceso(user); }
 };</script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="movil.js"></script></body>
+<script src="movil.js?v=20260816a"></script></body>
 </html>
