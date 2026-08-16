@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual del Sistema AM</title>
+<!--
+  ─────────────────────────────────────────────────────────────────────────────
+  MANUAL DEL SISTEMA AM · documento vivo
+  Relaciones Comunitarias · Antofagasta Minerals
+
+  Este archivo es AUTÓNOMO: no depende de ninguna librería externa. Los
+  diagramas son SVG escritos a mano, así que se abre en cualquier navegador,
+  sin internet, y siempre se ve igual.
+
+  ES EDITABLE. Botón "✏ Editar" abajo a la derecha → se corrige el texto en el
+  navegador → botón "⬇ Descargar HTML" → se reemplaza este archivo
+  (docs/MANUAL.html) con el descargado. En la próxima revisión, las mejoras
+  del usuario y las propias se integran sobre esa base.
+
+  Vive en docs/, que .vercelignore excluye: NO se publica en internet
+  (describe el modelo de seguridad; es interno).
+
+  VERSIÓN DEL DOCUMENTO: 1.0  (2026-08-16)
+  Al actualizarlo, subir MANUAL_VERSION en el <script> del final: eso hace que
+  los borradores locales de la versión anterior no pisen el contenido nuevo.
+  ─────────────────────────────────────────────────────────────────────────────
+-->
+<style>
+:root{
+  --ground:#eef3f4; --surface:#ffffff; --surface-2:#f4f8f9; --surface-3:#e9f1f2;
+  --ink:#152229; --ink-soft:#41535c; --ink-mute:#6d7d85; --hair:#d6e0e3;
+  --teal:#006973; --teal-2:#00a399; --teal-lt:#e4f6f5; --gold:#F2A900; --gold-dk:#7a5c00;
+  --ok:#1e7e34; --ok-lt:#e8f6ec; --warn-c:#8a6100; --warn-lt:#fff3cd;
+  --bad:#c0311b; --bad-lt:#fdecea; --plate:#fbfdfd; --plate-line:#d0dde0;
+  --shadow:0 1px 3px rgba(20,45,55,.08),0 8px 30px rgba(20,45,55,.06); --maxw:1180px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --ground:#0c1417; --surface:#121e22; --surface-2:#16242a; --surface-3:#1c2d33;
+  --ink:#e7f0f2; --ink-soft:#a9bcc2; --ink-mute:#7d939a; --hair:#243840;
+  --teal:#3fb8b0; --teal-2:#57d0c8; --teal-lt:#16302f; --gold:#f2b530; --gold-dk:#f2c25a;
+  --ok:#4ecb6a; --ok-lt:#12291a; --warn-c:#e0b64a; --warn-lt:#2c2410;
+  --bad:#f0806e; --bad-lt:#2a1512; --plate-line:#2a3f47;
+  --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 34px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --ground:#0c1417; --surface:#121e22; --surface-2:#16242a; --surface-3:#1c2d33;
+  --ink:#e7f0f2; --ink-soft:#a9bcc2; --ink-mute:#7d939a; --hair:#243840;
+  --teal:#3fb8b0; --teal-2:#57d0c8; --teal-lt:#16302f; --gold:#f2b530; --gold-dk:#f2c25a;
+  --ok:#4ecb6a; --ok-lt:#12291a; --warn-c:#e0b64a; --warn-lt:#2c2410;
+  --bad:#f0806e; --bad-lt:#2a1512; --plate-line:#2a3f47;
+  --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 34px rgba(0,0,0,.35);
+}
+/* La plancha de diagramas mantiene fondo claro en ambos temas: los planos se leen mejor sobre papel */
+[data-theme="dark"] .plate{ --plate:#f4f8f9 } @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .plate{ --plate:#f4f8f9 } }
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:var(--ground); color:var(--ink);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-size:16px; line-height:1.62; -webkit-font-smoothing:antialiased}
+@media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
+.dsp{font-family:"Barlow Condensed","Arial Narrow",ui-sans-serif,system-ui,sans-serif; font-weight:800; text-transform:uppercase; letter-spacing:.02em; line-height:1.04}
+
+.shell{display:grid; grid-template-columns:262px minmax(0,1fr); gap:40px; max-width:var(--maxw); margin:0 auto; padding:0 24px}
+main{min-width:0; padding:38px 0 140px}
+@media(max-width:900px){ .shell{grid-template-columns:1fr; gap:0} nav.toc{display:none} }
+
+nav.toc{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:30px 0 40px}
+.toc .brand{display:flex; align-items:center; gap:10px; margin-bottom:6px}
+.toc .brand b{font-size:.82rem; letter-spacing:.14em; text-transform:uppercase; color:var(--teal); font-weight:800}
+.toc .sub{font-size:.72rem; color:var(--ink-mute); text-transform:uppercase; letter-spacing:.1em; margin:0 0 20px 34px}
+.toc a{display:block; padding:5px 12px 5px 14px; color:var(--ink-soft); text-decoration:none; font-size:.86rem; border-left:2px solid transparent; line-height:1.35}
+.toc a:hover{color:var(--teal); border-left-color:var(--hair)}
+.toc a.h1{font-weight:700; color:var(--ink); margin-top:16px; font-size:.9rem}
+.toc a.h1 .n{color:var(--teal); font-variant-numeric:tabular-nums; margin-right:8px; font-weight:800}
+.toc a.h2{padding-left:30px; font-size:.82rem}
+.toc a:focus-visible{outline:2px solid var(--teal); outline-offset:2px; border-radius:3px}
+
+.cover{background:linear-gradient(158deg,#00505a 0%,#006973 42%,#00a399 118%); color:#fff; border-radius:20px; padding:52px 46px 44px; position:relative; overflow:hidden; box-shadow:var(--shadow); margin-bottom:14px}
+.cover::after{content:""; position:absolute; inset:0; background:repeating-linear-gradient(135deg,rgba(255,255,255,.04) 0 2px,transparent 2px 22px); pointer-events:none}
+.cover .kick{font-size:.74rem; letter-spacing:.24em; text-transform:uppercase; opacity:.82; font-weight:700}
+.cover h1{font-size:clamp(2.5rem,7vw,4.2rem); margin:.16em 0 .1em}
+.cover .lead{font-size:1.1rem; max-width:60ch; opacity:.94; line-height:1.55}
+.cover .meta{display:flex; flex-wrap:wrap; gap:8px 10px; margin-top:24px; position:relative; z-index:1}
+.cover .meta span{background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.22); border-radius:999px; padding:5px 13px; font-size:.78rem; font-weight:600}
+
+.sec-wrap{display:flex; align-items:baseline; gap:16px; margin:72px 0 8px; padding-top:14px; border-top:2px solid var(--hair)}
+.sec-wrap:first-of-type{margin-top:40px}
+.sec-n{font-family:"Barlow Condensed","Arial Narrow",sans-serif; font-weight:800; font-size:2.6rem; color:var(--teal); line-height:.8; font-variant-numeric:tabular-nums}
+h2.sec{font-size:clamp(1.7rem,3.4vw,2.35rem); margin:0 0 4px; color:var(--ink)}
+.sec-tag{font-size:.72rem; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-mute); font-weight:700; margin:6px 0 0}
+h3{font-size:1.28rem; margin:38px 0 6px; color:var(--ink); font-weight:750}
+h4{font-size:1.02rem; margin:26px 0 4px; color:var(--teal); font-weight:750}
+p{margin:.55em 0; max-width:70ch}
+.lead-p{font-size:1.06rem; color:var(--ink-soft); max-width:66ch}
+a{color:var(--teal); text-underline-offset:2px}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:.86em; background:var(--surface-3); padding:.12em .4em; border-radius:5px; color:var(--ink)}
+strong{font-weight:700}
+ul,ol{max-width:70ch; padding-left:1.3em} li{margin:.28em 0}
+
+.modhead{display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin:10px 0 2px}
+.modhead .ic{width:52px; height:52px; border-radius:13px; display:grid; place-items:center; font-size:1.7rem; background:var(--teal-lt); border:1px solid var(--hair); flex:0 0 auto}
+.slug{display:inline-flex; align-items:center; gap:6px; font-family:ui-monospace,monospace; font-size:.76rem; background:var(--ink); color:var(--surface); padding:3px 10px; border-radius:999px; font-weight:600}
+[data-theme="dark"] .slug{background:var(--teal); color:#04211f} @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .slug{background:var(--teal); color:#04211f} }
+.pill{display:inline-block; font-size:.72rem; font-weight:700; padding:3px 10px; border-radius:999px}
+.pill.pub{background:var(--ok-lt); color:var(--ok)} .pill.priv{background:var(--surface-3); color:var(--ink-soft)}
+
+.howto{background:var(--teal-lt); border:1px solid color-mix(in srgb,var(--teal) 30%,transparent); border-left:4px solid var(--teal); border-radius:0 12px 12px 0; padding:18px 22px; margin:22px 0}
+.howto .t{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; letter-spacing:.06em; font-weight:800; color:var(--teal); font-size:.9rem; margin-bottom:8px}
+.howto ol{margin:0; max-width:none} .howto li{margin:.34em 0}
+
+.note{border-radius:0 10px 10px 0; padding:14px 18px; margin:20px 0; font-size:.94rem}
+.note.warn{background:var(--warn-lt); border-left:4px solid var(--gold)} .note.warn b{color:var(--gold-dk)}
+.note.tip{background:var(--ok-lt); border-left:4px solid var(--ok)}
+.note.rule{background:var(--surface-2); border-left:4px solid var(--teal)}
+
+.plate{background:var(--plate); border:1px solid var(--plate-line); border-radius:14px; padding:20px; margin:24px 0; overflow-x:auto; box-shadow:var(--shadow)}
+.plate .cap{font-size:.76rem; color:#5a6b72; text-transform:uppercase; letter-spacing:.1em; font-weight:700; margin:0 0 4px}
+.plate .capd{font-size:.86rem; color:#41535c; margin:0 0 14px; max-width:74ch}
+.plate svg{max-width:100%; height:auto; display:block}
+/* estilos compartidos de todos los diagramas */
+.dg .bx{fill:#fff;stroke:#00778a;stroke-width:1.5}
+.dg .bx-lt{fill:#e4f6f5;stroke:#00778a;stroke-width:1.5}
+.dg .bx-ok{fill:#e8f6ec;stroke:#1e7e34;stroke-width:1.5}
+.dg .bx-bad{fill:#fdecea;stroke:#c0311b;stroke-width:1.5}
+.dg .bx-warn{fill:#fff3cd;stroke:#b8860b;stroke-width:1.5}
+.dg .bx-core{fill:#00778a;stroke:#00505a;stroke-width:1.5}
+.dg .t{font:600 12.5px ui-sans-serif,system-ui;fill:#12303a}
+.dg .tw{font:700 12.5px ui-sans-serif;fill:#fff}
+.dg .tl{font:600 10.5px ui-sans-serif;fill:#5a6b72}
+.dg .tm{font:500 10px ui-sans-serif;fill:#7a8890}
+.dg .ln{stroke:#5f7078;stroke-width:1.6;fill:none}
+
+.legend{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr)); gap:8px 22px; margin:16px 0 4px}
+.legend .li{display:flex; gap:10px; font-size:.9rem; align-items:baseline}
+.legend .no{flex:0 0 auto; width:22px; height:22px; border-radius:50%; background:var(--teal); color:#fff; display:grid; place-items:center; font-size:.74rem; font-weight:800}
+
+.tbl-wrap{overflow-x:auto; margin:20px 0; border:1px solid var(--hair); border-radius:12px}
+table{border-collapse:collapse; width:100%; font-size:.9rem; min-width:520px}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--hair); vertical-align:top}
+th{background:var(--surface-2); font-size:.74rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:700}
+tr:last-child td{border-bottom:0}
+.tag-role{font-family:ui-monospace,monospace; font-size:.8rem; color:var(--teal); font-weight:600}
+
+.feat{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr)); gap:14px; margin:22px 0}
+.feat .f{background:var(--surface-2); border:1px solid var(--hair); border-radius:12px; padding:15px 17px}
+.feat .f b{display:block; color:var(--teal); font-size:.96rem; margin-bottom:3px; font-weight:700}
+.feat .f span{font-size:.86rem; color:var(--ink-soft)}
+.tabs-demo{display:flex; flex-wrap:wrap; gap:7px; margin:16px 0}
+.tabs-demo span{font-size:.82rem; padding:6px 13px; border-radius:8px; background:var(--surface-2); border:1px solid var(--hair); color:var(--ink-soft); font-weight:600}
+.tabs-demo span.on{background:var(--teal); color:#fff; border-color:var(--teal)}
+.foot{margin-top:80px; padding-top:26px; border-top:2px solid var(--hair); color:var(--ink-mute); font-size:.86rem}
+
+/* ─── barra de herramientas del documento (tema + editar) ─── */
+.dockbtns{position:fixed; right:18px; bottom:18px; display:flex; flex-direction:column; gap:10px; z-index:50}
+.dockbtns button{border:1px solid var(--hair); background:var(--surface); color:var(--ink); box-shadow:var(--shadow); border-radius:999px; padding:11px 16px; font-size:.88rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:7px}
+.dockbtns button:hover{border-color:var(--teal); color:var(--teal)}
+.dockbtns button.primary{background:var(--teal); color:#fff; border-color:var(--teal)}
+.dockbtns button:focus-visible{outline:2px solid var(--teal); outline-offset:2px}
+
+/* barra superior de edición */
+.editbar{position:sticky; top:0; z-index:60; display:none; align-items:center; gap:10px; flex-wrap:wrap;
+  background:var(--gold); color:#2a2000; padding:10px 18px; box-shadow:0 2px 12px rgba(0,0,0,.15)}
+body.ed-on .editbar{display:flex}
+.editbar .lbl{font-weight:800; font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; letter-spacing:.05em; font-size:1rem; margin-right:6px}
+.editbar button{border:1.5px solid rgba(0,0,0,.28); background:rgba(255,255,255,.55); color:#2a2000; border-radius:8px; padding:7px 13px; font-size:.84rem; font-weight:700; cursor:pointer}
+.editbar button:hover{background:#fff}
+.editbar .sp{flex:1}
+.editbar .hint{font-size:.8rem; opacity:.85}
+
+/* resaltado de zonas editables */
+body.ed-on [contenteditable="true"]{outline:1px dashed rgba(0,105,115,.5); outline-offset:3px; border-radius:4px}
+body.ed-on [contenteditable="true"]:focus{outline:2px solid var(--teal); background:color-mix(in srgb,var(--teal) 7%,transparent)}
+.rev-note{background:var(--warn-lt); border:1px dashed var(--gold); border-left:4px solid var(--gold); border-radius:0 8px 8px 0; padding:10px 14px; margin:16px 0; font-size:.92rem; color:var(--ink)}
+.rev-note::before{content:"📝 Nota de revisión — "; font-weight:800; color:var(--gold-dk)}
+
+/* banner de restauración de borrador */
+.restore-banner{background:var(--teal); color:#fff; padding:12px 18px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; font-size:.9rem}
+.restore-banner button{background:#fff; color:var(--teal); border:none; border-radius:7px; padding:6px 12px; font-weight:700; cursor:pointer}
+.restore-banner button.ghost{background:transparent; color:#fff; border:1px solid rgba(255,255,255,.6)}
+
+@media print{ .dockbtns,.editbar,.restore-banner,nav.toc{display:none!important} .shell{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<div class="editbar" id="editbar" aria-hidden="true">
+  <span class="lbl">✏ Modo edición</span>
+  <button type="button" onclick="MANUAL.addNote()">➕ Nota de revisión</button>
+  <button type="button" onclick="MANUAL.download()">⬇ Descargar HTML</button>
+  <button type="button" onclick="MANUAL.discard()">↩ Descartar cambios</button>
+  <span class="sp"></span>
+  <span class="hint" id="edhint">Se guarda un borrador automático en este navegador.</span>
+  <button type="button" onclick="MANUAL.toggle(false)">✓ Listo</button>
+</div>
+
+<div class="restore-banner" id="restoreBanner" style="display:none">
+  <span>Tienes cambios guardados en este navegador de una sesión anterior.</span>
+  <button type="button" onclick="MANUAL.restore()">Restaurar mis cambios</button>
+  <button type="button" class="ghost" onclick="MANUAL.dropDraft()">Descartar</button>
+</div>
+
+<div class="shell">
+
+<nav class="toc" aria-label="Índice del manual">
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 6 L42 40 H33 L24 22 L15 40 H6 Z" fill="#00a399"/><path d="M24 16 L34 40 H27 L24 33 L21 40 H14 Z" fill="#006973"/><path d="M20 8 h8 l-1.6 6 h-4.8 z" fill="#F2A900"/></svg>
+    <b>Sistema AM</b>
+  </div>
+  <p class="sub">Manual operativo</p>
+  <a class="h1" href="#intro"><span class="n">1</span>Introducción general</a>
+  <a class="h1" href="#acceso"><span class="n">2</span>Acceso y permisos</a>
+  <a class="h1" href="#home"><span class="n">3</span>Página de inicio</a>
+  <a class="h1" href="#proveedores"><span class="n">4</span>Proveedores</a>
+  <a class="h1" href="#empleabilidad"><span class="n">5</span>Empleabilidad</a>
+  <a class="h1" href="#mgi"><span class="n">6</span>MGI Habitabilidad</a>
+  <a class="h1" href="#movil"><span class="n">7</span>Oficina Móvil</a>
+  <a class="h1" href="#hoteles"><span class="n">8</span>Hoteles SG</a>
+  <a class="h1" href="#faenas"><span class="n">9</span>Consulta por faena</a>
+  <a class="h1" href="#planer"><span class="n">10</span>Planer</a>
+  <a class="h1" href="#admin"><span class="n">11</span>Gestión de usuarios</a>
+  <a class="h1" href="#db"><span class="n">12</span>La base de datos</a>
+  <a class="h2" href="#db-tablas">— Tablas y relaciones</a>
+  <a class="h2" href="#db-borrado">— Borrado lógico</a>
+  <a class="h2" href="#db-rls">— Permisos (RLS)</a>
+  <a class="h2" href="#db-build">— Cómo se arma</a>
+  <a class="h1" href="#editar" style="color:var(--gold-dk)"><span class="n" style="color:var(--gold-dk)">✎</span>Cómo editar este manual</a>
+</nav>
+
+<main id="doc">
+
+<header class="cover">
+  <div class="kick">Antofagasta Minerals · Relaciones Comunitarias</div>
+  <h1 class="dsp">Manual del<br>Sistema AM</h1>
+  <p class="lead">Guía completa de operación: qué es cada página, cómo se usa, cómo se conectan entre sí y cómo está construida la base de datos que las sostiene.</p>
+  <div class="meta">
+    <span>10 módulos</span><span>~40 tablas en Supabase</span><span>Frontend sin framework</span>
+    <span>Hosting estático en Vercel</span><span>Documento editable</span>
+  </div>
+</header>
+<p style="color:var(--ink-mute);font-size:.86rem;margin:14px 2px 0">Documento de referencia y <b style="color:var(--gold-dk)">editable</b>. Léelo de arriba abajo la primera vez, después salta por el índice. Para corregirlo o mejorarlo, usa el botón <b>✏ Editar</b> abajo a la derecha (ver §<a href="#editar">Cómo editar</a>).</p>
+
+<!-- 1 -->
+<div class="sec-wrap" id="intro"><span class="sec-n">1</span><div><h2 class="sec dsp">Introducción general</h2><p class="sec-tag">Qué es, para quién y de qué está hecho</p></div></div>
+
+<p class="lead-p">El Sistema AM es la plataforma interna de <strong>Relaciones Comunitarias de Antofagasta Minerals</strong>. No es un solo programa: es un <strong>hub de botones</strong>. Una página de inicio funciona como menú y desde ahí se entra a módulos independientes, cada uno dedicado a un trabajo distinto de las comunidades — proveedores locales, empleabilidad, habitabilidad de hospedajes, captura en terreno y consultas por faena.</p>
+<p>Está <strong>en producción y en uso real</strong>. Todo lo que se describe acá es lo que hoy hace el sistema, no un plan.</p>
+
+<h3>Cómo está construido</h3>
+<div class="tbl-wrap"><table>
+<thead><tr><th>Capa</th><th>Tecnología</th><th>Qué significa en la práctica</th></tr></thead>
+<tbody>
+<tr><td><strong>Frontend</strong></td><td>HTML + CSS + JavaScript puro</td><td>Sin framework, sin instalación. Se editan archivos y se suben. Cada módulo son tres piezas: estructura (<code>index.html</code>), estilos (<code>.css</code>) y lógica (<code>.js</code>).</td></tr>
+<tr><td><strong>Backend</strong></td><td>Supabase (PostgreSQL + Auth + RLS)</td><td>La base de datos, el inicio de sesión y la seguridad. Región <code>sa-east-1</code> (São Paulo).</td></tr>
+<tr><td><strong>Hosting</strong></td><td>Vercel</td><td>Sitio 100 % estático. Se sube el repositorio y se publica solo. Dirección pública: <code>sistema-2-0.vercel.app</code>.</td></tr>
+<tr><td><strong>Librerías</strong></td><td>8, todas por CDN</td><td>Cliente Supabase, jsPDF (PDF), SheetJS (Excel), pdf.js y mammoth (leer CV), Chart.js (gráficos), tesseract.js (OCR), pptxgenjs.</td></tr>
+</tbody></table></div>
+
+<h3>Las reglas que no se rompen</h3>
+<p>El sistema se rige por ocho “reglas de oro”. Estas cuatro explican por qué las cosas están donde están:</p>
+<div class="feat">
+  <div class="f"><b>La seguridad vive en la base</b><span>El frontend esconde botones, pero eso no protege nada. Lo único que protege de verdad son el inicio de sesión y las políticas de la base de datos (RLS). Ver §2 y §12.</span></div>
+  <div class="f"><b>El slug de acceso manda</b><span>Cada módulo se abre con un “slug” de permiso. No siempre coincide con el nombre: Proveedores usa el slug <code>principal</code>, no <code>proveedores</code>.</span></div>
+  <div class="f"><b>Cero datos personales fuera de Supabase</b><span>RUT, nombres, teléfonos y CV solo viven en la base. Nunca en el navegador, ni en una URL, ni en un tercero.</span></div>
+  <div class="f"><b>Nada se borra de verdad</b><span>Eliminar marca el registro como <code>Eliminado</code>; el dato queda. Un candado en la base impide el borrado real salvo a un administrador.</span></div>
+</div>
+
+<div class="plate">
+  <p class="cap">Diagrama · Arquitectura general</p>
+  <p class="capd">El navegador de cada persona habla directo con Supabase. No hay servidor intermedio: Vercel solo entrega los archivos. La seguridad se aplica dentro de la base.</p>
+  <svg class="dg" viewBox="0 0 780 250" role="img" aria-label="Arquitectura general">
+    <defs><marker id="a1" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#5f7078"/></marker></defs>
+    <rect class="bx-lt" x="24" y="92" width="150" height="66" rx="12"/>
+    <text class="t" x="99" y="120" text-anchor="middle">👩‍💼 Persona</text>
+    <text class="tl" x="99" y="138" text-anchor="middle">(navegador)</text>
+    <rect class="bx" x="300" y="34" width="170" height="56" rx="12"/>
+    <text class="t" x="385" y="58" text-anchor="middle">Vercel</text>
+    <text class="tl" x="385" y="76" text-anchor="middle">sitio estático</text>
+    <rect x="556" y="42" width="204" height="170" rx="14" fill="#eef6f6" stroke="#b7d3d3"/>
+    <text class="tl" x="658" y="62" text-anchor="middle" style="font-weight:700">DENTRO DE SUPABASE</text>
+    <rect class="bx" x="574" y="72" width="168" height="34" rx="8"/><text class="t" x="658" y="93" text-anchor="middle">Auth · inicio de sesión</text>
+    <rect class="bx" x="574" y="116" width="168" height="34" rx="8"/><text class="t" x="658" y="137" text-anchor="middle">JWT · rol + accesos</text>
+    <rect class="bx-lt" x="574" y="160" width="168" height="38" rx="8"/><text class="t" x="658" y="184" text-anchor="middle">Políticas RLS · filtran</text>
+    <path class="ln" d="M174 112 H300" marker-end="url(#a1)"/><text class="tl" x="237" y="104" text-anchor="middle">carga</text>
+    <path class="ln" d="M300 78 H176" marker-end="url(#a1)" stroke-dasharray="5 4"/><text class="tl" x="238" y="72" text-anchor="middle">HTML · CSS · JS</text>
+    <path class="ln" d="M174 138 C 360 210, 420 150, 556 132" marker-end="url(#a1)" stroke-width="2.2"/>
+    <text class="tl" x="360" y="200" text-anchor="middle">consultas con anon key · devuelve solo lo permitido</text>
+  </svg>
+</div>
+<div class="note rule"><b>Lectura de una sola línea:</b> el navegador pide datos a la base con una llave pública (<code>anon key</code>), y la base decide fila por fila qué puede ver esa persona según su permiso. Aunque alguien abra la consola del navegador, no ve nada que su permiso no autorice.</div>
+
+<!-- 2 -->
+<div class="sec-wrap" id="acceso"><span class="sec-n">2</span><div><h2 class="sec dsp">Acceso y permisos</h2><p class="sec-tag">Cómo se entra, quién ve qué</p></div></div>
+<p class="lead-p">Entender esto una vez explica el comportamiento de todos los módulos: por qué a veces un botón aparece atenuado, por qué “me diste acceso y no me aparece” se arregla recargando, y por qué la seguridad no depende del frontend.</p>
+
+<div class="plate">
+  <p class="cap">Diagrama de proceso · De la solicitud al acceso</p>
+  <svg class="dg" viewBox="0 0 780 310" role="img" aria-label="De la solicitud al acceso">
+    <defs><marker id="a2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#5f7078"/></marker></defs>
+    <rect class="bx" x="300" y="18" width="180" height="40" rx="9"/><text class="t" x="390" y="43" text-anchor="middle">Persona se registra</text>
+    <rect class="bx-lt" x="290" y="86" width="200" height="46" rx="9"/><text class="t" x="390" y="106" text-anchor="middle">Tabla perfiles</text><text class="tl" x="390" y="123" text-anchor="middle">estado: pendiente</text>
+    <rect class="bx-warn" x="300" y="160" width="180" height="44" rx="9"/><text class="t" x="390" y="180" text-anchor="middle">Usuario maestro</text><text class="tl" x="390" y="196" text-anchor="middle">revisa la solicitud</text>
+    <rect class="bx-ok" x="70" y="238" width="240" height="52" rx="9"/><text class="t" x="190" y="258" text-anchor="middle">aprobar_usuario_v2()</text><text class="tl" x="190" y="275" text-anchor="middle">escribe en el JWT: rol · estado · accesos[]</text>
+    <rect class="bx-bad" x="470" y="238" width="240" height="52" rx="9"/><text class="t" x="590" y="258" text-anchor="middle">rechazar_usuario()</text><text class="tl" x="590" y="275" text-anchor="middle">estado: rechazado</text>
+    <path class="ln" d="M390 58 V86" marker-end="url(#a2)"/>
+    <path class="ln" d="M390 132 V160" marker-end="url(#a2)"/>
+    <path class="ln" d="M330 204 C 250 220, 220 224, 195 238" marker-end="url(#a2)"/><text class="tl" x="238" y="222">aprueba</text>
+    <path class="ln" d="M450 204 C 530 220, 560 224, 585 238" marker-end="url(#a2)"/><text class="tl" x="520" y="222">rechaza</text>
+  </svg>
+</div>
+<p>Hay un <strong>usuario maestro</strong> (rol <code>admin</code>) que decide quién entra a qué, desde el módulo <a href="#admin">Gestión de usuarios</a> (§11). Cuando aprueba a alguien, elige su rol y la lista de <strong>slugs de acceso</strong>. Esa lista viaja firmada dentro del token de sesión (JWT), en <code>app_metadata.accesos</code>.</p>
+<div class="note warn"><b>Consecuencia práctica.</b> Como los permisos van dentro del token, un token viejo trae permisos viejos. Por eso los módulos piden un token nuevo al abrir. Si el maestro le cambia los accesos a alguien, a esa persona le basta con <b>recargar la página</b> — ya no hace falta cerrar sesión.</div>
+
+<h3>Los slugs que existen hoy</h3>
+<div class="tbl-wrap"><table>
+<thead><tr><th>Slug</th><th>Abre</th><th>Ojo</th></tr></thead>
+<tbody>
+<tr><td><code>principal</code></td><td>Proveedores</td><td><strong>No</strong> se llama <code>proveedores</code>. Es el caso histórico.</td></tr>
+<tr><td><code>empleabilidad</code></td><td>Empleabilidad</td><td>Tener <code>movil</code> también la habilita.</td></tr>
+<tr><td><code>movil</code></td><td>Oficina Móvil</td><td>Tener <code>empleabilidad</code> también la habilita.</td></tr>
+<tr><td><code>mgi</code></td><td>MGI Habitabilidad</td><td></td></tr>
+<tr><td><code>centinela</code> · <code>antucoya</code> · <code>zaldivar</code></td><td>Consulta de cada faena</td><td>Solo lectura del directorio.</td></tr>
+<tr><td><code>planer</code></td><td>Planer</td><td></td></tr>
+<tr><td><code>lector</code></td><td>— (no es un módulo)</td><td>Marca al usuario como <strong>solo lectura</strong>.</td></tr>
+<tr><td><em>(sin slug)</em></td><td>Gestión de usuarios</td><td>Solo entra quien tiene rol <code>admin</code>.</td></tr>
+</tbody></table></div>
+<p>Un <code>admin</code> pasa todos los chequeos sin tener los slugs: ve todo. La página <strong>Hoteles SG</strong> es la excepción — es pública y no pide sesión (§8).</p>
+
+<h3>Los roles dentro de la base</h3>
+<p>Las políticas de seguridad usan funciones que responden sí/no según el token de quien pregunta. Son la traducción de “quién eres” a “qué puedes tocar”:</p>
+<div class="tbl-wrap"><table>
+<thead><tr><th>Función</th><th>Responde “sí” cuando…</th></tr></thead>
+<tbody>
+<tr><td><span class="tag-role">es_admin()</span></td><td>el rol del token es <code>admin</code> — acceso total.</td></tr>
+<tr><td><span class="tag-role">es_principal()</span></td><td>tiene el slug <code>principal</code> (Proveedores).</td></tr>
+<tr><td><span class="tag-role">es_mgi()</span></td><td>tiene el slug <code>mgi</code>.</td></tr>
+<tr><td><span class="tag-role">es_planer()</span></td><td>tiene el slug <code>planer</code>.</td></tr>
+<tr><td><span class="tag-role">es_editor()</span></td><td>puede editar (no es solo-lectura).</td></tr>
+<tr><td><span class="tag-role">es_lector()</span></td><td>tiene el flag <code>lector</code>: ve pero no modifica.</td></tr>
+<tr><td><span class="tag-role">tiene_acceso('slug')</span></td><td>es admin, <em>o</em> está aprobado y ese slug está en su lista.</td></tr>
+</tbody></table></div>
+
+<!-- 3 -->
+<div class="sec-wrap" id="home"><span class="sec-n">3</span><div><h2 class="sec dsp">Página de inicio</h2><p class="sec-tag">El menú · index.html</p></div></div>
+<p class="lead-p">Es lo primero que se ve. Un menú de tarjetas que lleva a cada módulo. No sabe qué es un proveedor ni una faena: solo lee la lista de módulos (<code>config/modules.config.js</code>) y pinta los botones. Para agregar un módulo al menú se edita esa lista, nunca el Home.</p>
+<div class="howto"><div class="t">▸ Instrucción rápida</div>
+  <ol>
+    <li>Abre <code>sistema-2-0.vercel.app</code>.</li>
+    <li>Haz clic en la tarjeta del módulo que necesitas. Cada tarjeta pide su propio inicio de sesión.</li>
+    <li>Las tarjetas <strong>atenuadas con un candado</strong> son módulos que tu cuenta actual no puede abrir. Igual son clicables por si tienes otra cuenta.</li>
+  </ol>
+</div>
+
+<div class="plate">
+  <p class="cap">Esquema · Página de inicio</p>
+  <p class="capd">Tres niveles de tarjetas, según la importancia y el uso de cada módulo.</p>
+  <svg class="dg" viewBox="0 0 820 470" role="img" aria-label="Esquema de la página de inicio">
+    <rect x="0" y="0" width="820" height="470" rx="16" fill="#fbfdfd"/>
+    <g transform="translate(360,20)"><path d="M50 4 L82 56 H68 L50 28 L32 56 H18 Z" fill="#00a399"/><path d="M50 22 L68 56 H58 L50 42 L42 56 H32 Z" fill="#006973"/></g>
+    <text x="410" y="100" text-anchor="middle" class="dsp" style="font-size:20px;fill:#00505a">SISTEMA AM</text>
+    <text x="410" y="118" text-anchor="middle" class="tm" style="letter-spacing:2px">RELACIONES COMUNITARIAS</text>
+    <rect class="bx" x="62" y="142" width="330" height="92" rx="12"/><rect class="bx" x="428" y="142" width="330" height="92" rx="12"/>
+    <text x="227" y="180" text-anchor="middle" class="t" style="font-weight:800">🏭 PROVEEDORES</text><text x="227" y="204" text-anchor="middle" class="tm">Directorio · hotelería · visitas · licitaciones</text>
+    <text x="593" y="180" text-anchor="middle" class="t" style="font-weight:800">👥 EMPLEABILIDAD</text><text x="593" y="204" text-anchor="middle" class="tm">CV · ofertas · matching · apresto</text>
+    <circle cx="74" cy="154" r="11" fill="#006973"/><text x="74" y="158" text-anchor="middle" class="tw" style="font-size:11px">1</text>
+    <text x="62" y="266" class="tm" style="letter-spacing:2px">MÓDULOS</text><line x1="140" y1="262" x2="758" y2="262" stroke="#e0e9eb"/>
+    <rect class="bx" x="62" y="280" width="146" height="78" rx="10"/><rect class="bx" x="220" y="280" width="146" height="78" rx="10"/><rect class="bx" x="378" y="280" width="146" height="78" rx="10"/><rect class="bx" x="536" y="280" width="146" height="78" rx="10"/>
+    <text x="135" y="324" text-anchor="middle" class="t">🏘️ MGI</text><text x="293" y="324" text-anchor="middle" class="t">🚐 Móvil</text>
+    <text x="451" y="318" text-anchor="middle" class="t">🏠 Hoteles SG</text><text x="451" y="340" text-anchor="middle" class="tl" style="fill:#1e7e34;font-weight:700">pública</text>
+    <text x="609" y="318" text-anchor="middle" class="t">▲ CEN</text><text x="609" y="340" text-anchor="middle" class="tm">ANT · CMZ →</text>
+    <circle cx="74" cy="292" r="11" fill="#006973"/><text x="74" y="296" text-anchor="middle" class="tw" style="font-size:11px">2</text>
+    <text x="62" y="392" class="tm" style="letter-spacing:2px">MÁS OPCIONES</text><line x1="180" y1="388" x2="758" y2="388" stroke="#e0e9eb"/>
+    <rect x="62" y="406" width="150" height="46" rx="10" fill="#f0f5f6" stroke="#d6e0e3"/><rect x="226" y="406" width="210" height="46" rx="10" fill="#f0f5f6" stroke="#d6e0e3"/>
+    <text x="137" y="434" text-anchor="middle" class="t">📋 Planer</text><text x="331" y="434" text-anchor="middle" class="t">👤 Gestión de usuarios</text>
+    <circle cx="74" cy="418" r="11" fill="#006973"/><text x="74" y="422" text-anchor="middle" class="tw" style="font-size:11px">3</text>
+  </svg>
+  <div class="legend">
+    <div class="li"><span class="no">1</span><div><b>Par principal.</b> Los dos módulos más usados, en tarjetas grandes: Proveedores y Empleabilidad.</div></div>
+    <div class="li"><span class="no">2</span><div><b>Fila del medio.</b> MGI, Oficina Móvil, Hoteles SG y las tres faenas (CEN, ANT, CMZ), con la marca “A” de AMSA.</div></div>
+    <div class="li"><span class="no">3</span><div><b>El resto.</b> Íconos chicos abajo: Planer y Gestión de usuarios.</div></div>
+  </div>
+</div>
+<h4>Cómo decide qué atenuar</h4>
+<p>El Home lee en el navegador (sin pedir nada a la red) las llaves de sesión que dejan los módulos, compara el slug de cada tarjeta contra los permisos guardados y <strong>atenúa</strong> las que la sesión actual no puede abrir. Antes las ocultaba, y fue un error: alguien con un solo acceso veía una tarjeta suelta rodeada de huecos y creía que la página estaba rota. Hoy se muestran todas — las que no se pueden abrir, con candado — y siguen siendo clicables. La tarjeta pública (Hoteles SG) nunca se atenúa.</p>
+
+<!-- 4 -->
+<div class="sec-wrap" id="proveedores"><span class="sec-n">4</span><div><h2 class="sec dsp">Proveedores</h2><p class="sec-tag">El módulo central</p></div></div>
+<div class="modhead"><div class="ic">🏭</div><div><span class="slug">slug&nbsp;·&nbsp;principal</span> <span class="pill priv">requiere sesión</span></div></div>
+<p class="lead-p">El módulo más grande del sistema y el corazón del trabajo con proveedores locales. Reúne el directorio regional, las visitas en terreno, los contratos y licitaciones, la habitabilidad de hospedajes, los compromisos RCA y la gestión interna del equipo. Se navega por pestañas en la barra superior.</p>
+<div class="howto"><div class="t">▸ Instrucción rápida</div>
+  <ol>
+    <li><strong>Buscar un proveedor:</strong> pestaña <em>Directorio</em>, usa el buscador o los filtros de la izquierda (localidad, rubro, facturación, programa MGI, faena).</li>
+    <li><strong>Ver o editar su ficha:</strong> clic en la tarjeta → se abre la ventana emergente con pestañas. El botón <em>Editar</em> abre el formulario.</li>
+    <li><strong>Registrar una visita:</strong> dentro de la ficha, pestaña Visitas → Nueva visita. Participantes, compromisos, firmas y minuta en PDF.</li>
+    <li><strong>Agregar un proveedor:</strong> botón <em>＋ Nuevo</em> arriba a la derecha (en teléfono, junto a Estadísticas).</li>
+  </ol>
+</div>
+<h3>Las pestañas y qué hace cada una</h3>
+<div class="tabs-demo"><span class="on">Directorio</span><span>Dashboard</span><span>Habitabilidad</span><span>Compromiso RCA</span><span>Contratos</span><span>Licitaciones</span><span>Compromisos</span><span>Programas</span><span>Estandarización</span><span>Gestión Interna</span></div>
+<div class="feat">
+  <div class="f"><b>Directorio</b><span>La lista de todos los proveedores con filtros y buscador. Cada tarjeta abre la ficha emergente. Exporta e importa por Excel.</span></div>
+  <div class="f"><b>Dashboard</b><span>Sistema de visualización para gerencia: tarjetas resumen y gráficos (visitas, contratos, por rubro). Cada gráfico es interactivo — al hacer clic despliega el detalle.</span></div>
+  <div class="f"><b>Habitabilidad</b><span>Solo proveedores del programa MGI: macro-resumen de habitaciones y camas, listado con avance de estandarización, en pestañas por rubro.</span></div>
+  <div class="f"><b>Compromiso RCA</b><span>Empresas colaboradoras con su contrato, administrador, período y monto para el cálculo del 10 %. Carga de documentos verificados (PDF o imagen).</span></div>
+  <div class="f"><b>Contratos</b><span>Los acuerdos comerciales firmados con cada compañía AMSA. Un contrato puede venir vinculado a la licitación que lo originó.</span></div>
+  <div class="f"><b>Licitaciones</b><span>Línea de tiempo de cada proceso sobre los cinco hitos de Operaciones Centinela. Ver el flujo abajo.</span></div>
+  <div class="f"><b>Compromisos</b><span>Compromisos adquiridos con proveedores, con seguimiento y responsables.</span></div>
+  <div class="f"><b>Programas</b><span>Catálogo de programas / iniciativas (hoy el activo es “Proveedor Seguro”) y su asignación a proveedores.</span></div>
+  <div class="f"><b>Estandarización</b><span>Criterios ponderados de habitabilidad; cada proveedor avanza por hitos y muestra su barra de progreso.</span></div>
+  <div class="f"><b>Gestión Interna</b><span>Tablero tipo Kanban del equipo: proyectos, reuniones, compromisos, reclamos (con filtro de Excel semanal), contactos, y las <em>Listas del directorio</em>.</span></div>
+</div>
+<h4>La ficha emergente</h4>
+<p>Al hacer clic en un proveedor se abre una ventana (compartida con MGI, para que se vean iguales) con cabecera de acciones, pestañas y cuerpo a dos columnas. Desde ahí se accede a todo lo del proveedor sin salir del directorio: visitas, contratos, contactos y la exportación de su ficha en PDF.</p>
+
+<div class="plate">
+  <p class="cap">Diagrama de flujo · De la licitación al contrato</p>
+  <p class="capd">Cuando una licitación se marca “Adjudicada”, el sistema lleva de inmediato a cargar el contrato, ya vinculado al proveedor y al proceso.</p>
+  <svg class="dg" viewBox="0 0 820 250" role="img" aria-label="De la licitación al contrato">
+    <defs><marker id="a3" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#5f7078"/></marker></defs>
+    <g class="t" text-anchor="middle">
+      <rect class="bx-lt" x="16" y="30" width="120" height="46" rx="9"/><text x="76" y="50">Invitación</text><text class="tl" x="76" y="66">por ARIBA</text>
+      <rect class="bx-lt" x="162" y="30" width="120" height="46" rx="9"/><text x="222" y="50">Entrega</text><text class="tl" x="222" y="66">documentación</text>
+      <rect class="bx-lt" x="308" y="30" width="128" height="46" rx="9"/><text x="372" y="50">Propuesta</text><text class="tl" x="372" y="66">téc. y económica</text>
+      <rect class="bx-lt" x="462" y="30" width="110" height="46" rx="9"/><text x="517" y="57">Resultados</text>
+      <rect class="bx-warn" x="598" y="30" width="120" height="46" rx="9"/><text x="658" y="50">Estado</text><text class="tl" x="658" y="66">final</text>
+    </g>
+    <path class="ln" d="M136 53 H162" marker-end="url(#a3)"/><path class="ln" d="M282 53 H308" marker-end="url(#a3)"/><path class="ln" d="M436 53 H462" marker-end="url(#a3)"/><path class="ln" d="M572 53 H598" marker-end="url(#a3)"/>
+    <rect class="bx-ok" x="470" y="150" width="250" height="72" rx="10"/><text class="t" x="595" y="176" text-anchor="middle">Se abre la pestaña Contratos</text><text class="tl" x="595" y="194" text-anchor="middle">ya vinculada · se completa: compañía · monto · fechas</text><text class="t" x="595" y="212" text-anchor="middle" style="fill:#1e7e34;font-weight:700">📄 Contrato cargado</text>
+    <rect class="bx-bad" x="90" y="160" width="210" height="50" rx="10"/><text class="t" x="195" y="190" text-anchor="middle">Perdida → cierra el proceso</text>
+    <path class="ln" d="M638 76 C 620 120, 610 130, 600 150" marker-end="url(#a3)"/><text class="tl" x="660" y="120">Adjudicada</text>
+    <path class="ln" d="M638 76 C 400 130, 300 140, 210 160" marker-end="url(#a3)"/><text class="tl" x="360" y="118">Perdida</text>
+  </svg>
+</div>
+<div class="note tip"><b>Cómo se ve el trabajo del equipo.</b> El Dashboard y las visitas están pensados para mostrarle a gerencia la gestión de los especialistas: cuántas visitas se hicieron, qué contratos se lograron, cómo avanza la estandarización. Es la vitrina del trabajo en terreno.</div>
+
+<!-- 5 -->
+<div class="sec-wrap" id="empleabilidad"><span class="sec-n">5</span><div><h2 class="sec dsp">Empleabilidad</h2><p class="sec-tag">CV, ofertas y calce con cargos</p></div></div>
+<div class="modhead"><div class="ic">👥</div><div><span class="slug">slug&nbsp;·&nbsp;empleabilidad</span> <span class="pill priv">requiere sesión</span></div></div>
+<p class="lead-p">Conecta a personas de las comunidades con oportunidades laborales. Mantiene la base de currículums, publica ofertas, las cruza con los perfiles y hace seguimiento de postulaciones y becados. Es el módulo con más datos personales de todo el sistema.</p>
+<div class="howto"><div class="t">▸ Instrucción rápida</div>
+  <ol>
+    <li><strong>Cargar un CV:</strong> botón <em>Cargar CV</em> → sube un PDF, Word, un escaneo o una foto del papel. El sistema lo lee, lo estructura y abre la ficha para revisar antes de guardar.</li>
+    <li><strong>Comparar con un cargo:</strong> en la lista, elige una oferta en el filtro <em>Oferta laboral</em>. Cada persona muestra su porcentaje de calce; el botón <em>¿por qué?</em> abre el desglose criterio por criterio.</li>
+    <li><strong>Generar CV formato Harvard:</strong> dentro de la ficha, botón <em>CV formato Harvard</em>. Antes, <em>Revisar formato</em> avisa qué falta.</li>
+  </ol>
+</div>
+<h3>Cómo entra y se ordena un CV</h3>
+<p>El módulo se divide en cuatro archivos: la pantalla principal, la <strong>lectura</strong> de documentos, el <strong>calce</strong> con cargos y el <strong>CV Harvard</strong>. Este es el camino de un documento desde que entra:</p>
+<div class="plate">
+  <p class="cap">Diagrama de proceso · Lectura y calce de un CV</p>
+  <svg class="dg" viewBox="0 0 820 360" role="img" aria-label="Lectura y calce de un CV">
+    <defs><marker id="a4" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#5f7078"/></marker></defs>
+    <rect class="bx" x="330" y="14" width="160" height="42" rx="9"/><text class="t" x="410" y="40" text-anchor="middle">📄 Entra un documento</text>
+    <rect class="bx-lt" x="30" y="96" width="160" height="48" rx="9"/><text class="t" x="110" y="116" text-anchor="middle">PDF con texto</text><text class="tl" x="110" y="132" text-anchor="middle">pdf.js lee y ordena líneas</text>
+    <rect class="bx-lt" x="230" y="96" width="150" height="48" rx="9"/><text class="t" x="305" y="116" text-anchor="middle">Word .docx</text><text class="tl" x="305" y="132" text-anchor="middle">mammoth</text>
+    <rect class="bx-lt" x="420" y="96" width="160" height="48" rx="9"/><text class="t" x="500" y="116" text-anchor="middle">Escaneo o foto</text><text class="tl" x="500" y="132" text-anchor="middle">OCR · tesseract.js</text>
+    <rect class="bx-lt" x="618" y="96" width="172" height="48" rx="9"/><text class="t" x="704" y="116" text-anchor="middle">PDF escaneado</text><text class="tl" x="704" y="132" text-anchor="middle">sin texto → OCR</text>
+    <rect class="bx" x="300" y="186" width="220" height="46" rx="9"/><text class="t" x="410" y="206" text-anchor="middle">Se parte en secciones</text><text class="tl" x="410" y="222" text-anchor="middle">experiencia · educación · cursos</text>
+    <rect class="bx-warn" x="310" y="262" width="200" height="42" rx="9"/><text class="t" x="410" y="288" text-anchor="middle">Ficha para revisar y guardar</text>
+    <rect class="bx-ok" x="90" y="322" width="270" height="34" rx="9"/><text class="t" x="225" y="344" text-anchor="middle">Calce vs. oferta · BM25 + diccionario</text>
+    <rect class="bx-ok" x="470" y="322" width="250" height="34" rx="9"/><text class="t" x="595" y="344" text-anchor="middle">Exportar CV formato Harvard</text>
+    <g stroke="#5f7078"><path class="ln" d="M370 56 C 250 78, 160 82, 120 96" marker-end="url(#a4)"/><path class="ln" d="M395 56 C 360 78, 330 84, 312 96" marker-end="url(#a4)"/><path class="ln" d="M425 56 C 460 78, 485 84, 500 96" marker-end="url(#a4)"/><path class="ln" d="M450 56 C 580 78, 660 84, 700 96" marker-end="url(#a4)"/>
+    <path class="ln" d="M110 144 C 160 176, 250 182, 300 200" marker-end="url(#a4)"/><path class="ln" d="M305 144 V186" marker-end="url(#a4)"/><path class="ln" d="M500 144 C 470 172, 450 180, 440 186" marker-end="url(#a4)"/><path class="ln" d="M704 144 C 640 176, 560 184, 520 200" marker-end="url(#a4)"/>
+    <path class="ln" d="M410 232 V262" marker-end="url(#a4)"/>
+    <path class="ln" d="M360 304 C 300 314, 270 318, 240 322" marker-end="url(#a4)"/><path class="ln" d="M460 304 C 530 314, 560 318, 590 322" marker-end="url(#a4)"/></g>
+  </svg>
+</div>
+<div class="feat">
+  <div class="f"><b>Lectura de calidad</b><span>PDF, Word, escaneos y fotos. Los escaneos y fotos pasan por OCR en español, que corre en el propio navegador — ningún CV sale del equipo.</span></div>
+  <div class="f"><b>Calce explicable</b><span>El porcentaje no es una caja negra: muestra qué palabras encontró, cuáles faltan y cuánto aportó cada criterio. “Falta: licencia clase D”.</span></div>
+  <div class="f"><b>Diccionario de oficios</b><span>Sabe que “LHD”, “scoop” y “cargador frontal” son lo mismo. Sale de los clasificadores CIUO-08.CL (INE) y ESCO, guardado localmente.</span></div>
+  <div class="f"><b>Formato Harvard</b><span>Genera el CV en el estándar de una columna: Educación → Experiencia → Cursos → Habilidades. Avisa lo que falta, no reescribe el texto de la persona.</span></div>
+  <div class="f"><b>Ofertas y postulaciones</b><span>Publica cargos con criterios ponderados y hace seguimiento de cada postulación.</span></div>
+  <div class="f"><b>Becados y Kanban</b><span>Seguimiento de becados con hitos, y un tablero de gestión.</span></div>
+</div>
+<div class="note rule"><b>Relación con Oficina Móvil.</b> Empleabilidad y Móvil son dos caras del mismo dato: Móvil captura en terreno, Empleabilidad administra desde la oficina. Ambos escriben en la tabla <code>cv_personas</code>. Por eso tener el slug <code>movil</code> también habilita este módulo.</div>
+
+<!-- 6 -->
+<div class="sec-wrap" id="mgi"><span class="sec-n">6</span><div><h2 class="sec dsp">MGI Habitabilidad</h2><p class="sec-tag">La planilla de hospedajes</p></div></div>
+<div class="modhead"><div class="ic">🏘️</div><div><span class="slug">slug&nbsp;·&nbsp;mgi</span> <span class="pill priv">requiere sesión</span></div></div>
+<p class="lead-p">Modelo de gestión integral de habitabilidad. El equipo de MGI usa esta página para registrar y mantener la información real de los hospedajes de Sierra Gorda que participan del programa. Lo que se edita acá alimenta el directorio de Proveedores y la página pública de Hoteles SG.</p>
+<div class="howto"><div class="t">▸ Instrucción rápida</div>
+  <ol>
+    <li>Al abrir <em>Hotelería</em> aparece la <strong>planilla</strong> de los hospedajes del programa, editable en la misma línea.</li>
+    <li><strong>Editar un dato:</strong> escribe en la casilla → aparece un <em>💾</em> en esa línea. Si editas varias, arriba sale “Guardar los N”.</li>
+    <li><strong>Menos columnas:</strong> botón <em>🧩 Columnas</em> → elige una vista (Llamada semanal, Capacidad, Contactos) o marca/desmarca columnas. La elección se recuerda.</li>
+    <li><strong>Dar de baja:</strong> el ✕ pide un motivo obligatorio; la fila queda en rojo y sale del conteo, pero no se borra.</li>
+    <li><strong>Importar el Excel de MGI:</strong> botón <em>⬆ Importar Excel</em>. Muestra qué se crearía y qué cambiaría antes de tocar nada.</li>
+  </ol>
+</div>
+<div class="plate">
+  <p class="cap">Esquema · Planilla de hospedajes (vista “Llamada semanal”)</p>
+  <p class="capd">Con la vista reducida, la planilla cabe entera sin desplazamiento horizontal.</p>
+  <svg class="dg" viewBox="0 0 820 300" role="img" aria-label="Planilla de hospedajes MGI">
+    <rect x="0" y="0" width="820" height="300" rx="12" fill="#fbfdfd"/>
+    <rect x="20" y="16" width="120" height="26" rx="6" fill="#5b4fcf"/><text x="80" y="33" text-anchor="middle" fill="#fff" style="font:700 11px ui-sans-serif">📋 Planilla</text>
+    <rect x="520" y="16" width="96" height="26" rx="6" fill="#fff" stroke="#c3d3d6"/><text x="568" y="33" text-anchor="middle" class="t" style="font-size:11px">🧩 Columnas</text>
+    <rect x="624" y="16" width="130" height="26" rx="6" fill="#fff" stroke="#c3d3d6"/><text x="689" y="33" text-anchor="middle" class="t" style="font-size:11px">➕ Agregar</text>
+    <circle cx="568" cy="16" r="10" fill="#5b4fcf"/><text x="568" y="20" text-anchor="middle" class="tw" style="font-size:10px">2</text>
+    <rect x="20" y="56" width="90" height="22" rx="11" fill="#5b4fcf"/><text x="65" y="71" text-anchor="middle" fill="#fff" style="font:600 10px ui-sans-serif">Todos</text>
+    <rect x="120" y="56" width="130" height="22" rx="11" fill="#fff" stroke="#c3d3d6"/><text x="185" y="71" text-anchor="middle" class="tm" style="font-size:10px">Con disponibilidad</text>
+    <rect x="260" y="56" width="90" height="22" rx="11" fill="#fff" stroke="#c3d3d6"/><text x="305" y="71" text-anchor="middle" class="tm" style="font-size:10px">Por llamar</text>
+    <rect x="20" y="90" width="780" height="26" fill="#f5f4fb"/><line x1="20" y1="116" x2="800" y2="116" stroke="#ddd9f5" stroke-width="1.5"/>
+    <g style="font:700 10px ui-sans-serif" fill="#4338ca"><text x="30" y="107">CÓD</text><text x="78" y="107">ESTABLECIMIENTO</text><text x="250" y="107">ENCARGADO</text><text x="380" y="107">TELÉFONO</text><text x="500" y="107">ARREND.</text><text x="580" y="107">HAB. DISP</text><text x="680" y="107">VOLVER A LLAMAR</text></g>
+    <g class="t" style="font-size:11px">
+      <text x="46" y="138">17</text><text x="78" y="138">Hospedaje Inés</text><text x="250" y="138">Doris Martínez</text><text x="380" y="138">+56 9 …</text><text x="505" y="138">Sí</text><text x="596" y="138">0</text>
+      <rect x="676" y="128" width="76" height="16" rx="8" fill="#e8f6ec"/><text x="714" y="140" text-anchor="middle" style="font:700 9px ui-sans-serif;fill:#1e7e34">faltan 90 d</text>
+      <line x1="20" y1="150" x2="800" y2="150" stroke="#eef0f3"/>
+      <text x="46" y="172">50</text><text x="78" y="172">Hostal Tronar</text><text x="250" y="172">Ingrid Guerrero</text><text x="380" y="172">+56 9 …</text><text x="505" y="172">No</text><text x="594" y="172">18</text>
+      <rect x="676" y="162" width="62" height="16" rx="8" fill="#fff3cd"/><text x="707" y="174" text-anchor="middle" style="font:700 9px ui-sans-serif;fill:#8a6100">llamar hoy</text>
+      <line x1="20" y1="184" x2="800" y2="184" stroke="#eef0f3"/>
+      <text x="46" y="206" fill="#c0311b">40</text><text x="78" y="206" fill="#c0311b">Hostal Minero 4 · fuera del conteo</text><text x="250" y="206" fill="#c0311b">—</text>
+    </g>
+    <rect x="22" y="126" width="18" height="18" rx="4" fill="#e0a800"/><text x="31" y="139" text-anchor="middle" style="font:11px ui-sans-serif">💾</text>
+    <circle cx="31" cy="126" r="9" fill="#5b4fcf"/><text x="31" y="130" text-anchor="middle" class="tw" style="font-size:10px">1</text>
+    <circle cx="30" cy="198" r="9" fill="#5b4fcf"/><text x="30" y="202" text-anchor="middle" class="tw" style="font-size:10px">3</text>
+  </svg>
+  <div class="legend">
+    <div class="li"><span class="no" style="background:#5b4fcf">1</span><div><b>Edición en línea.</b> Cada casilla es editable; el disquete guarda esa fila. El contador “volver a llamar” dice cuándo retomar cada hospedaje.</div></div>
+    <div class="li"><span class="no" style="background:#5b4fcf">2</span><div><b>Columnas ocultables.</b> Vistas armadas y casillas por columna. Con “Llamada semanal” la planilla cabe entera.</div></div>
+    <div class="li"><span class="no" style="background:#5b4fcf">3</span><div><b>Baja con motivo.</b> La fila queda en rojo y sale del conteo; el dato no se borra.</div></div>
+  </div>
+</div>
+<div class="note rule"><b>Dónde se guarda cada cosa.</b> Nada se duplica: el nombre, la dirección y el RUT viven en <code>proveedores</code>; las habitaciones y baños en <code>hoteleria</code>; el encargado y el dueño en <code>contactos</code>; y lo propio del programa (código MGI, arriendo, cuándo volver a llamar) en <code>hospedajes_mgi</code>. Por eso lo que MGI edita se ve de inmediato en el directorio y en la página pública.</div>
+
+<!-- 7 -->
+<div class="sec-wrap" id="movil"><span class="sec-n">7</span><div><h2 class="sec dsp">Oficina Móvil</h2><p class="sec-tag">Captura en terreno</p></div></div>
+<div class="modhead"><div class="ic">🚐</div><div><span class="slug">slug&nbsp;·&nbsp;movil</span> <span class="pill priv">requiere sesión</span></div></div>
+<p class="lead-p">“Móvil” es el vehículo que recorre la ciudad, no el teléfono. Es la herramienta con que el equipo levanta datos de personas en terreno: registra CV y aplica el cuestionario de apresto laboral. Después, en la oficina, ese mismo dato se administra desde Empleabilidad.</p>
+<div class="howto"><div class="t">▸ Instrucción rápida</div>
+  <ol>
+    <li><strong>Buscar o crear:</strong> escribe el RUT — si ya existe, trae la persona; si no, <em>＋ Nuevo</em>.</li>
+    <li>Completa datos personales y laborales. Puedes cargar un CV para prellenar.</li>
+    <li>Pasa a la pestaña <em>Cuestionario</em> para el apresto. Se puede guardar incompleto y seguir después.</li>
+    <li><em>Levantados</em> muestra todo lo capturado, buscable, y exporta el cuestionario.</li>
+  </ol>
+</div>
+<h3>Diseñada desde el escritorio</h3>
+<p>Aunque se usa en terreno, buena parte del trabajo — revisar, completar, exportar — se hace después en el computador. Por eso la interfaz está pensada de mayor a menor:</p>
+<div class="tbl-wrap"><table>
+<thead><tr><th>Tamaño</th><th>Qué cambia</th></tr></thead>
+<tbody>
+<tr><td><strong>Escritorio</strong></td><td>Cabecera con el logo de Antofagasta Minerals, pestañas arriba, y la captura en <strong>dos columnas</strong> (datos personales y laboral a la vista a la vez).</td></tr>
+<tr><td><strong>Tableta</strong></td><td>Una columna de tarjetas, pero los campos siguen de a dos (un iPad vertical mide 768 px).</td></tr>
+<tr><td><strong>Teléfono</strong></td><td>Barra de pestañas abajo, al alcance del pulgar; una columna; botones a todo el ancho.</td></tr>
+</tbody></table></div>
+<div class="note warn"><b>Sin modo sin conexión.</b> Si no hay señal, no guarda. Se decidió no dejar datos personales en el equipo. Cada creación y cada campo editado queda registrado en <code>cv_logs</code> con quién, qué campo, valor anterior y valor nuevo.</div>
+
+<!-- 8 -->
+<div class="sec-wrap" id="hoteles"><span class="sec-n">8</span><div><h2 class="sec dsp">Hoteles SG</h2><p class="sec-tag">La única página pública</p></div></div>
+<div class="modhead"><div class="ic">🏠</div><div><span class="pill pub">● pública · sin clave</span></div></div>
+<p class="lead-p">Disponibilidad de hospedajes del programa MGI en Sierra Gorda. Es la <strong>única página sin inicio de sesión</strong>: cualquiera con el enlace la abre. Por seguridad no lee la tabla de proveedores (que trae RUT y correos de toda la región): lee una <strong>vista acotada</strong> que expone solo lo necesario para buscar alojamiento, y sin el RUT.</p>
+<div class="howto"><div class="t">▸ Instrucción rápida</div>
+  <ol>
+    <li>Al abrir se ve el <strong>mapa</strong> de Sierra Gorda con los hospedajes disponibles marcados. Cada pin muestra cuántas habitaciones quedan.</li>
+    <li>Bajo el mapa, una tabla con cada pin. Marca los que necesites y descárgalos en Excel con el detalle de baños y contacto.</li>
+    <li>Pestaña <em>Disponibles</em>: fichas o lista. <em>Todos por empresa</em>: el listado completo agrupado.</li>
+  </ol>
+</div>
+<div class="feat">
+  <div class="f"><b>Mapa propio, sin terceros</b><span>El pueblo entero (calles, manzanas, línea férrea) son 55 KB guardados en el repositorio. Ningún servicio externo ve la IP de quien entra, y funciona aunque el mapa de turno se caiga.</span></div>
+  <div class="f"><b>Solo con disponibilidad</b><span>Muestra los hospedajes que tienen habitaciones libres. El dato lo levanta MGI; ver el flujo abajo.</span></div>
+  <div class="f"><b>Descarga a Excel</b><span>Selección con casillas: nombre, dirección, contacto, habitaciones por tipo de baño, camas y enlace a la ficha con fotos.</span></div>
+  <div class="f"><b>Dice de cuándo es el dato</b><span>Muestra la fecha del último levantamiento y marca “sin confirmar” lo que aún no verificó el equipo.</span></div>
+</div>
+<div class="plate">
+  <p class="cap">Diagrama de flujo · De dónde sale la disponibilidad</p>
+  <p class="capd">La disponibilidad manda desde la planilla de MGI, no de un cálculo automático. Este es el orden en que la vista decide qué mostrar.</p>
+  <svg class="dg" viewBox="0 0 780 330" role="img" aria-label="De dónde sale la disponibilidad">
+    <defs><marker id="a5" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#5f7078"/></marker></defs>
+    <rect class="bx" x="60" y="18" width="200" height="42" rx="9"/><text class="t" x="160" y="44" text-anchor="middle">Equipo MGI edita su planilla</text>
+    <rect class="bx-lt" x="90" y="86" width="140" height="38" rx="9"/><text class="t" x="160" y="110" text-anchor="middle">hospedajes_mgi</text>
+    <rect class="bx-warn" x="70" y="150" width="180" height="46" rx="9"/><text class="t" x="160" y="170" text-anchor="middle">Vista pública decide,</text><text class="tl" x="160" y="186" text-anchor="middle">en este orden:</text>
+    <g class="t" text-anchor="start" style="font-size:12px">
+      <rect class="bx-bad" x="360" y="30" width="360" height="30" rx="7"/><text x="374" y="50">1 · dado de baja del programa → no aparece</text>
+      <rect class="bx-bad" x="360" y="70" width="360" height="30" rx="7"/><text x="374" y="90">2 · no participa → no aparece</text>
+      <rect class="bx" x="360" y="110" width="360" height="30" rx="7"/><text x="374" y="130">3 · arrendado completo → 0 disponibles</text>
+      <rect class="bx-ok" x="360" y="150" width="360" height="30" rx="7"/><text x="374" y="170">4 · disponibilidad declarada → ese número</text>
+      <rect class="bx" x="360" y="190" width="360" height="30" rx="7"/><text x="374" y="210">5 · nada declarado → cálculo por contratos</text>
+    </g>
+    <rect class="bx-ok" x="360" y="260" width="360" height="46" rx="9"/><text class="t" x="540" y="280" text-anchor="middle">🌐 Página pública</text><text class="tl" x="540" y="296" text-anchor="middle">mapa + listado, con fecha del dato</text>
+    <path class="ln" d="M160 60 V86" marker-end="url(#a5)"/><path class="ln" d="M160 124 V150" marker-end="url(#a5)"/>
+    <path class="ln" d="M250 173 C 310 130, 330 110, 360 100" marker-end="url(#a5)"/>
+    <path class="ln" d="M540 220 V260" marker-end="url(#a5)"/>
+  </svg>
+</div>
+
+<!-- 9 -->
+<div class="sec-wrap" id="faenas"><span class="sec-n">9</span><div><h2 class="sec dsp">Consulta por faena</h2><p class="sec-tag">Centinela · Antucoya · Zaldívar</p></div></div>
+<div class="modhead"><div class="ic">▲</div><div><span class="slug">centinela</span> <span class="slug">antucoya</span> <span class="slug">zaldivar</span> <span class="pill priv">solo lectura</span></div></div>
+<p class="lead-p">Tres módulos que son en realidad el mismo con distinta faena. Dan acceso de <strong>solo lectura</strong> al directorio de proveedores a personas de cada faena, sin dejarlas entrar a la plataforma completa de Proveedores ni permitirles modificar nada. Es el nivel de acceso más restringido del sistema.</p>
+<div class="howto"><div class="t">▸ Instrucción rápida</div>
+  <ol>
+    <li>Se entra por URL directa (no están en el Home): <code>/modules/centinela/</code>, <code>/antucoya/</code> o <code>/zaldivar/</code>.</li>
+    <li>Cada una pide su propio inicio de sesión y valida su slug.</li>
+    <li>Se consulta y se exporta a PDF. No hay editar, ni crear, ni eliminar.</li>
+  </ol>
+</div>
+<p>Las tres comparten un solo archivo de código (<code>shared/js/faena-consulta.js</code>) y un solo estilo. Cada <code>index.html</code> solo declara su faena. Así un arreglo se aplica una vez y llega a las tres, pero el usuario sigue viendo tres botones, tres URL y tres permisos independientes.</p>
+
+<!-- 10 -->
+<div class="sec-wrap" id="planer"><span class="sec-n">10</span><div><h2 class="sec dsp">Planer</h2><p class="sec-tag">Pendientes del equipo</p></div></div>
+<div class="modhead"><div class="ic">📋</div><div><span class="slug">slug&nbsp;·&nbsp;planer</span> <span class="pill priv">requiere sesión</span></div></div>
+<p class="lead-p">Un planificador de verdad, con calendario. Los especialistas de Proveedores registran pendientes y acciones a tomar, ordenados por prioridad, ubicados en el calendario con fecha de inicio y término, con recordatorios recurrentes, notas y descarga al calendario del teléfono.</p>
+<div class="howto"><div class="t">▸ Instrucción rápida</div>
+  <ol>
+    <li>Crea un recordatorio — se puede por <strong>dictado de voz</strong>. Asígnale prioridad y fecha.</li>
+    <li>Si aplica, el sistema pregunta si se repite (semanal o mensual).</li>
+    <li>Vistas <em>lista / mes / semana / día</em> con los feriados de Chile marcados.</li>
+    <li><strong>Descarga</strong> todos los recordatorios a tu calendario (iPhone, Android u Outlook) con un archivo <code>.ics</code>.</li>
+  </ol>
+</div>
+<p>Se entra por URL directa. Está pensado como base para conectarse más adelante con generación de planes por IA; hoy funciona como registro manual, con filtro por autor para ver el trabajo de cada especialista o el conjunto.</p>
+
+<!-- 11 -->
+<div class="sec-wrap" id="admin"><span class="sec-n">11</span><div><h2 class="sec dsp">Gestión de usuarios</h2><p class="sec-tag">Solo para el usuario maestro</p></div></div>
+<div class="modhead"><div class="ic">👤</div><div><span class="pill priv">rol admin · sin slug</span></div></div>
+<p class="lead-p">Aprobar o rechazar las solicitudes de acceso al sistema. Solo entra quien tiene rol <code>admin</code>. No tiene formulario de registro — nadie se auto-asigna administrador.</p>
+<div class="howto"><div class="t">▸ Instrucción rápida</div>
+  <ol>
+    <li>Entra por URL directa e inicia sesión con una cuenta admin.</li>
+    <li>Verás las solicitudes pendientes. Para aprobar, eliges el <strong>rol</strong> y marcas los <strong>accesos</strong> (slugs) que tendrá la persona.</li>
+    <li>Al aprobar, esos permisos se escriben en el token del usuario. A la persona le basta recargar para verlos.</li>
+  </ol>
+</div>
+<div class="note rule"><b>Doble protección.</b> Aunque alguien abriera la consola del navegador y llamara a la función de aprobar directo, la función revisa <code>es_admin()</code> del lado del servidor y rechaza a quien no lo sea. El botón escondido no es la seguridad; la función que valida sí.</div>
+
+<!-- 12 -->
+<div class="sec-wrap" id="db"><span class="sec-n">12</span><div><h2 class="sec dsp">La base de datos</h2><p class="sec-tag">Cómo está armada</p></div></div>
+<p class="lead-p">Todo el sistema se apoya en una base de datos <strong>PostgreSQL alojada en Supabase</strong>. Son alrededor de 40 tablas. Supabase aporta tres cosas juntas: la base, el inicio de sesión (Auth) y la seguridad por filas (RLS). El navegador habla directo con ella usando una llave pública; la base decide qué devuelve.</p>
+
+<h3 id="db-tablas">Las tablas, por módulo</h3>
+<p>Cada módulo tiene su grupo de tablas. La tabla <code>proveedores</code> es el centro: casi todo se relaciona con ella a través del <code>proveedor_id</code>.</p>
+<div class="tbl-wrap"><table>
+<thead><tr><th>Módulo</th><th>Tablas principales</th><th>Para qué</th></tr></thead>
+<tbody>
+<tr><td><strong>Proveedores</strong></td><td><code>proveedores</code> · <code>contactos</code> · <code>visitas</code> · <code>visita_participantes</code> · <code>visita_compromisos</code> · <code>visita_firmas</code></td><td>El directorio y todo lo que cuelga de cada proveedor.</td></tr>
+<tr><td><strong>Contratos y licit.</strong></td><td><code>acuerdos</code> · <code>licitaciones</code> · <code>moli_beneficiarios</code></td><td>Contratos firmados, procesos de licitación y beneficiarios de mano de obra local.</td></tr>
+<tr><td><strong>Habitabilidad</strong></td><td><code>hoteleria</code> · <code>hoteleria_trabajadores</code> · <code>hospedajes_mgi</code> · <code>estandarizacion</code> · <code>est_criterios</code> · <code>est_avance</code></td><td>Capacidad de hospedajes, planilla de MGI y avance de estándares.</td></tr>
+<tr><td><strong>Programas y RCA</strong></td><td><code>programas</code> · <code>programas_catalogo</code> · <code>rca_empresas</code> · <code>rca_documentos</code> · <code>compras</code></td><td>Programas asignados y compromisos RCA con sus documentos.</td></tr>
+<tr><td><strong>Empleabilidad</strong></td><td><code>cv_personas</code> · <code>cv_ofertas</code> · <code>cv_postulaciones</code> · <code>cv_match</code> · <code>cv_logs</code> · <code>becados</code></td><td>CV, ofertas, postulaciones y auditoría de captura.</td></tr>
+<tr><td><strong>Planer y Kanban</strong></td><td><code>planer_items</code> · <code>planer_todo_checks</code> · <code>kanban_cards</code></td><td>Pendientes del equipo y tableros de gestión.</td></tr>
+<tr><td><strong>Sistema</strong></td><td><code>perfiles</code> · <code>registro_ediciones</code> · <code>catalogo_listas</code></td><td>Usuarios y solicitudes, bitácora de ediciones, listas maestras.</td></tr>
+</tbody></table></div>
+
+<div class="plate">
+  <p class="cap">Diagrama de relaciones · El núcleo</p>
+  <p class="capd">Simplificado a las tablas centrales. Todo gira en torno a <code>proveedores</code>; el vínculo es siempre <code>proveedor_id</code>.</p>
+  <svg class="dg" viewBox="0 0 780 420" role="img" aria-label="Relaciones del núcleo">
+    <defs><marker id="a6" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#5f7078"/></marker></defs>
+    <rect class="bx-core" x="320" y="180" width="150" height="56" rx="12"/><text class="tw" x="395" y="213" text-anchor="middle" style="font-size:14px">proveedores</text>
+    <g class="t" text-anchor="middle" style="font-size:11.5px">
+      <rect class="bx" x="30" y="40" width="150" height="38" rx="9"/><text x="105" y="63">contactos</text>
+      <rect class="bx" x="30" y="120" width="150" height="38" rx="9"/><text x="105" y="143">visitas</text>
+      <rect class="bx" x="30" y="200" width="150" height="38" rx="9"/><text x="105" y="223">hoteleria</text>
+      <rect class="bx-warn" x="30" y="280" width="150" height="38" rx="9"/><text x="105" y="303">hospedajes_mgi</text>
+      <rect class="bx" x="600" y="40" width="160" height="38" rx="9"/><text x="680" y="63">acuerdos (contratos)</text>
+      <rect class="bx" x="600" y="120" width="160" height="38" rx="9"/><text x="680" y="143">licitaciones</text>
+      <rect class="bx" x="600" y="200" width="160" height="38" rx="9"/><text x="680" y="223">programas</text>
+      <rect class="bx" x="600" y="280" width="160" height="38" rx="9"/><text x="680" y="303">estandarizacion</text>
+      <rect class="bx" x="255" y="330" width="150" height="34" rx="8"/><text x="330" y="352">visita_participantes</text>
+      <rect class="bx" x="415" y="330" width="140" height="34" rx="8"/><text x="485" y="352">visita_firmas</text>
+    </g>
+    <g class="ln"><path d="M180 60 C 260 90, 300 150, 322 190"/><path d="M180 138 C 250 150, 290 175, 330 195"/><path d="M180 220 H320"/><path d="M180 300 C 250 280, 290 250, 322 232"/>
+    <path d="M600 60 C 520 90, 470 150, 468 190"/><path d="M600 138 C 530 150, 500 175, 470 198"/><path d="M600 220 H470"/><path d="M600 300 C 520 280, 490 250, 468 232"/>
+    <path d="M170 138 C 200 260, 260 320, 320 335"/><path d="M180 140 C 300 240, 400 300, 470 335"/></g>
+    <path class="ln" d="M680 158 V120" stroke-dasharray="4 3" marker-end="url(#a6)"/><text class="tl" x="720" y="145">licitacion_id</text>
+    <rect class="bx-warn" x="300" y="300" width="190" height="0" rx="9"/>
+    <rect x="300" y="386" width="190" height="30" rx="9" fill="#fff3cd" stroke="#b8860b"/><text class="t" x="395" y="405" text-anchor="middle" style="font-size:11px">vista hoteles_sg_publico</text>
+    <path class="ln" d="M105 318 C 150 370, 250 395, 300 400" marker-end="url(#a6)"/><path class="ln" d="M180 219 C 220 380, 260 396, 300 401" marker-end="url(#a6)"/>
+  </svg>
+</div>
+
+<h3 id="db-borrado">Nada se borra: el borrado lógico</h3>
+<p>Ninguna tabla del sistema borra registros de verdad. Cada una tiene una columna <code>estado_registro</code>; “eliminar” la pone en <code>Eliminado</code> y el dato deja de mostrarse, pero sigue ahí. Esto permite recuperar información y mantener la trazabilidad.</p>
+<div class="note warn"><b>El candado.</b> Un disparador (<code>trg_bloq_borrado</code>) instalado en 22 tablas <b>impide el borrado físico</b> a menos que quien lo intente sea administrador. Aunque alguien llamara a “borrar” desde la consola, la base lo rechaza. Es el mismo principio de toda la seguridad: la protección está en la base, no en el botón.</div>
+
+<h3 id="db-rls">Los permisos: seguridad a nivel de fila (RLS)</h3>
+<p>Aquí está el corazón de la seguridad. Cada tabla tiene <strong>políticas RLS</strong> (Row-Level Security) que se aplican en <em>cada consulta</em>, fila por fila. No importa desde dónde se pregunte — la app, la consola del navegador, un script — la base filtra igual.</p>
+<div class="plate">
+  <p class="cap">Diagrama de flujo · Qué pasa en cada consulta</p>
+  <svg class="dg" viewBox="0 0 760 150" role="img" aria-label="Qué pasa en cada consulta">
+    <defs><marker id="a7" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#5f7078"/></marker></defs>
+    <rect class="bx" x="20" y="52" width="170" height="46" rx="9"/><text class="t" x="105" y="72" text-anchor="middle">Consulta desde</text><text class="tl" x="105" y="88" text-anchor="middle">el navegador</text>
+    <rect class="bx" x="230" y="52" width="150" height="46" rx="9"/><text class="t" x="305" y="72" text-anchor="middle">La base lee</text><text class="tl" x="305" y="88" text-anchor="middle">el token (JWT)</text>
+    <rect class="bx-warn" x="420" y="46" width="150" height="58" rx="9"/><text class="t" x="495" y="70" text-anchor="middle">¿tiene_acceso()</text><text class="t" x="495" y="86" text-anchor="middle">o es_admin()?</text>
+    <rect class="bx-ok" x="610" y="18" width="130" height="42" rx="9"/><text class="t" x="675" y="43" text-anchor="middle">Sí → filas permitidas</text>
+    <rect class="bx-bad" x="610" y="90" width="130" height="42" rx="9"/><text class="t" x="675" y="115" text-anchor="middle">No → vacío</text>
+    <path class="ln" d="M190 75 H230" marker-end="url(#a7)"/><path class="ln" d="M380 75 H420" marker-end="url(#a7)"/>
+    <path class="ln" d="M570 62 C 590 50, 600 44, 610 40" marker-end="url(#a7)"/><path class="ln" d="M570 90 C 590 100, 600 106, 610 110" marker-end="url(#a7)"/>
+  </svg>
+</div>
+<p>La función clave es <code>tiene_acceso('slug')</code>: devuelve verdadero si quien pregunta es admin, <em>o</em> si su cuenta está aprobada y ese slug figura en su lista de accesos (dentro del token). Las políticas de cada tabla la usan con el slug que corresponde. La esencia de la función:</p>
+<div class="plate"><pre style="margin:0;font:13px/1.6 ui-monospace,monospace;color:#12303a;white-space:pre-wrap">es_admin()  OR  (
+   estado = 'aprobado'
+   AND  'slug'  ∈  accesos[]   -- dentro del JWT firmado
+)</pre></div>
+<h4>Dos llaves, una pública y una prohibida</h4>
+<p>La <code>anon key</code> que usa el navegador es <strong>pública por diseño</strong>: está pensada para correr a la vista de todos, y no sirve de nada sin pasar las políticas RLS. La <code>service_role key</code>, en cambio, <strong>salta toda la seguridad</strong> y jamás entra al repositorio ni al navegador. Cualquier operación que la necesite la hace un administrador desde el panel de Supabase.</p>
+
+<h3 id="db-build">Cómo se arma la base, paso a paso</h3>
+<p>La base se construye ejecutando scripts SQL en orden. No se publican con el sitio (quedan fuera de Vercel) porque contienen el esquema completo y las funciones de seguridad.</p>
+<div class="plate">
+  <p class="cap">Diagrama de proceso · Orden de construcción</p>
+  <svg class="dg" viewBox="0 0 620 400" role="img" aria-label="Orden de construcción de la base">
+    <defs><marker id="a8" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#5f7078"/></marker></defs>
+    <g class="t" text-anchor="middle">
+      <rect class="bx-lt" x="150" y="16" width="320" height="44" rx="9"/><text x="310" y="36">1 · setup_database.sql (+ parte 2)</text><text class="tl" x="310" y="52">tablas base + columnas · estado_registro</text>
+      <rect class="bx" x="150" y="82" width="320" height="44" rx="9"/><text x="310" y="102">2 · Funciones de rol</text><text class="tl" x="310" y="118">es_admin, tiene_acceso, es_principal, …</text>
+      <rect class="bx" x="150" y="148" width="320" height="44" rx="9"/><text x="310" y="168">3 · Políticas RLS</text><text class="tl" x="310" y="184">una por tabla, con su slug</text>
+      <rect class="bx" x="150" y="214" width="320" height="44" rx="9"/><text x="310" y="234">4 · Disparadores</text><text class="tl" x="310" y="250">candado de borrado · recálculo hotelería</text>
+      <rect class="bx" x="150" y="280" width="320" height="44" rx="9"/><text x="310" y="300">5 · Vistas</text><text class="tl" x="310" y="316">hoteles_sg_publico · v_registro_ediciones</text>
+      <rect class="bx-ok" x="150" y="346" width="320" height="44" rx="9"/><text x="310" y="366">6 · migraciones/ con fecha</text><text class="tl" x="310" y="382">cada cambio posterior, nunca editar uno viejo</text>
+    </g>
+    <g class="ln"><path d="M310 60 V82" marker-end="url(#a8)"/><path d="M310 126 V148" marker-end="url(#a8)"/><path d="M310 192 V214" marker-end="url(#a8)"/><path d="M310 258 V280" marker-end="url(#a8)"/><path d="M310 324 V346" marker-end="url(#a8)"/></g>
+  </svg>
+</div>
+<ol>
+  <li><strong>Tablas base</strong> (<code>setup_database.sql</code> y su parte 2): se crean las tablas con sus columnas y la columna <code>estado_registro</code> en cada una.</li>
+  <li><strong>Funciones de rol:</strong> <code>es_admin()</code>, <code>es_principal()</code>, <code>tiene_acceso()</code> y las demás, que leen el token y responden sí/no.</li>
+  <li><strong>Políticas RLS:</strong> por cada tabla se declara quién puede ver, insertar, editar y borrar. <em>Si se agrega una tabla, se le agrega su RLS en el mismo cambio.</em></li>
+  <li><strong>Disparadores:</strong> el candado de borrado (<code>trg_bloq_borrado</code>) y el recálculo de hotelería cuando cambia un proveedor (<code>trg_recalc_hoteleria</code>).</li>
+  <li><strong>Vistas:</strong> <code>hoteles_sg_publico</code> (la única expuesta al público, sin RUT) y <code>v_registro_ediciones</code> (la bitácora legible).</li>
+  <li><strong>Migraciones:</strong> cada cambio posterior es un archivo con fecha en <code>database/migraciones/</code>. Nunca se edita un script viejo; se agrega uno nuevo. Así la historia queda registrada y es reproducible.</li>
+</ol>
+<h4>Almacenamiento de archivos</h4>
+<p>Los documentos (PDF de contratos, verificados de RCA, minutas de visita) no van en la base sino en el <strong>almacenamiento de Supabase</strong>, en un bucket <em>privado</em>. Cuando alguien autorizado los abre, la app pide una URL firmada que dura unos minutos y después caduca. El archivo nunca queda accesible con un enlace permanente.</p>
+<div class="note tip"><b>La regla que resume todo.</b> Si mañana se agrega una tabla, hay que darle su <code>estado_registro</code>, su política RLS y — si guarda datos personales — asegurarse de que solo se lea con el permiso correcto. La seguridad no es una capa aparte: es parte de crear cada tabla.</div>
+
+<!-- EDITAR -->
+<div class="sec-wrap" id="editar" style="border-top-color:var(--gold)"><span class="sec-n" style="color:var(--gold-dk)">✎</span><div><h2 class="sec dsp">Cómo editar este manual</h2><p class="sec-tag">Documento vivo</p></div></div>
+<p class="lead-p">Este manual está pensado para irse corrigiendo y mejorando con el tiempo. Se edita en el propio navegador, sin herramientas ni instalaciones.</p>
+<div class="howto"><div class="t">▸ Para corregir o agregar algo</div>
+  <ol>
+    <li>Haz clic en <strong>✏ Editar</strong> (abajo a la derecha). El texto se vuelve editable — se marca con un borde punteado.</li>
+    <li>Escribe directamente sobre el manual. Se guarda un <strong>borrador automático</strong> en este navegador, así no pierdes nada si cierras.</li>
+    <li>¿Algo para que se revise después? Botón <strong>➕ Nota de revisión</strong>: inserta un recuadro amarillo para dejar la observación.</li>
+    <li>Cuando termines, <strong>⬇ Descargar HTML</strong>: baja el manual con tus cambios ya incorporados.</li>
+    <li>Reemplaza el archivo <code>docs/MANUAL.html</code> del repositorio con el descargado (o pásaselo a quien mantiene el sistema).</li>
+  </ol>
+</div>
+<div class="note tip"><b>El ciclo de mejora.</b> Cada cierto tiempo se revisa el manual y se integran las correcciones — las tuyas (las notas de revisión y los cambios) y las mejoras propias del sistema a medida que evoluciona. El archivo descargado es siempre la base de la próxima versión.</div>
+<div class="note warn"><b>Dos detalles.</b> El borrador automático es de <em>este</em> navegador y computador: para que un cambio sea permanente hay que <b>descargar</b> y guardar el archivo. Y como <code>docs/</code> no se publica en internet, este manual es interno: no queda expuesto en la web.</div>
+
+<div class="foot">
+  <p><strong>Sistema AM</strong> · Relaciones Comunitarias, Antofagasta Minerals · Manual operativo · versión del documento <b id="verStamp">1.0</b>.<br>
+  Documento editable generado a partir del código en producción y del esquema real de la base de datos. Las cifras de contenido cambian con el uso.</p>
+</div>
+
+</main>
+</div>
+
+<div class="dockbtns">
+  <button type="button" id="themeBtn" onclick="MANUAL.theme()" title="Cambiar tema claro/oscuro">🌗 Tema</button>
+  <button type="button" class="primary" id="editBtn" onclick="MANUAL.toggle()">✏ Editar</button>
+</div>
+
+<script>
+window.MANUAL = (function(){
+  "use strict";
+  var VERSION = "1.0";
+  var LS = "manual_am_draft_v" + VERSION;
+  var LS_THEME = "manual_am_theme";
+  var doc = document.getElementById("doc");
+  var body = document.body;
+  var editing = false, saveTimer = null;
+
+  // Qué se puede editar: bloques de texto, no los diagramas (svg no se toca).
+  var SEL = "p,li,h2,h3,h4,td,th,.lead-p,.howto,.note,.f,.cap,.capd,.sec,.sec-tag,.tabs-demo span,.rev-note";
+  function editable(){
+    return Array.prototype.filter.call(doc.querySelectorAll(SEL), function(el){
+      return !el.closest("svg"); // nunca dentro de un diagrama
+    });
+  }
+  function setEditable(on){
+    editable().forEach(function(el){
+      if(on) el.setAttribute("contenteditable","true");
+      else el.removeAttribute("contenteditable");
+    });
+  }
+  function toggle(force){
+    editing = (typeof force === "boolean") ? force : !editing;
+    body.classList.toggle("ed-on", editing);
+    setEditable(editing);
+    var b = document.getElementById("editBtn");
+    b.textContent = editing ? "✓ Cerrar edición" : "✏ Editar";
+    document.getElementById("editbar").setAttribute("aria-hidden", editing ? "false" : "true");
+    if(editing){ doc.addEventListener("input", scheduleSave); }
+    else { doc.removeEventListener("input", scheduleSave); saveNow(); }
+  }
+  function scheduleSave(){
+    var h = document.getElementById("edhint");
+    if(h) h.textContent = "Guardando borrador…";
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveNow, 700);
+  }
+  function saveNow(){
+    try{
+      localStorage.setItem(LS, JSON.stringify({t:Date.now(), html:doc.innerHTML}));
+      var h = document.getElementById("edhint");
+      if(h) h.textContent = "Borrador guardado en este navegador · " + new Date().toLocaleTimeString();
+    }catch(e){
+      var h2 = document.getElementById("edhint");
+      if(h2) h2.textContent = "No se pudo guardar el borrador (almacenamiento lleno).";
+    }
+  }
+  function addNote(){
+    var note = document.createElement("div");
+    note.className = "rev-note";
+    note.setAttribute("contenteditable","true");
+    note.textContent = "escribe aquí lo que hay que corregir o mejorar…";
+    var sel = window.getSelection();
+    var anchor = null;
+    if(sel && sel.rangeCount){
+      var n = sel.getRangeAt(0).commonAncestorContainer;
+      anchor = (n.nodeType===1?n:n.parentElement);
+      anchor = anchor ? anchor.closest("#doc > *") : null;
+    }
+    if(anchor && anchor.parentNode===doc) anchor.after(note);
+    else doc.appendChild(note);
+    note.focus();
+    saveNow();
+  }
+  function download(){
+    var was = editing;
+    if(editing) toggle(false);
+    var clone = document.documentElement.cloneNode(true);
+    // limpiar estado transitorio del archivo exportado
+    var rb = clone.querySelector("#restoreBanner"); if(rb) rb.style.display="none";
+    Array.prototype.forEach.call(clone.querySelectorAll("[contenteditable]"), function(n){ n.removeAttribute("contenteditable"); });
+    var b = clone.querySelector("body"); if(b) b.classList.remove("ed-on");
+    var eb = clone.querySelector("#editbar"); if(eb) eb.setAttribute("aria-hidden","true");
+    var html = "<!doctype html>\n" + clone.outerHTML;
+    var blob = new Blob([html], {type:"text/html;charset=utf-8"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "MANUAL.html";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+    if(was) toggle(true);
+  }
+  function discard(){
+    if(!confirm("¿Descartar todos los cambios de esta sesión y volver al último guardado en el archivo?")) return;
+    try{ localStorage.removeItem(LS); }catch(e){}
+    location.reload();
+  }
+  function restore(){
+    try{
+      var raw = localStorage.getItem(LS);
+      if(!raw) return;
+      var data = JSON.parse(raw);
+      if(data && data.html){ doc.innerHTML = data.html; }
+      hideBanner();
+      if(!editing) toggle(true);
+    }catch(e){}
+  }
+  function dropDraft(){ try{ localStorage.removeItem(LS); }catch(e){} hideBanner(); }
+  function hideBanner(){ var el=document.getElementById("restoreBanner"); if(el) el.style.display="none"; }
+  function theme(){
+    var cur = document.documentElement.getAttribute("data-theme");
+    var next = cur==="dark" ? "light" : (cur==="light" ? "dark" : ((matchMedia("(prefers-color-scheme: dark)").matches)?"light":"dark"));
+    document.documentElement.setAttribute("data-theme", next);
+    try{ localStorage.setItem(LS_THEME, next); }catch(e){}
+  }
+
+  // ── al cargar ──
+  try{
+    var savedTheme = localStorage.getItem(LS_THEME);
+    if(savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+    var draft = localStorage.getItem(LS);
+    if(draft){ var el=document.getElementById("restoreBanner"); if(el) el.style.display="flex"; }
+  }catch(e){}
+  var vs = document.getElementById("verStamp"); if(vs) vs.textContent = VERSION;
+
+  // Resaltado del índice según sección visible
+  try{
+    var links = {}, all = document.querySelectorAll("nav.toc a");
+    Array.prototype.forEach.call(all, function(a){ var id=a.getAttribute("href").slice(1); if(id) links[id]=a; });
+    var obs = new IntersectionObserver(function(es){
+      es.forEach(function(e){ var a=links[e.target.id]; if(a && e.isIntersecting){
+        Array.prototype.forEach.call(all, function(x){ x.style.borderLeftColor="transparent"; });
+        a.style.borderLeftColor="var(--teal)";
+      }});
+    }, {rootMargin:"-8% 0px -80% 0px"});
+    document.querySelectorAll("[id]").forEach(function(el){ if(links[el.id]) obs.observe(el); });
+  }catch(e){}
+
+  return {toggle:toggle, addNote:addNote, download:download, discard:discard, restore:restore, dropDraft:dropDraft, theme:theme};
+})();
+</script>
+</body>
+</html>
