@@ -124,3 +124,102 @@ body.is-user .solo-admin{ display:none !important; }
 .fm-accion{background:var(--fm-primary);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.86rem;letter-spacing:.03em;cursor:pointer;white-space:nowrap}
 .fm-accion:hover{opacity:.9}
 @media(max-width:768px){.fm-accion{width:100%}}
+
+/* ═══ PLANILLA DE HOSPEDAJES MGI ═══════════════════════════════════════════
+   Es una planilla de verdad: muchas columnas, edición en la misma línea.
+   Por eso la tabla scrollea en horizontal y las primeras columnas quedan
+   fijas — sin eso, en el teléfono uno no sabe qué hospedaje está editando. */
+.pl-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.pl-kpi{background:#fff;border:1px solid var(--border);border-radius:11px;padding:12px 14px}
+.pl-kpi.alerta{border-color:#e0a800;background:#fffaf0}
+.pl-kn{font-family:'Barlow Condensed',sans-serif;font-size:1.7rem;font-weight:800;color:#5b4fcf;line-height:1}
+.pl-kpi.alerta .pl-kn{color:#b86000}
+.pl-kl{font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+
+.pl-tools{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.pl-f{background:#fff;border:1.5px solid var(--border);border-radius:18px;padding:6px 13px;
+      font-size:.82rem;font-weight:600;color:var(--text-muted);cursor:pointer}
+.pl-f.active{background:#5b4fcf;border-color:#5b4fcf;color:#fff}
+.pl-sep{flex:1}
+.pl-add{background:#5b4fcf;color:#fff;border:none;border-radius:8px;padding:8px 15px;font-weight:700;cursor:pointer}
+.pl-imp{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 13px;cursor:pointer;font-size:.84rem}
+
+.pl-barra{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+          background:#f6f5fd;border:1px solid #ddd9f5;border-radius:10px;padding:9px 14px;margin-bottom:10px;font-size:.85rem}
+.pl-barra.activa{background:#fff6e5;border-color:#f0c987}
+.pl-barra-btns{display:flex;gap:8px}
+.pl-b1{background:#5b4fcf;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:700;cursor:pointer}
+.pl-b2{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 13px;cursor:pointer;color:var(--text-muted)}
+.pl-dim{color:var(--text-muted);font-size:.82rem}
+
+.pl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:#fff;
+         border:1px solid var(--border);border-radius:12px}
+.pl-tabla{border-collapse:separate;border-spacing:0;font-size:.82rem}
+.pl-tabla th{background:#f5f4fb;color:#4338ca;font-size:.68rem;text-transform:uppercase;letter-spacing:.03em;
+             padding:8px 6px;text-align:left;font-weight:800;vertical-align:bottom;white-space:nowrap;
+             border-bottom:2px solid #ddd9f5;position:sticky;top:0;z-index:3}
+.pl-tabla td{padding:4px 6px;border-bottom:1px solid #eef0f3;vertical-align:middle;background:var(--bg,#fff)}
+.pl-tabla tr{--bg:#fff}
+.pl-tabla tr.sucia{--bg:#fffbf0}
+.pl-tabla tr.nueva{--bg:#f2fbf4}
+.pl-tabla tr.baja{--bg:#fdf5f4}
+.pl-tabla tr.baja td,.pl-tabla tr.baja input,.pl-tabla tr.baja select{color:#c0311b}
+.pl-tabla th.num,.pl-tabla td.num{text-align:center}
+.pl-tabla td.calc{font-weight:800;color:#4338ca;background:#f7f6fd}
+
+/* columnas fijas: acciones, código y nombre */
+.pl-tabla th.c-acc,.pl-tabla td.c-acc{position:sticky;left:0;z-index:2;width:64px;white-space:nowrap;
+                                      background:var(--bg,#fff);border-right:1px solid #eef0f3}
+.pl-tabla th.c-acc{background:#f5f4fb;z-index:4}
+.pl-tabla th.c-cod,.pl-tabla td.c-cod{position:sticky;left:64px;z-index:2;background:var(--bg,#fff)}
+.pl-tabla th.c-cod{background:#f5f4fb;z-index:4}
+.pl-tabla th.c-nom,.pl-tabla td.c-nom{position:sticky;left:130px;z-index:2;background:var(--bg,#fff);
+                                      border-right:1.5px solid #ddd9f5}
+.pl-tabla th.c-nom{background:#f5f4fb;z-index:4}
+
+.pl-in{border:1px solid transparent;border-radius:6px;padding:5px 7px;font-size:.83rem;
+       background:transparent;font-family:inherit;color:inherit}
+.pl-in:hover{border-color:#e2e2ee}
+.pl-in:focus{border-color:#5b4fcf;background:#fff;outline:none;box-shadow:0 0 0 2px rgba(91,79,207,.13)}
+.pl-in.num{width:64px;text-align:center}
+.pl-in.fecha{width:130px}
+.pl-in.sel{width:auto;min-width:96px}
+
+.pl-guardar{background:#e0a800;border:none;border-radius:6px;padding:3px 6px;cursor:pointer;font-size:.85rem}
+.pl-baja{background:none;border:none;color:#c0311b;cursor:pointer;font-size:.9rem;padding:2px 4px}
+.pl-motivo{font-size:.68rem;color:#c0311b;font-style:italic;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl-chip{display:inline-block;border-radius:11px;padding:2px 8px;font-size:.7rem;font-weight:700;white-space:nowrap}
+.pl-chip.ok{background:#e8f6ec;color:#1e7e34}
+.pl-chip.hoy{background:#fff3cd;color:#8a6100}
+.pl-chip.tarde{background:#fdecea;color:#c0311b}
+.pl-sug{background:#eef0ff;border:1px solid #ccd0f5;border-radius:11px;padding:2px 8px;
+        font-size:.68rem;color:#4338ca;cursor:pointer;white-space:nowrap}
+.c-llam{min-width:150px}
+@media(max-width:599px){
+  .pl-tabla th.c-nom,.pl-tabla td.c-nom{position:static}
+  .pl-tabla th.c-cod,.pl-tabla td.c-cod{position:static}
+}
+
+/* Previo de la importación: se ve qué va a cambiar antes de tocar nada */
+.imp-res{background:#f6f5fd;border:1px solid #ddd9f5;border-radius:10px;padding:12px 14px;font-size:.86rem}
+.imp-nums{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.imp-n{border-radius:14px;padding:3px 11px;font-size:.78rem;font-weight:700}
+.imp-n.crea{background:#e8f6ec;color:#1e7e34}
+.imp-n.edita{background:#fff3cd;color:#8a6100}
+.imp-n.igual{background:#eef0f3;color:#6b7280}
+.imp-sec{font-family:'Barlow Condensed',sans-serif;font-weight:800;color:#4338ca;text-transform:uppercase;
+         font-size:.95rem;margin:16px 0 7px}
+.imp-lista{margin:0;padding-left:18px;font-size:.84rem;line-height:1.7;max-height:190px;overflow-y:auto}
+.imp-item{border:1px solid var(--border);border-radius:9px;padding:9px 11px;margin-bottom:7px}
+.imp-it-h{font-size:.88rem;margin-bottom:5px}
+.imp-como{font-size:.72rem;color:var(--text-muted);font-style:italic}
+.imp-difs{display:flex;flex-wrap:wrap;gap:6px}
+.imp-dif{background:#fafbfc;border:1px solid #eef0f3;border-radius:6px;padding:2px 8px;font-size:.75rem}
+.imp-dif s{color:#9aa3af}
+.imp-aviso{background:#fff8e6;border:1px solid #f0d9a0;border-radius:9px;padding:10px 12px;
+           font-size:.82rem;color:#7a5c00;margin-top:14px;line-height:1.5}
+.imp-dim{font-size:.78rem;color:var(--text-muted);margin-bottom:7px}
+.imp-nuevo{display:flex;gap:8px;align-items:flex-start;padding:5px 7px;border-radius:7px;font-size:.83rem;line-height:1.5}
+.imp-nuevo:hover{background:#fafbfc}
+.imp-nuevo input{margin-top:3px;width:16px;height:16px;flex:0 0 auto}
+.imp-parecido{display:block;font-size:.74rem;color:#b86000}

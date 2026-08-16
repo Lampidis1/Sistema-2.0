@@ -11,7 +11,7 @@
 <!-- La ficha emergente es la misma que usa Proveedores: vive en shared/
      (CLAUDE.md Regla 8). Va ANTES de mgi.css, que le pone el morado. -->
 <link rel="stylesheet" href="../../shared/css/ficha-modal.css?v=20260808d">
-<link rel="stylesheet" href="mgi.css?v=20260808d">
+<link rel="stylesheet" href="mgi.css?v=20260814a">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -62,7 +62,8 @@
   <div class="bar">
     <input class="search" id="q" placeholder="🔍 Buscar hotelería..." oninput="render()">
     <div class="view-toggle">
-      <button class="view-btn active" id="bCards" onclick="setView('cards')">▦ Fichas</button>
+      <button class="view-btn active" id="bPlan" onclick="setView('planilla')">📋 Planilla</button>
+      <button class="view-btn" id="bCards" onclick="setView('cards')">▦ Fichas</button>
       <button class="view-btn" id="bList" onclick="setView('list')">☰ Lista</button>
       <button class="view-btn" id="bAgenda" onclick="setView('agenda')">📞 Agenda</button>
     </div>
@@ -72,6 +73,21 @@
   <div id="resumenMGI"></div>
   <div class="count" id="count"></div>
   <div id="cont"><div class="loading">Inicia sesión…</div></div>
+</div>
+
+<!-- MODAL IMPORTAR EXCEL DE MGI -->
+<div class="medit-ov" id="impModal">
+  <div class="medit-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:#4338ca;text-transform:uppercase">&#11014; Importar planilla de hospedajes</div>
+      <button onclick="impCerrar()" style="background:none;border:none;font-size:1.4rem;color:#aaa;cursor:pointer">&#10005;</button>
+    </div>
+    <div id="impBody"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+      <button onclick="impCerrar()" style="padding:9px 14px;border:1.5px solid var(--border);background:#fff;border-radius:8px;cursor:pointer">Cancelar</button>
+      <button id="impAplicar" onclick="impAplicar()" style="padding:9px 18px;border:none;background:#5b4fcf;color:#fff;border-radius:8px;font-weight:700;cursor:pointer">Cargar en la planilla</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL EDICIÓN -->
@@ -151,7 +167,11 @@
   </div>
 </div>
 
-<script src="mgi.js?v=20260808d"></script>
+<!-- SheetJS: bajar la planilla a Excel. Ya es una de las librerías del
+     sistema (CLAUDE.md §7), fijada a versión exacta. -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="mgi.js?v=20260814a"></script>
+<script src="mgi-planilla.js?v=20260814a"></script>
 
 <!-- MODAL NUEVA VISITA MGI -->
 <div class="medit-ov" id="vModal">
