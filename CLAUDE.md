@@ -24,7 +24,7 @@ Está en **producción y en uso real**. No es un prototipo.
 | Frontend | HTML + CSS + JavaScript **vanilla** | Sin framework, sin build, sin `npm install` |
 | Backend | **Supabase** (PostgreSQL + Auth + RLS) | Proyecto `sistema-am-v2`, región `sa-east-1` |
 | Hosting | **Vercel**, sitio 100% estático | Sin funciones serverless |
-| Librerías | 7, todas por CDN | Ver §7 |
+| Librerías | 8, todas por CDN | Ver §7 |
 
 **No hay paso de compilación.** Se editan los archivos y se suben. Cada módulo
 son tres piezas: `index.html` (estructura), `<id>.css` y `<id>.js`.
@@ -262,13 +262,19 @@ Lo mismo aplica a envolver el archivo en un IIFE o en `'use strict'` con
 |---|---|---|
 | `@supabase/supabase-js` | 2.110.7 | Cliente de base de datos y auth |
 | jsPDF | 2.5.1 | Exportar a PDF |
+| tesseract.js | 5.1.1 | OCR de CVs escaneados (**carga diferida**, solo empleabilidad) |
 | SheetJS (xlsx) | 0.18.5 | Exportar/importar Excel |
 | pdf.js | 3.11.174 | Leer PDF (CVs) |
 | mammoth | 1.6.0 | Leer .docx (CVs) |
 | Chart.js | 4.4.0 | Gráficos |
 | pptxgenjs | 3.12.0 | Exportar a PowerPoint |
 
-Las 7 están fijadas a versión exacta. **Mantenerlo así.** Usar un rango como
+Todas están fijadas a versión exacta. **Mantenerlo así.**
+
+> `tesseract.js` es la única que NO se carga con el resto: pesa ~17 MB con su
+> diccionario de español, así que `modules/empleabilidad/empleabilidad-lectura.js`
+> inyecta el `<script>` recién cuando entra un CV escaneado. Todo corre en el
+> navegador; ningún documento sale del equipo. Usar un rango como
 `@2` hace que el CDN sirva la última 2.x, y el sistema en producción cambiaría
 solo, sin que nadie toque el código.
 
@@ -292,6 +298,17 @@ Ya no está vacío. Lo que vive ahí hoy:
 | `css/ficha-modal.css` | **Ficha emergente del proveedor** | proveedores, mgi |
 | `css/responsive.css` | **Ajustes de tableta y teléfono** | **los 10 puntos de entrada** |
 | `assets/logo-amsa-*.png` | Logos | todos |
+| `assets/mapa-sierra-gorda.geojson` | Plano del pueblo (55 KB, de OpenStreetMap) | hoteles-sg |
+| `assets/oficios-mineria.json` | **Diccionario de oficios y competencias** | empleabilidad |
+
+### `assets/oficios-mineria.json` — el diccionario del match
+
+42 oficios y 18 competencias del rubro, con los sinónimos que usa la gente
+("LHD", "scoop" y "cargador frontal" son lo mismo). Sale de CIUO 08.CL (INE) y
+ESCO, extraído una vez y guardado acá: sin llamadas a terceros en tiempo de
+ejecución. Lo usa `modules/empleabilidad` para comparar un cargo con la lista
+de CVs. Para ampliarlo, agregar una entrada a `oficios` — el archivo trae sus
+propias instrucciones en `_meta`.
 
 ### `css/responsive.css` — leer antes de tocar CSS de un módulo
 

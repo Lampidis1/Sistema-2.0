@@ -18,7 +18,11 @@ async function _empOnAcceso(user){
 
 // ═══════════════════════ CARGA DE DATOS ═══════════════════════
 let CVS=[], OFERTAS=[], POSTUL=[], VISTA='tabla', OFERTA_MATCH='';
-async function cargarTodo(){ await Promise.all([cargarCVs(), cargarOfertas(), cargarPostulaciones(), cargarBecados()]); poblarFiltros(); renderDir(); abrirDesdeAncla(); }
+async function cargarTodo(){
+  await Promise.all([cargarCVs(), cargarOfertas(), cargarPostulaciones(), cargarBecados(), cargarDiccionarioOficios()]);
+  mConstruirIDF(CVS);   // el peso de cada palabra depende del conjunto de CVs
+  poblarFiltros(); renderDir(); abrirDesdeAncla();
+}
 function abrirDesdeAncla(){
   const m=(location.hash||'').match(/cv=([^&]+)/);
   if(m){ const id=decodeURIComponent(m[1]); if(CVS.find(c=>c.cv_id===id)){ setTimeout(()=>abrirCV(id),300); } }
@@ -30,6 +34,8 @@ async function cargarCVs(){
     experiencia:parseJ(c.experiencia_json), academico:parseJ(c.academico_json), cursos:parseJ(c.cursos_json),
     idiomas:parseJ(c.idiomas_json), software:parseJ(c.software_json), adjuntos:parseJ(c.adjuntos_json)
   }));
+  // el peso de cada palabra depende del conjunto de CVs: si cambia, se recalcula
+  if(typeof mConstruirIDF==='function') mConstruirIDF(CVS);
 }
 async function cargarOfertas(){ const {data}=await SB.from('cv_ofertas').select('*').neq('estado_registro','Eliminado'); OFERTAS=(data||[]).map(o=>({...o,criterios:parseJ(o.criterios_json)})); }
 async function cargarPostulaciones(){ const {data}=await SB.from('cv_postulaciones').select('*').neq('estado_registro','Eliminado'); POSTUL=data||[]; }
@@ -70,8 +76,12 @@ function _critScore(criterioTexto, txtCV){
   const frac=hits/palabras.length;
   return frac>=0.4 ? frac : 0;
 }
+// El puntaje lo calcula empleabilidad-match.js (BM25 + diccionario de oficios).
+// Esta función se mantiene porque la llaman varias pantallas; si el motor nuevo
+// todavía no cargó, cae al conteo simple de antes en vez de fallar.
 function matchPct(cv,oferta){
-  const crits=(oferta.criterios||[]).filter(c=>(c.texto||'').trim());
+  if(typeof matchPct2==='function') return matchPct2(cv,oferta);
+  const crits=((oferta&&oferta.criterios)||[]).filter(c=>(c.texto||'').trim());
   if(!crits.length) return 0;
   const txt=cvTexto(cv);
   const sumP=crits.reduce((a,c)=>a+(Math.max(0,+c.ponderacion||0)),0)||crits.length;
@@ -124,7 +134,9 @@ function renderDir(){
     h+=`<tr>
       <td><b>${esc((cv.nombres||'')+' '+(cv.apellidos||''))}</b>${(cv.origen_plataforma==='movil'||cv.fuente==='movil')?' <span class="chip" style="background:#fff3d6;color:#8a6100">móvil</span>':''}<br><span style="font-size:.74rem;color:var(--text-muted)">${esc(cv.rut||'')}</span></td>
       <td>${esc(cv.comuna||'-')}</td><td>${esc(cv.sexo||'-')}</td><td>${esc(cv.nacionalidad||'-')}</td>
-      <td><span class="match-bar"><div style="width:${pct}%;background:${col}"></div></span> <b style="color:${col}">${pct}%</b></td>
+      <td><span class="match-bar"><div style="width:${pct}%;background:${col}"></div></span> <b style="color:${col}">${pct}%</b>
+        ${OFERTA_MATCH?`<button class="mx-btn" title="Ver el desglose del puntaje" onclick="matchExplicar('${cv.cv_id}','${OFERTA_MATCH}')">¿por qué?</button>`:''}
+      </td>
       <td><button class="btn sec" style="padding:5px 11px" onclick="abrirCV('${cv.cv_id}')">✏ Editar</button></td>
     </tr>`;
   });
@@ -509,13 +521,13 @@ async function cargarCVArchivo(files){
   if(!files||!files.length) return;
   for(const file of files){
     try{
-      let texto='';
-      if(/\.pdf$/i.test(file.name)){ texto=await leerPDF(file); }
-      else if(/\.docx?$/i.test(file.name)){ texto=await leerWord(file); }
-      else { toast('Formato no soportado: '+file.name,'err'); continue; }
-      const cv=estandarizarTexto(texto,file.name);
+      // Lectura con estructura: PDF con texto, PDF escaneado (OCR), Word o foto.
+      const lectura=await leerDocumento(file);
+      const cv=estructurarCV(lectura,file.name);
       CV_EDIT=cv; renderFicha(); document.getElementById('cvModal').classList.add('show');
-      toast('CV leído. Revisa y completa los datos antes de guardar.','ok');
+      const et=ORIGEN_ETIQUETA[lectura.origen]||lectura.origen;
+      toast('Leído desde '+et+' · '+(cv._completitud||0)+'% de los datos reconocidos. Revisa antes de guardar.','ok');
+      if((cv._avisos||[]).length) setTimeout(()=>alert('Al leer el documento:\n\n• '+cv._avisos.join('\n• ')),400);
     }catch(e){ toast('Error leyendo '+file.name+': '+e.message,'err'); }
   }
   document.getElementById('cvFileInput').value='';

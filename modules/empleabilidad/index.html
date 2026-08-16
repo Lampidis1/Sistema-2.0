@@ -11,7 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="empleabilidad.css">
+<link rel="stylesheet" href="empleabilidad.css?v=20260816a">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -103,8 +103,8 @@
         </div>
         <div class="toolbar">
           <button class="btn" onclick="nuevoCV()">＋ Nuevo CV</button>
-          <button class="btn sec" onclick="document.getElementById('cvFileInput').click()">📄 Cargar CV (PDF/Word)</button>
-          <input type="file" id="cvFileInput" accept=".pdf,.doc,.docx" style="display:none" onchange="cargarCVArchivo(this.files)">
+          <button class="btn sec" onclick="document.getElementById('cvFileInput').click()">📄 Cargar CV (PDF, Word, escaneo o foto)</button>
+          <input type="file" id="cvFileInput" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff" multiple style="display:none" onchange="cargarCVArchivo(this.files)">
           <button class="btn sec" onclick="document.getElementById('xlsInput').click()">📊 Carga masiva Excel</button>
           <input type="file" id="xlsInput" accept=".xlsx,.xls" style="display:none" onchange="cargarExcelMasivo(this.files[0])">
           <button class="btn gray" onclick="revisarDuplicados()">🔍 Revisar duplicados</button>
@@ -171,9 +171,33 @@
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
       <button class="btn" onclick="guardarCV()">💾 Guardar</button>
       <button class="btn sec" onclick="exportarCVpdf()">📄 Exportar PDF</button>
+      <button class="btn sec" onclick="exportarCVHarvard()">🎓 CV formato Harvard</button>
+      <button class="btn gray" onclick="revisarHarvard()">✓ Revisar formato</button>
       <button class="btn sec" onclick="exportarCVpdfConQR()">📄+QR PDF con QR</button>
       <button class="btn gray solo-admin" onclick="eliminarCV()" style="color:#c0311b;border-color:#f1b0a5;margin-left:auto">🗑 Eliminar</button>
     </div>
+  </div>
+</div>
+
+<!-- ░░ MODAL EXPLICACIÓN DEL MATCH ░░ -->
+<div class="modal-ov" id="mxModal" onmousedown="ovDown(event)" onclick="ovClick(event,matchCerrarExplicacion)">
+  <div class="modal">
+    <div class="modal-h">
+      <div class="t">Por qué este porcentaje</div>
+      <button class="x-btn" onclick="matchCerrarExplicacion()">&#10005;</button>
+    </div>
+    <div id="mxBody"></div>
+  </div>
+</div>
+
+<!-- ░░ MODAL REVISIÓN FORMATO HARVARD ░░ -->
+<div class="modal-ov" id="hvModal" onmousedown="ovDown(event)" onclick="ovClick(event,cerrarHarvard)">
+  <div class="modal">
+    <div class="modal-h">
+      <div class="t">Revisión del formato Harvard</div>
+      <button class="x-btn" onclick="cerrarHarvard()">&#10005;</button>
+    </div>
+    <div id="hvBody"></div>
   </div>
 </div>
 
@@ -226,7 +250,10 @@
   onAcceso: function(user){ return _empOnAcceso(user); }
 };</script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="empleabilidad.js"></script>
+<script src="empleabilidad.js?v=20260816a"></script>
+<script src="empleabilidad-lectura.js?v=20260816a"></script>
+<script src="empleabilidad-match.js?v=20260816a"></script>
+<script src="empleabilidad-harvard.js?v=20260816a"></script>
 
 </body>
 </html>

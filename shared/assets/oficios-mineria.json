@@ -1,0 +1,86 @@
+{
+  "_meta": {
+    "nombre": "Diccionario de oficios y competencias — rubro minero y servicios asociados",
+    "para": "Comparar el cargo de una oferta con la lista de CVs (modules/empleabilidad)",
+    "fuentes": [
+      "CIUO 08.CL — Clasificador Chileno de Ocupaciones, INE (https://www.ine.gob.cl/calidad-estadistica/clasificaciones)",
+      "ESCO — Clasificación europea de capacidades y ocupaciones, versión en español (https://esco.ec.europa.eu/es)"
+    ],
+    "por_que_local": "Se extrajo una vez y vive en el repositorio, igual que el mapa de Sierra Gorda: sin llamadas a terceros en tiempo de ejecución y sin exponer datos de las personas. Ver CLAUDE.md Regla 6.",
+    "como_ampliar": "Agregar una entrada a `oficios` con su `ciuo` (4 dígitos si se conoce), el nombre canónico y los sinónimos tal como los escribe la gente. Los sinónimos se comparan sin tildes y en minúsculas.",
+    "actualizado": "2026-08-16"
+  },
+
+  "oficios": [
+    {"ciuo":"8111","nombre":"Operador de equipo minero","sinonimos":["operador mina","operador de equipos","operador equipo pesado","operador de maquinaria","operario de equipos mineros","operador minero"],"familia":"operacion_mina"},
+    {"ciuo":"8111","nombre":"Operador de cargador frontal","sinonimos":["cargador frontal","operador cargador","lhd","scoop","operador lhd","cargador de bajo perfil","pala cargadora"],"familia":"operacion_mina"},
+    {"ciuo":"8111","nombre":"Operador de camión de extracción","sinonimos":["camion extraccion","camion minero","cat 793","cat 797","komatsu 930","operador camion alto tonelaje","cae","camion de alto tonelaje"],"familia":"operacion_mina"},
+    {"ciuo":"8111","nombre":"Operador de perforadora","sinonimos":["perforista","perforacion","operador perforadora","drill","sondaje","perforador"],"familia":"operacion_mina"},
+    {"ciuo":"8111","nombre":"Operador de excavadora","sinonimos":["excavadora","retroexcavadora","operador retro","excavador"],"familia":"operacion_mina"},
+    {"ciuo":"8111","nombre":"Operador de bulldozer","sinonimos":["bulldozer","tractor oruga","d10","d11","operador dozer","dozer"],"familia":"operacion_mina"},
+    {"ciuo":"8111","nombre":"Operador de motoniveladora","sinonimos":["motoniveladora","niveladora","operador motoniveladora"],"familia":"operacion_mina"},
+    {"ciuo":"8111","nombre":"Operador de planta","sinonimos":["operador de planta","planta concentradora","operador chancado","chancador","molienda","flotacion","operador proceso"],"familia":"planta"},
+    {"ciuo":"3117","nombre":"Técnico en minería","sinonimos":["tecnico minero","tecnico en mineria","tecnico de mina","tecnico nivel superior mineria"],"familia":"tecnico"},
+    {"ciuo":"3115","nombre":"Técnico mecánico","sinonimos":["mecanico","tecnico mecanico","mantenedor mecanico","mecanico industrial","mecanico automotriz","mecanico de equipo pesado"],"familia":"mantenimiento"},
+    {"ciuo":"7412","nombre":"Electricista","sinonimos":["electrico","electricista industrial","mantenedor electrico","tecnico electrico","electromecanico"],"familia":"mantenimiento"},
+    {"ciuo":"7412","nombre":"Instrumentista","sinonimos":["instrumentacion","tecnico instrumentista","control e instrumentacion"],"familia":"mantenimiento"},
+    {"ciuo":"7212","nombre":"Soldador","sinonimos":["soldadura","soldador calificado","welding","soldador 6g","soldador estructural"],"familia":"mantenimiento"},
+    {"ciuo":"7222","nombre":"Maestro mayor / mecánico de mantención","sinonimos":["maestro mayor","mantencion","mantenimiento mecanico","maestro de mantencion"],"familia":"mantenimiento"},
+    {"ciuo":"7233","nombre":"Mantenedor de maquinaria industrial","sinonimos":["mantenedor","mantencion industrial","mantenimiento de equipos"],"familia":"mantenimiento"},
+    {"ciuo":"8332","nombre":"Conductor de camión","sinonimos":["chofer","conductor","camionero","conductor de camion","chofer de camion","conductor clase a"],"familia":"transporte"},
+    {"ciuo":"8331","nombre":"Conductor de bus","sinonimos":["conductor de bus","chofer de bus","transporte de personal","conductor minibus"],"familia":"transporte"},
+    {"ciuo":"8344","nombre":"Operador de grúa horquilla","sinonimos":["grua horquilla","montacargas","forklift","operador grua","gruero"],"familia":"transporte"},
+    {"ciuo":"8343","nombre":"Operador de grúa","sinonimos":["grua pluma","grua horquilla telescopica","operador de grua movil","rigger"],"familia":"transporte"},
+    {"ciuo":"7114","nombre":"Trabajador de la construcción","sinonimos":["construccion","obrero","jornal","ayudante de obra","maestro de obra","albanil","albañil"],"familia":"construccion"},
+    {"ciuo":"7115","nombre":"Carpintero","sinonimos":["carpintero","carpinteria","moldajero","enfierrador"],"familia":"construccion"},
+    {"ciuo":"7126","nombre":"Gásfiter","sinonimos":["gasfiter","gasfiteria","plomero","sanitario"],"familia":"construccion"},
+    {"ciuo":"7131","nombre":"Pintor","sinonimos":["pintor","pintura industrial","pintor industrial"],"familia":"construccion"},
+    {"ciuo":"9313","nombre":"Ayudante de construcción","sinonimos":["ayudante","peoneta","auxiliar de obra","pañolero","panolero"],"familia":"construccion"},
+    {"ciuo":"5120","nombre":"Cocinero","sinonimos":["cocinero","chef","cocina","maestro de cocina","cocinera"],"familia":"alimentacion"},
+    {"ciuo":"9412","nombre":"Ayudante de cocina","sinonimos":["ayudante de cocina","auxiliar de cocina","pinche"],"familia":"alimentacion"},
+    {"ciuo":"5246","nombre":"Garzón / servicio de casino","sinonimos":["garzon","garzona","mesero","casino","servicio de alimentacion","atencion de casino"],"familia":"alimentacion"},
+    {"ciuo":"9112","nombre":"Auxiliar de aseo","sinonimos":["aseo","limpieza","auxiliar de aseo","servicios de aseo","aseador","aseadora"],"familia":"servicios"},
+    {"ciuo":"9121","nombre":"Lavandería","sinonimos":["lavanderia","lavado de ropa","planchado","operario de lavanderia"],"familia":"servicios"},
+    {"ciuo":"5414","nombre":"Guardia de seguridad","sinonimos":["guardia","vigilante","seguridad","nochero","os10","control de acceso"],"familia":"servicios"},
+    {"ciuo":"5152","nombre":"Camarero de hotelería","sinonimos":["camarera","mucama","aseo de habitaciones","housekeeping"],"familia":"servicios"},
+    {"ciuo":"4321","nombre":"Bodeguero","sinonimos":["bodega","bodeguero","almacen","control de inventario","panolero"],"familia":"administracion"},
+    {"ciuo":"4110","nombre":"Administrativo","sinonimos":["administrativo","secretaria","oficina","asistente administrativo","auxiliar administrativo"],"familia":"administracion"},
+    {"ciuo":"3313","nombre":"Contabilidad","sinonimos":["contador","contabilidad","asistente contable","remuneraciones"],"familia":"administracion"},
+    {"ciuo":"2263","nombre":"Prevencionista de riesgos","sinonimos":["prevencion de riesgos","prevencionista","experto en prevencion","hse","seguridad y salud ocupacional","asesor en prevencion"],"familia":"seguridad"},
+    {"ciuo":"3257","nombre":"Monitor de seguridad","sinonimos":["monitor de seguridad","supervisor de terreno hse","observador de seguridad"],"familia":"seguridad"},
+    {"ciuo":"2149","nombre":"Ingeniero","sinonimos":["ingeniero","ingeniera","ingenieria civil","ingeniero de proyectos","ingeniero de procesos"],"familia":"profesional"},
+    {"ciuo":"1321","nombre":"Supervisor","sinonimos":["supervisor","jefe de turno","capataz","encargado","jefe de area","lider de equipo"],"familia":"supervision"},
+    {"ciuo":"3122","nombre":"Jefe de terreno","sinonimos":["jefe de terreno","administrador de contrato","jefe de obra"],"familia":"supervision"},
+    {"ciuo":"9333","nombre":"Rigger / maniobras","sinonimos":["rigger","maniobras","izaje","señalero","senalero"],"familia":"operacion_mina"},
+    {"ciuo":"8189","nombre":"Operador de planta de agua","sinonimos":["planta de agua","tratamiento de aguas","osmosis","planta desaladora"],"familia":"planta"},
+    {"ciuo":"3132","nombre":"Operador de sala de control","sinonimos":["sala de control","operador ccm","despachador","dispatch","control room"],"familia":"planta"}
+  ],
+
+  "competencias": [
+    {"nombre":"Licencia clase A","sinonimos":["licencia a1","licencia a2","licencia a3","licencia a4","licencia a5","clase a","licencia profesional"]},
+    {"nombre":"Licencia clase B","sinonimos":["licencia b","clase b","licencia de conducir clase b"]},
+    {"nombre":"Licencia clase D","sinonimos":["licencia d","clase d","maquinaria automotriz"]},
+    {"nombre":"Licencia interna minera","sinonimos":["licencia interna","licencia minera","acreditacion interna"],"nota":"la entrega la faena, no el municipio"},
+    {"nombre":"Curso de altura física","sinonimos":["trabajo en altura","altura fisica","altura geografica"]},
+    {"nombre":"Espacios confinados","sinonimos":["espacio confinado","recinto confinado"]},
+    {"nombre":"Manejo a la defensiva","sinonimos":["conduccion defensiva","manejo defensivo","4x4"]},
+    {"nombre":"Primeros auxilios","sinonimos":["primeros auxilios","rcp","brigadista"]},
+    {"nombre":"Trabajos en caliente","sinonimos":["trabajo en caliente","corte y soldadura"]},
+    {"nombre":"Sustancias peligrosas","sinonimos":["sustancias peligrosas","hoja de datos de seguridad","hds","transporte de sustancias"]},
+    {"nombre":"OS-10","sinonimos":["os10","os 10","credencial os10"]},
+    {"nombre":"Manipulación de alimentos","sinonimos":["manipulacion de alimentos","manipulador de alimentos","resolucion sanitaria"]},
+    {"nombre":"Excel","sinonimos":["excel","planilla de calculo","office","microsoft office"]},
+    {"nombre":"AutoCAD","sinonimos":["autocad","cad","dibujo tecnico"]},
+    {"nombre":"SAP","sinonimos":["sap","erp"]},
+    {"nombre":"Experiencia en minería","sinonimos":["experiencia minera","faena minera","gran mineria","rubro minero","mina"]},
+    {"nombre":"Sistema de turnos","sinonimos":["turno 7x7","turno 4x4","turno 14x14","sistema de turnos","rotativo"]},
+    {"nombre":"Residencia local","sinonimos":["sierra gorda","baquedano","maria elena","calama","antofagasta","mejillones","residente local"]}
+  ],
+
+  "equivalencias_nivel": {
+    "basica":     ["educacion basica","ensenanza basica","basica completa"],
+    "media":      ["ensenanza media","media completa","cuarto medio","liceo","tecnico profesional"],
+    "tecnica":    ["tecnico de nivel superior","cft","instituto profesional","tecnico superior"],
+    "universitaria": ["universidad","titulo profesional","licenciatura","ingenieria"]
+  }
+}
