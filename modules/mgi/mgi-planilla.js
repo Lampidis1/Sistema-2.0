@@ -308,6 +308,17 @@ function planReactivar(pid){
   planSet(pid,'baja_motivo','');
   planRender();
 }
+// Abre la ficha completa del hospedaje (mismo formulario a fondo del directorio)
+// para editar datos que la planilla no toca: correo/teléfono de la empresa,
+// contratos, visitas, servicios. Es "aparte de la lista de verificación de camas".
+function planAbrirFicha(pid){
+  if(PLAN_EDIT[pid] && Object.keys(PLAN_EDIT[pid]).length){
+    if(!confirm('Esta línea tiene cambios sin guardar en la planilla. La ficha muestra lo que ya está en la base.\n\n¿Abrir la ficha de todas formas? (guarda la planilla primero para no perder lo editado)')) return;
+  }
+  if(typeof abrirEdit==='function') abrirEdit(pid);
+  else if(typeof verFichaMGI==='function') verFichaMGI(pid);
+}
+
 function planAgregar(){
   const pid='mgi_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
   PLAN_NUEVAS.push(pid);
@@ -554,6 +565,8 @@ function planRender(){
       <td class="c-acc">
         <button class="pl-guardar" style="visibility:${sucia?'visible':'hidden'}"
                 onclick="planGuardarUna('${pid}')" title="Guardar esta línea">💾</button>
+        ${nueva ? '' : `<button class="pl-ficha" onclick="planAbrirFicha('${pid}')"
+                title="Abrir la ficha completa para editar a fondo">✎</button>`}
         ${baja
           ? `<button class="pl-baja" onclick="planReactivar('${pid}')" title="${esc(planV(pid,'baja_motivo')||'')}">↩</button>`
           : `<button class="pl-baja" onclick="planDarBaja('${pid}')" title="Sacar del conteo">✕</button>`}
@@ -658,40 +671,110 @@ function impAbrir(){
   inp.click();
 }
 
+// Cada campo con los nombres de encabezado que puede tener. Se compara sin
+// tildes ni mayúsculas. Así el importador entiende TANTO el Excel que exporta
+// esta misma página ("Hospedajes MGI") COMO el informe viejo ("Hostales SG"),
+// y no se rompe si alguien reordena o renombra levemente una columna.
+const IMP_COLS = {
+  cod:        ['codigo mgi','cod mgi','codigo'],
+  nombre:     ['nombre establecimiento','establecimiento','hospedaje','nombre'],
+  direccion:  ['direccion','direccion '],
+  participa:  ['participa programa centinela 2026','participara del programa centinela 2026','participa','participa 2026'],
+  rut:        ['rut','rut empresa'],
+  enc_nombre: ['encargado'],
+  enc_correo: ['correo encargado','correo electronico encargado','correo electronico  encargado'],
+  enc_fono:   ['telefono encargado','telefono  encargado','fono encargado'],
+  due_nombre: ['dueno','dueño'],
+  due_correo: ['correo dueno','correo electronico dueno','correo dueño'],
+  due_fono:   ['telefono dueno','fono dueno','telefono dueño'],
+  simples_priv:['simples bano privado','cantidad habitaciones simples bano privado','habitaciones que solo pueden ser simples simples bano privado'],
+  simples_comp:['simples bano compartido','cantidad habitaciones simples bano compartido','habitaciones que solo pueden ser simples simples sin  privado'],
+  dobles_priv: ['dobles bano privado','cantidad habitaciones dobles bano privado','habitaciiones que pueden ser dobles o simples con bano privado'],
+  dobles_comp: ['dobles bano compartido','cantidad habitaciones dobles bano compartido','habitaciiones que pueden ser dobles o simples con sin  privado'],
+  camas_instaladas:['no camas instaladas','n camas instaladas','camas instaladas','camas instaladas mgi 2026','camas instaladas 2026'],
+  eecc_hospeda:['eecc que hospeda','eecc que hospeda','indique el nombre de la empresa colaboradora de minera centinela que hospeda en su establecimiento'],
+  es_eecc_mcen:['es eecc de mcen','es eecc de mcen'],
+  contrato_inicio:['inicio contrato','fehca de inicicio contrato','fecha de inicio contrato'],
+  contrato_fin:['termino contrato','fecha de termino de contrato','fecha de termino contrato'],
+  arrendado_completo:['arrendado completo','su hospedaje esta completamente arrendado a la empresa colaboradora mencionada anteriormente'],
+  hab_disponibles:['habitaciones disponibles','cuantas habitaciones le quedan disponibles'],
+  n_hospedados:['no hospedados','n hospedados','hopedados','nº hopedados','cuantos trabajadores de la empresa colaboradora de minera centinela indicada anteriormente alojan en su hospedaje'],
+  camas_disponibles:['camas disponibles','camas disponibles (si no arrendo hostal completo)'],
+  al_dia_pagos:['al dia con pagos','la empresa mencionada anteriormente se encuentra al dia con los pagos'],
+  volver_a_llamar:['volver a llamar','volver a llamar dia'],
+  notas:['notas','observaciones'],
+  fuera:['fuera del conteo'],
+};
+
+// Localiza la fila de encabezados y arma el mapa columna→campo.
+function impMapa(matriz){
+  for(let i=0;i<Math.min(6,matriz.length);i++){
+    const fila=matriz[i].map(c=>impNorm(c));
+    const mapa={}; let aciertos=0;
+    fila.forEach((txt,col)=>{
+      if(!txt) return;
+      for(const campo in IMP_COLS){
+        if(mapa[campo]!=null) continue;
+        if(IMP_COLS[campo].some(h=>txt===impNorm(h))){ mapa[campo]=col; aciertos++; break; }
+      }
+    });
+    if(mapa.nombre!=null && aciertos>=4) return {fila:i, mapa};
+  }
+  return null;
+}
+
 function impLeer(file){
   if(typeof XLSX==='undefined'){ alert('No se pudo cargar el lector de Excel.'); return; }
   const fr=new FileReader();
   fr.onload=e=>{
     try{
       const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
-      const hoja=wb.SheetNames.find(n=>impNorm(n).startsWith('hostales sg')) || wb.SheetNames[0];
-      // los encabezados están en la fila 3
-      const filas=XLSX.utils.sheet_to_json(wb.Sheets[hoja],{header:1,defval:''}).slice(3);
+      // hoja preferida: la que exporta esta página o el informe conocido; si no,
+      // la primera que tenga encabezados reconocibles.
+      let hoja=wb.SheetNames.find(n=>/hospedajes mgi|hostales sg/.test(impNorm(n)));
+      let matriz, m=null;
+      const hojas = hoja ? [hoja] : wb.SheetNames;
+      for(const nom of hojas){
+        matriz=XLSX.utils.sheet_to_json(wb.Sheets[nom],{header:1,defval:''});
+        m=impMapa(matriz);
+        if(m){ hoja=nom; break; }
+      }
+      if(!m){
+        alert('No reconocí las columnas del Excel. Debe tener una fila de encabezados con al menos "Nombre Establecimiento" y otras columnas de la planilla MGI.');
+        return;
+      }
+      const g=(r,campo)=>{ const c=m.mapa[campo]; return c==null?'':String(r[c]==null?'':r[c]).trim(); };
+      const gN=(r,campo)=>{ const v=g(r,campo); return v===''?null:(parseInt(v)||0); };
       IMP={archivo:file.name, hoja:hoja, filas:[]};
-      filas.forEach(r=>{
-        if(!r[4]) return;                                   // columna E = establecimiento
-        const par=impPartir(r[4]);
+      matriz.slice(m.fila+1).forEach(r=>{
+        const nombreCel=g(r,'nombre');
+        if(!nombreCel) return;
+        // el nombre puede venir limpio ("Hospedaje Inés") o como
+        // "17. Hospedaje Inés - Diego Portales #108": impPartir separa ambos.
+        const par=impPartir(nombreCel);
+        const codCel=g(r,'cod');
+        const rutCel=g(r,'rut');
         const f={
-          cod:par.cod, nombre:par.nombre,
-          direccion:String(r[5]||'').trim()||par.direccion,   // F si viene, si no la de la celda
-          participa:String(r[1]||'').trim(),
-          // en la columna del RUT a veces quedó escrito un motivo ("En reparación");
-          // si no parece un RUT, no se importa
-          rut:(impRut(r[3]).length>=7 ? String(r[3]||'').trim() : ''),
-          enc_nombre:String(r[6]||'').trim(), enc_correo:String(r[7]||'').trim(), enc_fono:String(r[8]||'').trim(),
-          due_nombre:String(r[9]||'').trim(), due_correo:String(r[10]||'').trim(), due_fono:String(r[11]||'').trim(),
-          simples_priv:parseInt(r[12])||0, simples_comp:parseInt(r[13])||0,
-          dobles_priv:parseInt(r[14])||0,  dobles_comp:parseInt(r[15])||0,
-          camas_instaladas:parseInt(r[18])||null,
-          eecc_hospeda:String(r[19]||'').trim(),
-          // en varias filas quedó copiado el enunciado ("Si, No, No Sabe") en vez
-          // de la respuesta: eso no se importa
-          es_eecc_mcen:(/,/.test(String(r[20]||'')) ? '' : String(r[20]||'').trim()),
-          hab_disponibles:r[23]===''?null:(parseInt(r[23])||0),
-          al_dia_pagos:String(r[24]||'').trim(),
-          n_hospedados:r[29]===''?null:(parseInt(r[29])||0),
-          camas_disponibles:r[30]===''?null:(parseInt(r[30])||0),
-          notas:String(r[32]||'').trim(),
+          cod: codCel || par.cod,
+          nombre: par.nombre || nombreCel,
+          direccion: g(r,'direccion') || par.direccion,
+          participa: g(r,'participa'),
+          rut: (impRut(rutCel).length>=7 ? rutCel : ''),
+          enc_nombre:g(r,'enc_nombre'), enc_correo:g(r,'enc_correo'), enc_fono:g(r,'enc_fono'),
+          due_nombre:g(r,'due_nombre'), due_correo:g(r,'due_correo'), due_fono:g(r,'due_fono'),
+          simples_priv:gN(r,'simples_priv')||0, simples_comp:gN(r,'simples_comp')||0,
+          dobles_priv:gN(r,'dobles_priv')||0,   dobles_comp:gN(r,'dobles_comp')||0,
+          camas_instaladas:gN(r,'camas_instaladas'),
+          eecc_hospeda:g(r,'eecc_hospeda'),
+          es_eecc_mcen:(/,/.test(g(r,'es_eecc_mcen'))?'':g(r,'es_eecc_mcen')),  // "Si, No, No Sabe" es el enunciado, no la respuesta
+          contrato_inicio:g(r,'contrato_inicio'), contrato_fin:g(r,'contrato_fin'),
+          arrendado_completo:/^s[ií]/i.test(g(r,'arrendado_completo')),
+          hab_disponibles:gN(r,'hab_disponibles'),
+          n_hospedados:gN(r,'n_hospedados'),
+          camas_disponibles:gN(r,'camas_disponibles'),
+          al_dia_pagos:g(r,'al_dia_pagos'),
+          volver_a_llamar:g(r,'volver_a_llamar'),
+          notas:g(r,'notas'),
         };
         f.match=impBuscar(f);
         IMP.filas.push(f);
@@ -713,10 +796,13 @@ function impDiffs(f){
   };
   ['direccion','rut','enc_nombre','enc_correo','enc_fono','due_nombre','due_correo','due_fono',
    'simples_priv','simples_comp','dobles_priv','dobles_comp','camas_instaladas','eecc_hospeda',
-   'es_eecc_mcen','hab_disponibles','al_dia_pagos','n_hospedados','camas_disponibles','notas']
+   'es_eecc_mcen','contrato_inicio','contrato_fin','hab_disponibles','al_dia_pagos',
+   'n_hospedados','camas_disponibles','notas']
     .forEach(k=>cmp(k,f[k]));
   if(f.cod) cmp('codigo_mgi',f.cod);
   if(f.participa) cmp('participa',f.participa.toUpperCase()==='SI'?'SI':f.participa);
+  if(f.arrendado_completo===true && planV(pid,'arrendado_completo')!==true)
+    d.push({campo:'arrendado_completo', viejo:'No', nuevo:'Sí'});
   return d;
 }
 
@@ -801,9 +887,11 @@ function impAplicar(){
     else { poner('direccion',f.direccion); poner('rut',f.rut); }
     ['enc_nombre','enc_correo','enc_fono','due_nombre','due_correo','due_fono','simples_priv',
      'simples_comp','dobles_priv','dobles_comp','camas_instaladas','eecc_hospeda','es_eecc_mcen',
-     'hab_disponibles','al_dia_pagos','n_hospedados','camas_disponibles','notas'].forEach(k=>poner(k,f[k]));
+     'contrato_inicio','contrato_fin','hab_disponibles','al_dia_pagos','n_hospedados',
+     'camas_disponibles','notas'].forEach(k=>poner(k,f[k]));
     if(f.cod) poner('codigo_mgi',f.cod);
     if(f.participa) poner('participa',f.participa.toUpperCase()==='SI'?'SI':f.participa);
+    if(f.arrendado_completo===true) PLAN_EDIT[pid]['arrendado_completo']=true;
   });
   impCerrar();
   planRender();

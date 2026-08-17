@@ -101,3 +101,27 @@ una preferencia de interfaz, no un dato de nadie (CLAUDE.md Regla 5).
 salen de esa misma lista, así no se pueden desalinear. Para agregar una columna
 se agrega una entrada con su `k`, su título (`th`), cómo se dibuja la celda
 (`td`) y a qué `grupo` pertenece en el panel.
+
+
+## Importar / exportar: el mismo formato
+
+El botón **⬇ Excel** exporta la planilla (hoja *Hospedajes MGI*, 30 columnas con
+encabezados claros) y **⬆ Importar Excel** vuelve a leer ese mismo archivo. El
+importador reconoce las columnas **por su nombre**, no por su posición, así que
+también entiende el informe antiguo *Hostales SG* y no se rompe si alguien
+reordena una columna. El ciclo exportar → corregir en Excel → importar funciona
+de ida y vuelta.
+
+Al importar, el nombre puede venir limpio (*Hospedaje Inés*) o con el formato
+del informe (*17. Hospedaje Inés - Diego Portales #108*): en ambos casos se
+separa código, nombre y dirección. El previo muestra qué se crearía y qué
+cambiaría antes de tocar nada.
+
+## Acceso a la ficha completa desde la planilla
+
+Cada fila tiene un botón **✎** (junto al 💾 y el ✕) que abre la **ficha
+completa** del hospedaje — el mismo formulario a fondo del directorio de
+Proveedores: correo y teléfono de la empresa, contratos, visitas, servicios.
+Es para editar en profundidad, aparte de la verificación de camas que se hace
+en la propia planilla. Solo aparece en hospedajes ya guardados; si la línea
+tiene cambios sin guardar, avisa antes de abrir.

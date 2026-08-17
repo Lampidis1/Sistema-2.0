@@ -250,3 +250,5 @@ body.is-user .solo-admin{ display:none !important; }
 .plc-pie{font-size:.76rem;color:var(--text-muted);margin-top:12px;padding-top:10px;
          border-top:1px solid var(--border)}
 @media(max-width:599px){ .plc-panel{right:auto;left:0;width:92vw} }
+.pl-ficha{background:none;border:none;color:#5b4fcf;cursor:pointer;font-size:.95rem;padding:2px 4px}
+.pl-ficha:hover{color:#4338ca}
