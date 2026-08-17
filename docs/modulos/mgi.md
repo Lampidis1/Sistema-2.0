@@ -125,3 +125,14 @@ Proveedores: correo y teléfono de la empresa, contratos, visitas, servicios.
 Es para editar en profundidad, aparte de la verificación de camas que se hace
 en la propia planilla. Solo aparece en hospedajes ya guardados; si la línea
 tiene cambios sin guardar, avisa antes de abrir.
+
+
+## Ordenar y marcar filas
+
+La barra de la planilla tiene un selector **Ordenar**: por Código MGI (por
+defecto), A → Z, Z → A, o por camas disponibles (mayor a menor / menor a mayor).
+
+Al **hacer clic en una fila** se marca completa en ámbar — sirve para no perder
+de vista qué hospedaje se está mirando mientras se llama por teléfono. Un clic
+sobre una celda para editarla no la marca; el clic en el resto de la fila sí.
+Volver a hacer clic la desmarca.

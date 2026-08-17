@@ -252,3 +252,15 @@ body.is-user .solo-admin{ display:none !important; }
 @media(max-width:599px){ .plc-panel{right:auto;left:0;width:92vw} }
 .pl-ficha{background:none;border:none;color:#5b4fcf;cursor:pointer;font-size:.95rem;padding:2px 4px}
 .pl-ficha:hover{color:#4338ca}
+
+/* Selector de orden en la barra de la planilla */
+.pl-orden{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text-muted);font-weight:600}
+.pl-orden select{border:1.5px solid var(--border);border-radius:8px;padding:6px 9px;font-size:.82rem;font-family:inherit;background:#fff;cursor:pointer}
+/* Fila marcada al hacer clic: no perderse al llamar por teléfono.
+   El fondo pinta toda la fila, incluidas las columnas fijas. */
+.pl-tabla tr.marcada > td{background:#fff3cd !important}
+.pl-tabla tr.marcada > td.c-acc,
+.pl-tabla tr.marcada > td.c-cod,
+.pl-tabla tr.marcada > td.c-nom{background:#fdecb0 !important}
+.pl-tabla tr.marcada{box-shadow:inset 3px 0 0 #e0a800}
+.pl-tabla tbody tr{cursor:pointer}

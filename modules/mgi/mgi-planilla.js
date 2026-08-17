@@ -25,6 +25,8 @@ let PLAN = {};          // proveedor_id → fila de hospedajes_mgi
 let PLAN_EDIT = {};     // proveedor_id → {campo: valorNuevo} pendientes de guardar
 let PLAN_NUEVAS = [];   // filas agregadas que todavía no existen en la base
 let PLAN_FILTRO = 'todos';
+let PLAN_ORDEN  = 'codigo';   // codigo | az | za | disp_desc | disp_asc
+let PLAN_SEL    = null;       // pid de la fila marcada (para no perderse al llamar)
 
 // ── Carga ───────────────────────────────────────────────────────────────────
 async function planCargar(){
@@ -53,14 +55,29 @@ function planFilas(){
   else if(PLAN_FILTRO==='baja')   arr=arr.filter(p=>planV(p,'baja'));
   if(q) arr=arr.filter(p=>((dispName(p)||'')+' '+(p.direccion||'')+' '+(p.rut_empresa||'')+' '+
                            (planV(p,'codigo_mgi')||'')+' '+(planV(p,'eecc_hospeda')||'')).toLowerCase().includes(q));
+  const az=(a,b)=>dispName(a).localeCompare(dispName(b),'es');
+  const disp=p=>{ const v=planV(p,'hab_disponibles'); return v===''||v==null?-1:(parseInt(v)||0); };
   return arr.sort((a,b)=>{
+    if(PLAN_ORDEN==='az')  return az(a,b);
+    if(PLAN_ORDEN==='za')  return az(b,a);
+    if(PLAN_ORDEN==='disp_desc'){ const d=disp(b)-disp(a); return d||az(a,b); }
+    if(PLAN_ORDEN==='disp_asc'){  const d=disp(a)-disp(b); return d||az(a,b); }
+    // por código (por defecto)
     const ca=String(planV(a,'codigo_mgi')||''), cb=String(planV(b,'codigo_mgi')||'');
     const na=parseInt(ca), nb=parseInt(cb);
     if(!isNaN(na)&&!isNaN(nb)&&na!==nb) return na-nb;
     if(!isNaN(na)&&isNaN(nb)) return -1;
     if(isNaN(na)&&!isNaN(nb)) return 1;
-    return dispName(a).localeCompare(dispName(b),'es');
+    return az(a,b);
   });
+}
+function planSetOrden(v){ PLAN_ORDEN=v; planRender(); }
+// Marca la fila completa: al llamar por teléfono, no perder de vista cuál es.
+function planMarcarFila(pid, ev){
+  if(ev && (ev.target.closest('input,select,button,a,textarea'))) return;  // no al editar una celda
+  PLAN_SEL = (PLAN_SEL===pid ? null : pid);
+  document.querySelectorAll('.pl-tabla tr.marcada').forEach(t=>t.classList.remove('marcada'));
+  if(PLAN_SEL){ const tr=document.querySelector(`tr[data-pid="${PLAN_SEL}"]`); if(tr) tr.classList.add('marcada'); }
 }
 
 // ── Lectura de un campo, con lo editado sin guardar por encima ──────────────
@@ -530,6 +547,15 @@ function planRender(){
          ['llamar','Por llamar'],['baja','Fuera del conteo']]
         .map(([k,t])=>`<button class="pl-f ${PLAN_FILTRO===k?'active':''}" onclick="planSetFiltro('${k}')">${t}</button>`).join('')}
       <span class="pl-sep"></span>
+      <label class="pl-orden">Ordenar
+        <select onchange="planSetOrden(this.value)">
+          <option value="codigo" ${PLAN_ORDEN==='codigo'?'selected':''}>Código MGI</option>
+          <option value="az" ${PLAN_ORDEN==='az'?'selected':''}>A → Z</option>
+          <option value="za" ${PLAN_ORDEN==='za'?'selected':''}>Z → A</option>
+          <option value="disp_desc" ${PLAN_ORDEN==='disp_desc'?'selected':''}>Camas disp.: mayor a menor</option>
+          <option value="disp_asc" ${PLAN_ORDEN==='disp_asc'?'selected':''}>Camas disp.: menor a mayor</option>
+        </select>
+      </label>
       <div class="pl-cols-wrap">
         <button class="pl-imp pl-cols-btn" onclick="planAbrirColumnas()">🧩 Columnas
           <span class="pl-cols-n">${PLAN_COLUMNAS.length-PLAN_OCULTAS.size}/${PLAN_COLUMNAS.length}</span></button>
@@ -561,7 +587,8 @@ function planRender(){
     const baja=planV(pid,'baja');
     const nueva=PLAN_NUEVAS.includes(pid);
     const sucia=(PLAN_EDIT[pid]&&Object.keys(PLAN_EDIT[pid]).length);
-    return `<tr data-pid="${pid}" class="${baja?'baja':''} ${nueva?'nueva':''} ${sucia?'sucia':''}">
+    const mk=(PLAN_SEL===pid)?'marcada':'';
+    return `<tr data-pid="${pid}" class="${baja?'baja':''} ${nueva?'nueva':''} ${sucia?'sucia':''} ${mk}" onclick="planMarcarFila('${pid}',event)">
       <td class="c-acc">
         <button class="pl-guardar" style="visibility:${sucia?'visible':'hidden'}"
                 onclick="planGuardarUna('${pid}')" title="Guardar esta línea">💾</button>
