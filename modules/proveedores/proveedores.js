@@ -823,6 +823,13 @@ function openModal(id){
             ${p.pub_antucoya?'<span class="dcf-exp">☆ Antucoya (ANT)</span>':''}
           </div>`:''}
 
+          ${(p.fotos&&p.fotos.filter(Boolean).length)?`
+          <div class="dcf-sec-t" style="margin-top:18px">📷 Fotografías</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${p.fotos.filter(Boolean).slice(0,3).map(u=>
+            `<a href="javascript:void(0)" data-firmar-link="${esc(u)}" onclick="return abrirFirmado(this)" title="Ver más grande">
+               <img data-firmar="${esc(u)}" style="width:112px;height:84px;object-fit:cover;border-radius:8px;border:1px solid var(--border,#e2e8f0)">
+             </a>`).join('')}</div>`:''}
+
           ${(p.flota&&p.flota.length)?`
           <div class="dcf-flota-box" style="margin-top:18px">
             <div class="dcf-flota-hdr"><div class="dcf-flota-t">⚙ Maquinaria / Flota</div><div class="dcf-flota-s">Inventario de equipos</div></div>
@@ -882,7 +889,8 @@ function openModal(id){
       const url=window._fichaFotos[i];
       if(url){
         const img=document.getElementById('fotoImg'+i), th=document.getElementById('fotoThumb'+i), pl=document.getElementById('fotoPlaceholder'+i);
-        if(img&&th&&pl){ img.src=url; th.style.display='block'; pl.style.display='none'; }
+        // la URL guardada es del bucket privado: hay que firmarla antes de mostrarla
+        if(img&&th&&pl){ resolverUrlFirmada(url).then(u=>{ img.src=u||url; }); th.style.display='block'; pl.style.display='none'; }
       } else { resetFoto(i); }
     });
   },50);
@@ -4762,7 +4770,7 @@ function renderVisitaForm(){
   [0,1,2].forEach(i=>{
     const url=v.fotos[i];
     const img=document.getElementById('visFotoImg'+i), th=document.getElementById('visFotoThumb'+i), pl=document.getElementById('visFotoPlaceholder'+i);
-    if(img&&th&&pl){ if(url){ img.src=url; th.style.display='block'; pl.style.display='none'; } else { th.style.display='none'; pl.style.display='flex'; } }
+    if(img&&th&&pl){ if(url){ resolverUrlFirmada(url).then(u=>{ img.src=u||url; }); th.style.display='block'; pl.style.display='none'; } else { th.style.display='none'; pl.style.display='flex'; } }
   });
   // participantes
   document.getElementById('visV3Parts').innerHTML=v.participantes.map((pt,i)=>`

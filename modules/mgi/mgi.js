@@ -544,7 +544,7 @@ function renderVForm(){
   [0,1,2].forEach(i=>{
     const url=v.fotos[i];
     const img=document.getElementById('vFotoImg'+i), th=document.getElementById('vFotoThumb'+i), pl=document.getElementById('vFotoPlaceholder'+i);
-    if(img&&th&&pl){ if(url){ img.src=url; th.style.display='block'; pl.style.display='none'; } else { th.style.display='none'; pl.style.display='flex'; } }
+    if(img&&th&&pl){ if(url){ resolverUrlFirmadaMGI(url).then(u=>{ img.src=u||url; }); th.style.display='block'; pl.style.display='none'; } else { th.style.display='none'; pl.style.display='flex'; } }
   });
   document.getElementById('vParts').innerHTML=v.participantes.map((pt,i)=>`<div style="background:#f4f7f7;border-radius:7px;padding:7px 11px;font-size:.83rem;margin-bottom:5px">
     <b>${esc(pt.nombre)}</b> · ${esc(pt.empresa)} ${pt.correo?'· '+esc(pt.correo):''} ${pt.telefono?'· '+esc(pt.telefono):''}
@@ -1084,7 +1084,7 @@ function verFichaMGI(pid){
           <div class="dcf-right">
             ${p.descripcion_general&&p.descripcion_general.trim()?`<div class="dcf-sec-t">≡ Descripción General</div><div class="dcf-desc">${esc(p.descripcion_general)}</div>`:''}
             ${(h.servicios||[]).length?`<div class="dcf-sec-t" style="margin-top:18px">🛎 Servicios incluidos</div><div style="display:flex;flex-wrap:wrap;gap:7px">${h.servicios.map(sv=>`<span class="dcf-exp">${esc(sv)}</span>`).join('')}</div>`:''}
-            ${fotos.length?`<div class="dcf-sec-t" style="margin-top:18px">📷 Fotografías</div><div style="display:flex;flex-wrap:wrap;gap:8px">${fotos.slice(0,3).map(u=>`<img src="${esc(u)}" style="width:31%;aspect-ratio:1.35;object-fit:cover;border-radius:8px;border:1px solid #ddd">`).join('')}</div>`:''}
+            ${fotos.length?`<div class="dcf-sec-t" style="margin-top:18px">📷 Fotografías</div><div style="display:flex;flex-wrap:wrap;gap:8px">${fotos.slice(0,3).map(u=>`<a href="javascript:void(0)" data-firmar-link="${esc(u)}" onclick="return abrirFirmadoMGI(this)"><img data-firmar="${esc(u)}" style="width:31%;aspect-ratio:1.35;object-fit:cover;border-radius:8px;border:1px solid #ddd"></a>`).join('')}</div>`:''}
             ${!(p.descripcion_general||'').trim()&&!(h.servicios||[]).length&&!fotos.length?`<div style="font-size:.82rem;color:var(--text-muted)">Sin descripción, servicios ni fotos registrados.</div>`:''}
           </div>
         </div>
