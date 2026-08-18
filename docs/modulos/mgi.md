@@ -129,8 +129,16 @@ tiene cambios sin guardar, avisa antes de abrir.
 
 ## Ordenar y marcar filas
 
-La barra de la planilla tiene un selector **Ordenar**: por Código MGI (por
-defecto), A → Z, Z → A, o por camas disponibles (mayor a menor / menor a mayor).
+Dos maneras de ordenar la planilla:
+
+- El selector **Ordenar** de la barra: Código MGI, hospedaje A→Z / Z→A,
+  encargado A→Z / Z→A, o camas disponibles (mayor↔menor).
+- **Clic en el título de cualquier columna**: ordena por ella; otro clic
+  invierte el sentido. La flecha (▲/▼) marca la columna y el sentido activos.
+
+Para hacer las llamadas, lo habitual es ordenar por **Establecimiento** o por
+**Encargado**. La **fila de títulos queda fija** al desplazarse por la lista, y
+las columnas Código y Establecimiento quedan fijas al desplazarse en horizontal.
 
 Al **hacer clic en una fila** se marca completa en ámbar — sirve para no perder
 de vista qué hospedaje se está mirando mientras se llama por teléfono. Un clic

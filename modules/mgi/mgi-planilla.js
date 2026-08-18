@@ -25,7 +25,7 @@ let PLAN = {};          // proveedor_id → fila de hospedajes_mgi
 let PLAN_EDIT = {};     // proveedor_id → {campo: valorNuevo} pendientes de guardar
 let PLAN_NUEVAS = [];   // filas agregadas que todavía no existen en la base
 let PLAN_FILTRO = 'todos';
-let PLAN_ORDEN  = 'codigo';   // codigo | az | za | disp_desc | disp_asc
+let PLAN_ORDEN  = {col:'codigo', dir:'asc'};  // col = clave de columna · dir = asc|desc
 let PLAN_SEL    = null;       // pid de la fila marcada (para no perderse al llamar)
 
 // ── Carga ───────────────────────────────────────────────────────────────────
@@ -56,22 +56,49 @@ function planFilas(){
   if(q) arr=arr.filter(p=>((dispName(p)||'')+' '+(p.direccion||'')+' '+(p.rut_empresa||'')+' '+
                            (planV(p,'codigo_mgi')||'')+' '+(planV(p,'eecc_hospeda')||'')).toLowerCase().includes(q));
   const az=(a,b)=>dispName(a).localeCompare(dispName(b),'es');
-  const disp=p=>{ const v=planV(p,'hab_disponibles'); return v===''||v==null?-1:(parseInt(v)||0); };
+  const dir = PLAN_ORDEN.dir==='desc' ? -1 : 1;
   return arr.sort((a,b)=>{
-    if(PLAN_ORDEN==='az')  return az(a,b);
-    if(PLAN_ORDEN==='za')  return az(b,a);
-    if(PLAN_ORDEN==='disp_desc'){ const d=disp(b)-disp(a); return d||az(a,b); }
-    if(PLAN_ORDEN==='disp_asc'){  const d=disp(a)-disp(b); return d||az(a,b); }
-    // por código (por defecto)
-    const ca=String(planV(a,'codigo_mgi')||''), cb=String(planV(b,'codigo_mgi')||'');
-    const na=parseInt(ca), nb=parseInt(cb);
-    if(!isNaN(na)&&!isNaN(nb)&&na!==nb) return na-nb;
-    if(!isNaN(na)&&isNaN(nb)) return -1;
-    if(isNaN(na)&&!isNaN(nb)) return 1;
-    return az(a,b);
+    const r = planCmpCol(a,b,PLAN_ORDEN.col);
+    return (r!==0 ? r*dir : az(a,b));   // desempate estable por nombre
   });
 }
-function planSetOrden(v){ PLAN_ORDEN=v; planRender(); }
+// Valor de una columna para ordenar. Números como número, texto como texto.
+function planOrdenValor(p,col){
+  const pid=p.proveedor_id;
+  if(col==='codigo'){ const n=parseInt(planV(pid,'codigo_mgi')); return isNaN(n)?Infinity:n; }
+  if(col==='nombre')      return dispName(p);
+  if(col==='contacto')    return (planV(pid,'enc_nombre')||planV(pid,'due_nombre')||'');
+  if(col==='hab_totales') return planTotalHab(pid);
+  if(col==='cap_maxima')  return planCapMax(pid);
+  const NUM=new Set(['simples_priv','simples_comp','dobles_priv','dobles_comp','camas_instaladas',
+    'hab_disponibles','n_hospedados','camas_disponibles']);
+  const v=planV(pid,col);
+  if(NUM.has(col)){ const n=parseInt(v); return isNaN(n)?-1:n; }
+  return String(v==null?'':v);
+}
+// Compara dos hospedajes por una columna (texto o número).
+function planCmpCol(a,b,col){
+  const x=planOrdenValor(a,col), y=planOrdenValor(b,col);
+  if(typeof x==='number' && typeof y==='number') return x-y;
+  return String(x).localeCompare(String(y),'es',{numeric:true});
+}
+// Clic en el título de una columna: ordena por ella; otro clic invierte.
+function planOrdenarCol(col){
+  const NUM=new Set(['codigo','hab_totales','cap_maxima','simples_priv','simples_comp','dobles_priv',
+    'dobles_comp','camas_instaladas','hab_disponibles','n_hospedados','camas_disponibles']);
+  if(PLAN_ORDEN.col===col) PLAN_ORDEN={col, dir: PLAN_ORDEN.dir==='asc'?'desc':'asc'};
+  else PLAN_ORDEN={col, dir: NUM.has(col)?'desc':'asc'};   // números: mayor a menor primero
+  planRender();
+}
+// Desde el selector de arriba (mapea a la nueva forma {col,dir}).
+function planSetOrden(v){
+  const M={codigo:['codigo','asc'], az:['nombre','asc'], za:['nombre','desc'],
+    cont_az:['contacto','asc'], cont_za:['contacto','desc'],
+    disp_desc:['hab_disponibles','desc'], disp_asc:['hab_disponibles','asc']};
+  const m=M[v]||['codigo','asc'];
+  PLAN_ORDEN={col:m[0], dir:m[1]};
+  planRender();
+}
 // Marca la fila completa: al llamar por teléfono, no perder de vista cuál es.
 function planMarcarFila(pid, ev){
   if(ev && (ev.target.closest('input,select,button,a,textarea'))) return;  // no al editar una celda
@@ -548,13 +575,22 @@ function planRender(){
         .map(([k,t])=>`<button class="pl-f ${PLAN_FILTRO===k?'active':''}" onclick="planSetFiltro('${k}')">${t}</button>`).join('')}
       <span class="pl-sep"></span>
       <label class="pl-orden">Ordenar
-        <select onchange="planSetOrden(this.value)">
-          <option value="codigo" ${PLAN_ORDEN==='codigo'?'selected':''}>Código MGI</option>
-          <option value="az" ${PLAN_ORDEN==='az'?'selected':''}>A → Z</option>
-          <option value="za" ${PLAN_ORDEN==='za'?'selected':''}>Z → A</option>
-          <option value="disp_desc" ${PLAN_ORDEN==='disp_desc'?'selected':''}>Camas disp.: mayor a menor</option>
-          <option value="disp_asc" ${PLAN_ORDEN==='disp_asc'?'selected':''}>Camas disp.: menor a mayor</option>
-        </select>
+        ${(()=>{ const o=PLAN_ORDEN, sel=(c,d)=>o.col===c&&o.dir===d?'selected':'';
+          return `<select onchange="planSetOrden(this.value)">
+          <option value="codigo" ${sel('codigo','asc')}>Código MGI</option>
+          <optgroup label="Por hospedaje">
+            <option value="az" ${sel('nombre','asc')}>Hospedaje A → Z</option>
+            <option value="za" ${sel('nombre','desc')}>Hospedaje Z → A</option>
+          </optgroup>
+          <optgroup label="Por contacto">
+            <option value="cont_az" ${sel('contacto','asc')}>Encargado A → Z</option>
+            <option value="cont_za" ${sel('contacto','desc')}>Encargado Z → A</option>
+          </optgroup>
+          <optgroup label="Por camas disponibles">
+            <option value="disp_desc" ${sel('hab_disponibles','desc')}>Mayor a menor</option>
+            <option value="disp_asc" ${sel('hab_disponibles','asc')}>Menor a mayor</option>
+          </optgroup>
+        </select>`; })()}
       </label>
       <div class="pl-cols-wrap">
         <button class="pl-imp pl-cols-btn" onclick="planAbrirColumnas()">🧩 Columnas
@@ -576,10 +612,15 @@ function planRender(){
   // de "Columnas" salen de la misma lista, así no se pueden desalinear.
   const visibles = PLAN_COLUMNAS.filter(c => planColVisible(c.k));
 
+  // la columna del nombre se ordena por 'nombre'; las demás por su propia clave
+  const colOrden=c=>c.k==='nombre'?'nombre':c.k;
+  const flecha=c=>{ const k=colOrden(c); return PLAN_ORDEN.col===k
+    ? `<span class="pl-fl">${PLAN_ORDEN.dir==='asc'?'▲':'▼'}</span>` : '<span class="pl-fl off">↕</span>'; };
   h+=`<div class="pl-wrap"><table class="pl-tabla"><thead><tr>
       <th class="c-acc"></th>
-      ${visibles.map(c=>`<th class="${c.clase||''} ${c.num?'num':''} ${c.calc?'calc':''}"
-           data-c="${c.k}">${c.th}</th>`).join('')}
+      ${visibles.map(c=>`<th class="${c.clase||''} ${c.num?'num':''} ${c.calc?'calc':''} pl-th-ord ${PLAN_ORDEN.col===colOrden(c)?'activo':''}"
+           data-c="${c.k}" title="Ordenar por esta columna"
+           onclick="planOrdenarCol('${colOrden(c)}')">${c.th}${flecha(c)}</th>`).join('')}
     </tr></thead><tbody>`;
 
   h+=filas.map(p=>{

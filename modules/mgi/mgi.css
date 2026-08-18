@@ -152,9 +152,13 @@ body.is-user .solo-admin{ display:none !important; }
 .pl-b2{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 13px;cursor:pointer;color:var(--text-muted)}
 .pl-dim{color:var(--text-muted);font-size:.82rem}
 
-.pl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:#fff;
-         border:1px solid var(--border);border-radius:12px}
-.pl-tabla{border-collapse:separate;border-spacing:0;font-size:.82rem}
+.pl-wrap{overflow:auto;background:#fff;
+         border:1px solid var(--border);border-radius:12px;
+         max-height:calc(100vh - 300px);min-height:220px}
+/* nota: sin -webkit-overflow-scrolling:touch — rompe el position:sticky de la
+   fila de títulos en WebKit. La cabecera fija pesa más que el rebote táctil. */
+.pl-tabla{border-collapse:separate;border-spacing:0;font-size:.82rem;
+          overflow:visible}   /* anula el overflow:hidden de la regla table{}: rompía el sticky del header */
 .pl-tabla th{background:#f5f4fb;color:#4338ca;font-size:.68rem;text-transform:uppercase;letter-spacing:.03em;
              padding:8px 6px;text-align:left;font-weight:800;vertical-align:bottom;white-space:nowrap;
              border-bottom:2px solid #ddd9f5;position:sticky;top:0;z-index:3}
@@ -264,3 +268,11 @@ body.is-user .solo-admin{ display:none !important; }
 .pl-tabla tr.marcada > td.c-nom{background:#fdecb0 !important}
 .pl-tabla tr.marcada{box-shadow:inset 3px 0 0 #e0a800}
 .pl-tabla tbody tr{cursor:pointer}
+
+/* Títulos clicables para ordenar + flecha de sentido */
+.pl-th-ord{cursor:pointer;user-select:none}
+.pl-th-ord:hover{background:#ecebf9}
+.pl-th-ord.activo{background:#e3e0fb;color:#3b2fb0}
+.pl-fl{margin-left:4px;font-size:.7rem}
+.pl-fl.off{opacity:.35;font-weight:400}
+.pl-th-ord.activo .pl-fl{opacity:1}
