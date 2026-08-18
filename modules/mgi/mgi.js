@@ -99,7 +99,10 @@ async function salir(){ try{ await SB.auth.signOut(); }catch(e){} location.reloa
 async function cargar(){
   document.getElementById('cont').innerHTML='<div class="loading">Cargando hotelería…</div>';
   try{
-    const {data:prov,error}=await SB.from('proveedores').select('*').or('es_hoteleria.eq.true,rubros_norm.ilike.%lavand%,rubros_norm.ilike.%aliment%,rubros_norm.ilike.%gastron%,actividad_principal.ilike.%lavand%,actividad_principal.ilike.%aliment%,actividad_principal.ilike.%gastron%,actividad_principal.ilike.%banquete%,giros_sii.ilike.%lavand%,giros_sii.ilike.%aliment%,razon_social.ilike.%lavand%,nombre_fantasia.ilike.%lavand%').neq('estado_registro','Eliminado');
+    // Cualquier proveedor del programa MGI entra, aunque le falte la marca
+    // es_hoteleria (algunos hospedajes se crearon sin ella): programa_mgi.eq.true
+    // va PRIMERO en el OR. Además, los rubros de lavandería/alimentación.
+    const {data:prov,error}=await SB.from('proveedores').select('*').or('programa_mgi.eq.true,es_hoteleria.eq.true,rubros_norm.ilike.%lavand%,rubros_norm.ilike.%aliment%,rubros_norm.ilike.%gastron%,actividad_principal.ilike.%lavand%,actividad_principal.ilike.%aliment%,actividad_principal.ilike.%gastron%,actividad_principal.ilike.%banquete%,giros_sii.ilike.%lavand%,giros_sii.ilike.%aliment%,razon_social.ilike.%lavand%,nombre_fantasia.ilike.%lavand%').neq('estado_registro','Eliminado');
     if(error)throw error;
     DATA=prov||[];
     const ids=DATA.map(p=>p.proveedor_id);
