@@ -34,6 +34,7 @@ let RCA_VALID = [];      // registro de validados (se carga una vez)
 let RCA_VMAP = {};       // rut canónico → registro validado
 let RCA_TAB = 'prov';    // prov | mol
 let _rcaFileCb = null;   // callback pendiente del <input file>
+let _facturasAbiertas = null;  // eecc_id con la ventana Facturas abierta (para refrescar tras importar)
 
 // Comunas de la Región de Antofagasta (para pistas de validación regional).
 const RCA_COMUNAS_REGION = ['ANTOFAGASTA','MEJILLONES','SIERRA GORDA','TALTAL',
@@ -455,10 +456,13 @@ async function procesarExcel(eeccId,file){
       filas.push(obj);
     }
     // Facturas ya cargadas de esta EECC, para no duplicar y poder ACTUALIZAR al
-    // recargar. La clave de una factura es EECC + RUT + N° de factura.
-    const claveFactura=(rut,num)=>eeccId+'|'+rutCanon(rut)+'|'+String(num||'').trim().toUpperCase();
+    // recargar. La identidad de una factura es EECC + N° de factura: el número lo
+    // emite el proveedor y debe ser único dentro del reporte de una EECC. No se
+    // incluye el RUT en la clave a propósito, para que una corrección de RUT en la
+    // auditoría no rompa el calce (y el cambio de RUT igual se avisa como conflicto).
+    const claveFactura=(num)=>eeccId+'|'+String(num||'').trim().toUpperCase().replace(/\s+/g,'');
     const existentes={};
-    RCA_FACT.filter(f=>f.eecc_id===eeccId).forEach(f=>{ existentes[claveFactura(f.rut_proveedor,f.num_factura)]=f; });
+    RCA_FACT.filter(f=>f.eecc_id===eeccId).forEach(f=>{ existentes[claveFactura(f.num_factura)]=f; });
 
     // Se recorre el Excel a un mapa por clave: si el mismo N° de factura viene
     // dos veces en el archivo, queda una sola (gana la última fila).
@@ -482,12 +486,13 @@ async function procesarExcel(eeccId,file){
         if(!razon) razon=reg.razon_social||'';
         if(!comuna) comuna=reg.comuna||'';
       }
-      const _clv=claveFactura(rut,numFact);
-      // Misma factura repetida DENTRO del archivo con distinto monto → a revisar.
-      if(vistoArchivo[_clv]!=null && Number(vistoArchivo[_clv])!==monto){
-        dupArchivo.push({num:numFact,rut:rutFmt(rut),antes:vistoArchivo[_clv],despues:monto});
+      const _clv=claveFactura(numFact);
+      // Mismo N° de factura repetido DENTRO del archivo con distinto monto o RUT.
+      const prev=vistoArchivo[_clv];
+      if(prev && (Number(prev.monto)!==monto || rutCanon(prev.rut)!==canon)){
+        dupArchivo.push({num:numFact,rut:rutFmt(rut),antes:prev.monto,despues:monto,rutAntes:prev.rut});
       }
-      vistoArchivo[_clv]=monto;
+      vistoArchivo[_clv]={monto,rut:rutFmt(rut)};
       porClave[_clv]={
         rca_id:RCA_ACTUAL.rca_id, eecc_id:eeccId,
         anio:String(pickCol(r,['ano','anio','year'])||'').trim(),
@@ -510,8 +515,9 @@ async function procesarExcel(eeccId,file){
     claves.forEach(k=>{
       const fac=porClave[k]; const ex=existentes[k];
       if(ex){ fac.factura_id=ex.factura_id; updC++;
-        // Misma factura YA cargada pero con otro monto → cambio a revisar.
-        if(Number(ex.monto_clp)!==Number(fac.monto_clp)) cambios.push({num:fac.num_factura,rut:fac.rut_proveedor,antes:ex.monto_clp,despues:fac.monto_clp});
+        // Misma factura YA cargada pero con otro monto o RUT → cambio a revisar.
+        if(Number(ex.monto_clp)!==Number(fac.monto_clp) || rutCanon(ex.rut_proveedor)!==rutCanon(fac.rut_proveedor))
+          cambios.push({num:fac.num_factura,rut:fac.rut_proveedor,antes:ex.monto_clp,despues:fac.monto_clp,rutAntes:ex.rut_proveedor});
       }
       else { fac.factura_id=uid('fac'); fac.created_by=quien(); nuevasC++; }
       if(fac.estado_revision==='ok') okC++; else if(fac.estado_revision==='pendiente') pendC++; else noReg++;
@@ -523,6 +529,7 @@ async function procesarExcel(eeccId,file){
     toast(`✅ ${nuevasC} nueva(s) · ${updC} actualizada(s)${incompletas?` · ${incompletas} incompleta(s) omitida(s)`:''} — ${okC} regionales · ${pendC} por revisar · ${noReg} fuera de región`,'ok');
     if(dupArchivo.length||cambios.length) alertaMontos(dupArchivo,cambios);
     else if(pendC) verAlertas();
+    else if(_facturasAbiertas===eeccId) verFacturas(eeccId);   // refrescar montos en la ventana abierta
   }catch(err){ toast('Error al procesar: '+err.message,'err'); }
 }
 
@@ -532,10 +539,17 @@ async function procesarExcel(eeccId,file){
 // permitir correcciones de auditoría), pero se avisa para que se revise que no
 // sea una carga duplicada por error.
 function alertaMontos(dupArchivo,cambios){
-  const fila=x=>`<div class="alert-row"><div class="alert-info">
-    <div class="alert-rut">Factura ${esc(x.num||'—')} · ${esc(rutFmt(x.rut)||'')}</div>
-    <div class="alert-sub">Monto anterior <b>${_clp(x.antes)}</b> → nuevo <b>${_clp(x.despues)}</b></div>
-  </div></div>`;
+  const fila=x=>{
+    const rutCambio = x.rutAntes && rutCanon(x.rutAntes)!==rutCanon(x.rut);
+    const montoCambio = Number(x.antes)!==Number(x.despues);
+    return `<div class="alert-row"><div class="alert-info">
+      <div class="alert-rut">Factura ${esc(x.num||'—')} · ${esc(rutFmt(x.rut)||'')}</div>
+      <div class="alert-sub">
+        ${montoCambio?`Monto <b>${_clp(x.antes)}</b> → <b>${_clp(x.despues)}</b>`:''}
+        ${rutCambio?`${montoCambio?' · ':''}RUT <b>${esc(rutFmt(x.rutAntes))}</b> → <b>${esc(rutFmt(x.rut))}</b>`:''}
+      </div>
+    </div></div>`;
+  };
   abrirModal(`
     <h3>⚠ Revisar montos de facturas</h3>
     <p class="modal-nota">Se cargaron facturas con el <b>mismo N° pero distinto monto</b>. El sistema tomó el
@@ -622,6 +636,7 @@ async function marcarFueraRegion(rutE){
 
 // ══ FACTURAS DE UNA EECC ═════════════════════════════════════════════════════
 function verFacturas(eeccId){
+  _facturasAbiertas=eeccId;
   const e=RCA_EECC.find(x=>x.eecc_id===eeccId);
   const facts=RCA_FACT.filter(f=>f.eecc_id===eeccId).sort((a,b)=>String(b.anio+b.mes).localeCompare(String(a.anio+a.mes)));
   const badge=s=>s==='ok'?'<span class="est ok">Regional ✓</span>':s==='no_regional'?'<span class="est off">Fuera región</span>':'<span class="est pend">Por revisar</span>';
@@ -783,5 +798,5 @@ function abrirModal(html){
   const host=document.getElementById('modalHost');
   host.innerHTML=`<div class="modal-ov" onclick="if(event.target===this)cerrarModal()"><div class="modal-box">${html}</div></div>`;
 }
-function cerrarModal(){ document.getElementById('modalHost').innerHTML=''; }
+function cerrarModal(){ document.getElementById('modalHost').innerHTML=''; _facturasAbiertas=null; }
 function val(id){ const el=document.getElementById(id); return el?el.value:''; }
