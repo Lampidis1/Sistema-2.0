@@ -107,7 +107,10 @@ function verLista(){
         <div class="lista-t">Resoluciones de Calificación Ambiental</div>
         <div class="lista-s">Cada RCA agrupa a sus empresas colaboradoras y el avance del compromiso de proveedores locales.</div>
       </div>
-      <button class="btn primary" onclick="rcaModal()">➕ Nueva RCA</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn ghost" onclick="verBaseProveedores()">⚙ Base de proveedores</button>
+        <button class="btn primary" onclick="rcaModal()">➕ Nueva RCA</button>
+      </div>
     </div>
     ${!RCA_LISTA.length
       ? `<div class="vacio">Todavía no hay ninguna RCA cargada.<br><span>Crea la primera con «Nueva RCA»: código, faena y el % de compromiso (10% por defecto).</span></div>`
@@ -203,8 +206,7 @@ function bodyProveedores(tot,avanceG,pendTot){
   return `
     <div class="kpis">
       <div class="kpi"><div class="kpi-n">${RCA_EECC.length}</div><div class="kpi-l">Empresas colaboradoras</div></div>
-      <div class="kpi"><div class="kpi-n sm">${_clp(tot.decl)}</div><div class="kpi-l">Monto declarado (cartas)</div></div>
-      <div class="kpi"><div class="kpi-n sm">${_clp(tot.meta)}</div><div class="kpi-l">Meta ${(+RCA_ACTUAL.pct_meta||10)}%</div></div>
+      <div class="kpi"><div class="kpi-n sm">${_clp(tot.meta)}</div><div class="kpi-l">Meta ${(+RCA_ACTUAL.pct_meta||10)}% comprometida</div></div>
       <div class="kpi"><div class="kpi-n sm" style="color:#1e7e34">${_clp(tot.rep)}</div><div class="kpi-l">Reportado regional</div></div>
       <div class="kpi"><div class="kpi-n" style="color:${col}">${avanceG}%</div><div class="kpi-l">Avance global RCA</div></div>
     </div>
@@ -247,7 +249,8 @@ function tarjetaEECC(e){
       <button class="mini" onclick="importarExcel('${e.eecc_id}')">📥 Cargar Excel</button>
       <button class="mini" onclick="verFacturas('${e.eecc_id}')">🧾 Facturas</button>
       <button class="mini" onclick="eeccModal('${e.eecc_id}')">✏ Editar</button>
-      <button class="mini" onclick="subirCarta('${e.eecc_id}')">📄 Carta</button>
+      ${e.carta_path?`<button class="mini" onclick="verCarta('${esc(e.carta_path)}')">👁 Ver carta</button>`:''}
+      <button class="mini" onclick="subirCarta('${e.eecc_id}')">📄 ${e.carta_path?'Reemplazar carta':'Subir carta'}</button>
     </div>
   </div>`;
 }
@@ -392,6 +395,14 @@ async function guardarCarta(id,file){
     await cargarEECC(RCA_ACTUAL.rca_id); renderDetalle(); toast('✅ Carta cargada','ok');
   }catch(e){ toast('Error al subir: '+e.message,'err'); }
 }
+// Abre la carta formal con una URL firmada de duración corta (bucket privado).
+async function verCarta(path){
+  try{
+    const {data,error}=await SB.storage.from('documentos').createSignedUrl(path,300);
+    if(error) throw error;
+    window.open(data.signedUrl,'_blank','noopener');
+  }catch(e){ toast('No se pudo abrir la carta: '+e.message,'err'); }
+}
 
 // ══ IMPORTAR EXCEL DE FACTURAS + CRUCE POR RUT ═══════════════════════════════
 function importarExcel(eeccId){
@@ -444,27 +455,36 @@ async function procesarExcel(eeccId,file){
       const obj={}; headers.forEach((k,j)=>{ if(k) obj[k]=matriz[i][j]; });
       filas.push(obj);
     }
-    // construir facturas cruzando el RUT
-    const nuevas=[]; let okC=0, pendC=0, noReg=0;
+    // Facturas ya cargadas de esta EECC, para no duplicar y poder ACTUALIZAR al
+    // recargar. La clave de una factura es EECC + RUT + N° de factura.
+    const claveFactura=(rut,num)=>eeccId+'|'+rutCanon(rut)+'|'+String(num||'').trim().toUpperCase();
+    const existentes={};
+    RCA_FACT.filter(f=>f.eecc_id===eeccId).forEach(f=>{ existentes[claveFactura(f.rut_proveedor,f.num_factura)]=f; });
+
+    // Se recorre el Excel a un mapa por clave: si el mismo N° de factura viene
+    // dos veces en el archivo, queda una sola (gana la última fila).
+    const porClave={}; let incompletas=0;
     for(const r of filas){
       const rut=pickCol(r,['rut']);
+      const canon=rutCanon(rut);
       const monto=parseMonto(pickCol(r,['clpmonto','montoclp','clp','montodelacontratacion','monto','montoneto']));
       const numFact=String(pickCol(r,['ndefactura','nfactura','numfactura','factura','folio'])||'').trim();
-      if(!rutCanon(rut) && !monto && !numFact) continue; // fila vacía
-      const canon=rutCanon(rut);
+      const algo = canon || monto || numFact || String(pickCol(r,['razonsocial','razon'])||'').trim();
+      if(!algo) continue;                       // fila totalmente vacía: se ignora
+      // FILA INCOMPLETA: sin N° de factura, sin RUT o sin monto → no se carga.
+      if(!numFact || !canon || monto<=0){ incompletas++; continue; }
       const reg=RCA_VMAP[canon];
-      let estado='pendiente', esReg=false, rvpId=null, razon=String(pickCol(r,['razonsocial','razon','nombre','fantasia'])||'').trim(), comuna=String(pickCol(r,['comunacasamatriz','comuna'])||'').trim();
+      let estado='pendiente', esReg=false, rvpId=null;
+      let razon=String(pickCol(r,['razonsocial','razon','nombre','fantasia'])||'').trim();
+      let comuna=String(pickCol(r,['comunacasamatriz','comuna'])||'').trim();
       if(reg){
         rvpId=reg.rvp_id;
-        if(reg.es_regional){ estado='ok'; esReg=true; okC++; }
-        else{ estado='no_regional'; noReg++; }
+        if(reg.es_regional){ estado='ok'; esReg=true; } else { estado='no_regional'; }
         if(!razon) razon=reg.razon_social||'';
         if(!comuna) comuna=reg.comuna||'';
-      }else{
-        pendC++;
       }
-      nuevas.push({
-        factura_id:uid('fac'), rca_id:RCA_ACTUAL.rca_id, eecc_id:eeccId,
+      porClave[claveFactura(rut,numFact)]={
+        rca_id:RCA_ACTUAL.rca_id, eecc_id:eeccId,
         anio:String(pickCol(r,['ano','anio','year'])||'').trim(),
         mes:String(pickCol(r,['mes','month'])||'').trim(),
         num_factura:numFact, eecc_nombre:String(pickCol(r,['eecc','empresacolaboradora'])||e.nombre).trim()||e.nombre,
@@ -472,15 +492,27 @@ async function procesarExcel(eeccId,file){
         bien_servicio:String(pickCol(r,['bienoservicio','bienservicio','servicio','bien'])||'').trim(),
         clasificacion:String(pickCol(r,['clasificacion','clasif'])||'').trim(),
         monto_clp:monto, monto_usd:parseMonto(pickCol(r,['usd','dolar'])),
-        rvp_id:rvpId, es_regional:esReg, estado_revision:estado, origen:'excel',
-        created_by:quien(), updated_by:quien()
-      });
+        rvp_id:rvpId, es_regional:esReg, estado_revision:estado, origen:'excel', updated_by:quien(), updated_at:nowISO()
+      };
     }
-    if(!nuevas.length){ toast('No se encontraron facturas en el Excel','err'); return; }
-    const {error}=await SB.from('rca_facturas').insert(nuevas);
+    const claves=Object.keys(porClave);
+    if(!claves.length){
+      toast(incompletas?`No se cargó nada: ${incompletas} fila(s) sin N° de factura, RUT o monto.`:'No se encontraron facturas en el Excel','err');
+      return;
+    }
+    // Separar en nuevas (insert) y ya existentes (update, mismo factura_id).
+    const filasUpsert=[]; let nuevasC=0, updC=0, okC=0, pendC=0, noReg=0;
+    claves.forEach(k=>{
+      const fac=porClave[k]; const ex=existentes[k];
+      if(ex){ fac.factura_id=ex.factura_id; updC++; }
+      else { fac.factura_id=uid('fac'); fac.created_by=quien(); nuevasC++; }
+      if(fac.estado_revision==='ok') okC++; else if(fac.estado_revision==='pendiente') pendC++; else noReg++;
+      filasUpsert.push(fac);
+    });
+    const {error}=await SB.from('rca_facturas').upsert(filasUpsert,{onConflict:'factura_id'});
     if(error) throw error;
     await cargarFacturas(RCA_ACTUAL.rca_id); renderDetalle();
-    toast(`✅ ${nuevas.length} factura(s): ${okC} regionales · ${pendC} por revisar · ${noReg} fuera de región`,'ok');
+    toast(`✅ ${nuevasC} nueva(s) · ${updC} actualizada(s)${incompletas?` · ${incompletas} incompleta(s) omitida(s)`:''} — ${okC} regionales · ${pendC} por revisar · ${noReg} fuera de región`,'ok');
     if(pendC) verAlertas();
   }catch(err){ toast('Error al procesar: '+err.message,'err'); }
 }
@@ -575,7 +607,10 @@ function verFacturas(eeccId){
         <td><button class="mini danger" title="Eliminar" onclick="borrarFactura('${f.factura_id}','${eeccId}')">🗑</button></td>
       </tr>`).join('')}</tbody>
     </table></div>`}
-    <div class="modal-acc"><span></span><button class="btn ghost" onclick="cerrarModal()">Cerrar</button></div>`);
+    <div class="modal-acc">
+      <button class="btn ghost" onclick="exportarInforme('${eeccId}')">⬇ Descargar (auditoría)</button>
+      <button class="btn ghost" onclick="cerrarModal()">Cerrar</button>
+    </div>`);
 }
 async function borrarFactura(id,eeccId){
   if(!confirm('¿Eliminar esta factura?')) return;
@@ -587,22 +622,127 @@ async function borrarFactura(id,eeccId){
 }
 
 // ══ INFORME EXCEL ════════════════════════════════════════════════════════════
-function exportarInforme(){
+// Informe de auditoría. La hoja "Facturas" usa los MISMOS encabezados de la
+// plantilla EECC, así se puede descargar, corregir y volver a subir: al recargar
+// se actualizan las facturas existentes (mismo N° de factura) en vez de duplicar.
+function exportarInforme(eeccId){
   const r=RCA_ACTUAL;
-  // Hoja 1: resumen por EECC
+  const eecc = eeccId ? RCA_EECC.filter(e=>e.eecc_id===eeccId) : RCA_EECC;
+  const facts = eeccId ? RCA_FACT.filter(f=>f.eecc_id===eeccId) : RCA_FACT;
   const resumen=[['RCA',r.codigo,r.nombre||''],['Meta',(+r.pct_meta||10)+'%'],[],
     ['EECC','RUT','Monto declarado','Meta','Reportado regional','Avance %','Facturas','Por revisar']];
-  RCA_EECC.forEach(e=>{ const c=calcEECC(e);
+  eecc.forEach(e=>{ const c=calcEECC(e);
     resumen.push([e.nombre,rutFmt(e.rut||''),c.decl,c.meta,c.rep,c.avance,c.nfact,c.pend]); });
-  // Hoja 2: todas las facturas
-  const fdet=[['EECC','Año','Mes','N° factura','RUT','Proveedor','Comuna','Bien/servicio','Clasificación','Monto CLP','Estado']];
-  RCA_FACT.forEach(f=>{ const e=RCA_EECC.find(x=>x.eecc_id===f.eecc_id);
-    fdet.push([e?e.nombre:'',f.anio,f.mes,f.num_factura,rutFmt(f.rut_proveedor||''),f.razon_social,f.comuna,f.bien_servicio,f.clasificacion,f.monto_clp,
+  const fdet=[['Año','Mes','N° de Factura','EE.CC','RUT','Razón social o nombre de fantasía',
+    'Comuna casa matriz','Bien o servicio contratado','Clasificación','CLP Monto de la contratación','Estado revisión']];
+  facts.forEach(f=>{ const e=RCA_EECC.find(x=>x.eecc_id===f.eecc_id);
+    fdet.push([f.anio,f.mes,f.num_factura,e?e.nombre:(f.eecc_nombre||''),rutFmt(f.rut_proveedor||''),
+      f.razon_social,f.comuna,f.bien_servicio,f.clasificacion,f.monto_clp,
       f.estado_revision==='ok'?'Regional':f.estado_revision==='no_regional'?'Fuera región':'Por revisar']); });
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumen),'Resumen');
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fdet),'Facturas');
-  XLSX.writeFile(wb,`RCA_${r.codigo}_informe.xlsx`);
+  const suf = eeccId ? '_'+(eecc[0]?eecc[0].nombre.replace(/[^\w]+/g,'_').slice(0,20):'eecc') : '';
+  XLSX.writeFile(wb,`RCA_${r.codigo}${suf}_auditoria.xlsx`);
+}
+
+// ══ BASE DE PROVEEDORES VALIDADOS (Ajustes) ═════════════════════════════════
+// Registro que se acumula con el tiempo y sirve para todas las RCAs. Cada vez
+// que se valida un proveedor nuevo desde una alerta, entra acá.
+let _bpFiltro='';
+function verBaseProveedores(){
+  abrirModal(`
+    <h3>⚙ Base de proveedores regionales</h3>
+    <p class="modal-nota">Registro que se acumula con el tiempo y sirve para todas las RCAs. Los marcados
+    <b>regional</b> suman al 10%; los de fuera de la Región de Antofagasta quedan registrados pero no suman.</p>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input id="bpBuscar" placeholder="Buscar por RUT, razón social o comuna…" oninput="bpRender()" style="flex:1">
+      <button class="btn primary" onclick="validadoModal()">➕ Agregar</button>
+    </div>
+    <div id="bpLista"></div>
+    <div class="modal-acc">
+      <button class="btn ghost" onclick="exportarValidados()">⬇ Descargar registro</button>
+      <button class="btn ghost" onclick="cerrarModal()">Cerrar</button>
+    </div>`);
+  const inp=document.getElementById('bpBuscar'); if(inp) inp.value=_bpFiltro;
+  bpRender();
+}
+function bpRender(){
+  const cont=document.getElementById('bpLista'); if(!cont) return;
+  const q=(document.getElementById('bpBuscar')||{}).value||''; _bpFiltro=q;
+  const nq=q.toLowerCase().trim();
+  const lista=RCA_VALID
+    .filter(v=>!nq || (rutCanon(v.rut)+' '+(v.razon_social||'')+' '+(v.comuna||'')).toLowerCase().includes(nq))
+    .sort((a,b)=>String(a.razon_social||'').localeCompare(String(b.razon_social||'')));
+  const reg=RCA_VALID.filter(v=>v.es_regional).length;
+  cont.innerHTML=`<div class="bp-tot">${RCA_VALID.length} proveedores · <b style="color:var(--green)">${reg} regionales</b> · ${RCA_VALID.length-reg} fuera de región${nq?` · ${lista.length} coinciden`:''}</div>
+  <div class="tabla-scroll"><table class="tabla-fact">
+    <thead><tr><th>RUT</th><th>Razón social</th><th>Comuna</th><th>Región</th><th></th></tr></thead>
+    <tbody>${lista.map(v=>`<tr class="${v.es_regional?'':'no_regional'}">
+      <td>${esc(rutFmt(v.rut))}</td><td>${esc(v.razon_social||'')}</td><td>${esc(v.comuna||'')}</td>
+      <td>${v.es_regional?'<span class="est ok">Regional</span>':'<span class="est off">Fuera</span>'}</td>
+      <td><button class="mini" onclick="validadoModal(${v.rvp_id})">✏</button></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+function validadoModal(id){
+  const v=id?RCA_VALID.find(x=>x.rvp_id===id):{};
+  abrirModal(`
+    <h3>${id?'Editar proveedor':'Nuevo proveedor validado'}</h3>
+    <div class="g2">
+      <div><label>RUT *</label><input id="vRut" value="${esc(v.rut||'')}" placeholder="76xxxxxxx-x"></div>
+      <div><label>Comuna casa matriz</label><input id="vComuna" value="${esc(v.comuna||'')}" placeholder="Antofagasta, Calama…"></div>
+    </div>
+    <label>Razón social o nombre de fantasía</label><input id="vRazon" value="${esc(v.razon_social||'')}">
+    <div class="g2">
+      <div><label>Clasificación</label><input id="vClasif" value="${esc(v.clasificacion||'')}" placeholder="BIENES / SERVICIOS"></div>
+      <div><label>Bien o servicio</label><input id="vBien" value="${esc(v.bien_servicio||'')}"></div>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
+      <input type="checkbox" id="vRegional" style="width:auto" ${(v.rvp_id?v.es_regional:true)?'checked':''}>
+      <span>Es proveedor regional (Región de Antofagasta) — suma al 10%</span>
+    </label>
+    <div class="modal-acc">
+      ${id?`<button class="btn danger ghost" onclick="borrarValidado(${id})">🗑 Eliminar</button>`:'<span></span>'}
+      <div><button class="btn ghost" onclick="verBaseProveedores()">Cancelar</button>
+      <button class="btn primary" onclick="guardarValidado(${id||'null'})">Guardar</button></div>
+    </div>`);
+}
+async function guardarValidado(id){
+  const rut=val('vRut').trim();
+  if(!rutCanon(rut)){ toast('El RUT es obligatorio','err'); return; }
+  const esReg=document.getElementById('vRegional').checked;
+  const fila={
+    rut:rutFmt(rut), razon_social:val('vRazon').trim()||null, comuna:val('vComuna').trim()||null,
+    clasificacion:val('vClasif').trim()||null, bien_servicio:val('vBien').trim()||null,
+    es_regional:esReg, region:esReg?'Antofagasta':null, validado:true,
+    validado_por:quien(), validado_en:nowISO(), updated_by:quien(), updated_at:nowISO()
+  };
+  try{
+    if(id){ const {error}=await SB.from('rca_proveedores_validados').update(fila).eq('rvp_id',id); if(error) throw error; }
+    else{
+      // upsert por RUT: si ya existe, se actualiza en vez de fallar por el unique
+      fila.created_by=quien();
+      const {error}=await SB.from('rca_proveedores_validados').upsert(fila,{onConflict:'rut'}); if(error) throw error;
+    }
+    await cargarValidados(); verBaseProveedores(); toast('✅ Guardado','ok');
+  }catch(e){ toast('Error: '+e.message,'err'); }
+}
+async function borrarValidado(id){
+  if(!confirm('¿Eliminar este proveedor del registro? No afecta las facturas ya cargadas.')) return;
+  try{
+    const {error}=await SB.from('rca_proveedores_validados').update({estado_registro:'Eliminado',updated_at:nowISO()}).eq('rvp_id',id);
+    if(error) throw error;
+    await cargarValidados(); verBaseProveedores(); toast('🗑 Eliminado','ok');
+  }catch(e){ toast('Error: '+e.message,'err'); }
+}
+function exportarValidados(){
+  const aoa=[['RUT','Razón social','Comuna','Clasificación','Bien o servicio','Región','Regional']];
+  RCA_VALID.slice().sort((a,b)=>String(a.razon_social||'').localeCompare(String(b.razon_social||'')))
+    .forEach(v=>aoa.push([rutFmt(v.rut),v.razon_social,v.comuna,v.clasificacion,v.bien_servicio,v.region,v.es_regional?'Sí':'No']));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),'Proveedores');
+  XLSX.writeFile(wb,'RCA_base_proveedores_regionales.xlsx');
 }
 
 // ══ modal genérico ═══════════════════════════════════════════════════════════

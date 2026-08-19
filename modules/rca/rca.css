@@ -171,6 +171,7 @@ main{padding:22px 28px 48px;max-width:1200px;margin:0 auto}
 .est.ok{background:#e4f6ea;color:var(--green)}
 .est.off{background:#f6e4e2;color:var(--red)}
 .est.pend{background:#fff2cf;color:var(--amber)}
+.bp-tot{font-size:.82rem;color:var(--text-muted);margin-bottom:8px}
 
 /* ── TOAST ────────────────────────────────────────────────────────────────── */
 .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;
