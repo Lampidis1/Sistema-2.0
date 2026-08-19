@@ -49,7 +49,11 @@ function cvTexto(cv){
   ].filter(Boolean).join(' ');
 }
 
-document.addEventListener('DOMContentLoaded',()=>{ try{ cargarDiccionarioOficios(); }catch(e){} });
+document.addEventListener('DOMContentLoaded',()=>{
+  try{ cargarDiccionarioOficios(); }catch(e){}
+  // Prellenar el código si viene en el link de invitación (?codigo=FERIA2026).
+  try{ const c=new URLSearchParams(location.search).get('codigo'); if(c){ const i=document.getElementById('fpCodigo'); if(i) i.value=c; } }catch(e){}
+});
 
 // ── Paso 0 · comenzar ────────────────────────────────────────────────────────
 async function fpComenzar(){

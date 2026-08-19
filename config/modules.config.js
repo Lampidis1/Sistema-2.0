@@ -93,6 +93,21 @@ window.AM_MODULES = [
     doc: 'docs/modulos/movil.md',
   },
   {
+    id: 'feria',
+    nombre: 'Feria Digital',
+    descripcion: 'Feria laboral CV Minero QR: postulantes, empresas, escaneo en stand y reportes. El admin abre acá; el postulante entra por link público.',
+    icono: '🎪',
+    ruta: 'modules/feria/',
+    acceso: 'feria',
+    estado: 'activo',
+    visibleEnHome: true,
+    homeTier: 'medio',
+    doc: 'docs/modulos/feria.md',
+    // La página del postulante (postulante.html) es pública, se alcanza por el
+    // link/QR de invitación (con ?codigo=). El panel de empresa es empresa.html
+    // (slug feria_empresa). El Home solo enlaza al admin (index.html).
+  },
+  {
     id: 'hoteles-sg',
     nombre: 'Hoteles SG',
     descripcion: 'Disponibilidad de hospedajes del programa MGI en Sierra Gorda. Página pública, sin clave.',

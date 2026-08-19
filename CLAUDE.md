@@ -185,6 +185,8 @@ Hay un **usuario maestro** (`rol: 'admin'`) que decide quién entra a qué.
 | `antucoya` | Faena Antucoya | |
 | `zaldivar` | Faena Zaldívar | |
 | `rca` | RCA (cumplimiento) | tener `principal` también la habilita |
+| `feria` | Feria Digital (admin AMSA) | el postulante entra sin slug, por código |
+| `feria_empresa` | Feria Digital (empresa/reclutador) | `feria` también lo habilita |
 | `lector` | — | **no es un módulo**: flag de solo-lectura |
 
 Un `admin` pasa todos los chequeos de `tiene_acceso()` sin tener los slugs.
@@ -269,6 +271,8 @@ Lo mismo aplica a envolver el archivo en un IIFE o en `'use strict'` con
 | mammoth | 1.6.0 | Leer .docx (CVs) |
 | Chart.js | 4.4.0 | Gráficos |
 | pptxgenjs | 3.12.0 | Exportar a PowerPoint |
+| qrcodejs | 1.0.0 | Generar el QR de la credencial (solo Feria Digital) |
+| jsQR | 1.4.0 | Leer el QR con la cámara del reclutador (solo Feria Digital) |
 
 Todas están fijadas a versión exacta. **Mantenerlo así.**
 
