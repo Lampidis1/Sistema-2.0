@@ -605,18 +605,24 @@ async function validarProveedor(rutE,razonE,comunaE){
   const canon=rutCanon(rut);
   if(!canon){ toast('Sin RUT no se puede validar; edita la factura primero','err'); return; }
   try{
-    let reg=RCA_VMAP[canon];
-    if(!reg){
-      const ins={rut:rutFmt(rut), razon_social:razon||null, comuna:comuna||null,
-        region:'Antofagasta', es_regional:true, validado:true, validado_por:quien(), validado_en:nowISO(),
-        created_by:quien()};
-      const {data,error}=await SB.from('rca_proveedores_validados').insert(ins).select().single();
-      if(error) throw error;
-      reg=data; RCA_VALID.push(reg); RCA_VMAP[canon]=reg;
-    }else if(!reg.es_regional){
-      const {error}=await SB.from('rca_proveedores_validados').update({es_regional:true,region:'Antofagasta',validado_por:quien(),validado_en:nowISO()}).eq('rvp_id',reg.rvp_id);
-      if(error) throw error; reg.es_regional=true;
-    }
+    const previo=RCA_VMAP[canon];
+    // upsert por RUT: si el proveedor ya existe (sembrado o validado antes) se
+    // actualiza a regional; si no, se crea. Evita el error de RUT duplicado.
+    const payload={
+      rut:rutFmt(rut),
+      razon_social:razon||(previo&&previo.razon_social)||null,
+      comuna:comuna||(previo&&previo.comuna)||null,
+      region:'Antofagasta', es_regional:true, validado:true,
+      validado_por:quien(), validado_en:nowISO(), updated_at:nowISO(), updated_by:quien()
+    };
+    if(!previo) payload.created_by=quien();
+    const {data,error}=await SB.from('rca_proveedores_validados')
+      .upsert(payload,{onConflict:'rut'}).select().single();
+    if(error) throw error;
+    const reg=data;
+    const i=RCA_VALID.findIndex(v=>rutCanon(v.rut)===canon);
+    if(i>=0) RCA_VALID[i]=reg; else RCA_VALID.push(reg);
+    RCA_VMAP[canon]=reg;
     // actualizar todas las facturas pendientes de ese RUT
     const ids=RCA_FACT.filter(f=>rutCanon(f.rut_proveedor)===canon && f.estado_revision!=='ok').map(f=>f.factura_id);
     if(ids.length){
