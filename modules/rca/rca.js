@@ -455,14 +455,11 @@ async function procesarExcel(eeccId,file){
       const obj={}; headers.forEach((k,j)=>{ if(k) obj[k]=matriz[i][j]; });
       filas.push(obj);
     }
-    // Facturas ya cargadas de esta EECC, para no duplicar y poder ACTUALIZAR al
-    // recargar. La identidad de una factura es EECC + N° de factura: el número lo
-    // emite el proveedor y debe ser único dentro del reporte de una EECC. No se
-    // incluye el RUT en la clave a propósito, para que una corrección de RUT en la
-    // auditoría no rompa el calce (y el cambio de RUT igual se avisa como conflicto).
+    // REEMPLAZO TOTAL: el Excel auditado es la fuente de verdad. Al cargarlo se
+    // reemplazan TODAS las facturas ya cargadas de esta EECC por las del archivo
+    // (así se reflejan correcciones, eliminaciones y agregados). La identidad
+    // dentro del archivo es EECC + N° de factura, para descartar repetidos.
     const claveFactura=(num)=>eeccId+'|'+String(num||'').trim().toUpperCase().replace(/\s+/g,'');
-    const existentes={};
-    RCA_FACT.filter(f=>f.eecc_id===eeccId).forEach(f=>{ existentes[claveFactura(f.num_factura)]=f; });
 
     // Se recorre el Excel a un mapa por clave: si el mismo N° de factura viene
     // dos veces en el archivo, queda una sola (gana la última fila).
@@ -506,30 +503,38 @@ async function procesarExcel(eeccId,file){
       };
     }
     const claves=Object.keys(porClave);
+    // SALVAGUARDA: si el archivo no trae ninguna factura válida, NO se borra nada.
     if(!claves.length){
-      toast(incompletas?`No se cargó nada: ${incompletas} fila(s) sin N° de factura, RUT o monto.`:'No se encontraron facturas en el Excel','err');
+      toast(incompletas?`No se cargó nada: ${incompletas} fila(s) sin N° de factura, RUT o monto. No se tocó lo ya cargado.`:'No se encontraron facturas en el Excel. No se tocó lo ya cargado.','err');
       return;
     }
-    // Separar en nuevas (insert) y ya existentes (update, mismo factura_id).
-    const filasUpsert=[], cambios=[]; let nuevasC=0, updC=0, okC=0, pendC=0, noReg=0;
+    // Confirmar el reemplazo cuando ya hay facturas cargadas para esta EECC.
+    const previas=RCA_FACT.filter(f=>f.eecc_id===eeccId).length;
+    if(previas && !confirm(`Este Excel REEMPLAZARÁ las ${previas} factura(s) ya cargadas de «${e.nombre}» por las ${claves.length} del archivo.\n\nEs lo correcto si subes el Excel auditado completo. ¿Continuar?`)){
+      toast('Carga cancelada','err'); return;
+    }
+    // Clasificar y preparar las filas nuevas (todas con id nuevo).
+    const filasNuevas=[]; let okC=0, pendC=0, noReg=0;
     claves.forEach(k=>{
-      const fac=porClave[k]; const ex=existentes[k];
-      if(ex){ fac.factura_id=ex.factura_id; updC++;
-        // Misma factura YA cargada pero con otro monto o RUT → cambio a revisar.
-        if(Number(ex.monto_clp)!==Number(fac.monto_clp) || rutCanon(ex.rut_proveedor)!==rutCanon(fac.rut_proveedor))
-          cambios.push({num:fac.num_factura,rut:fac.rut_proveedor,antes:ex.monto_clp,despues:fac.monto_clp,rutAntes:ex.rut_proveedor});
-      }
-      else { fac.factura_id=uid('fac'); fac.created_by=quien(); nuevasC++; }
+      const fac=porClave[k];
+      fac.factura_id=uid('fac'); fac.created_by=quien();
       if(fac.estado_revision==='ok') okC++; else if(fac.estado_revision==='pendiente') pendC++; else noReg++;
-      filasUpsert.push(fac);
+      filasNuevas.push(fac);
     });
-    const {error}=await SB.from('rca_facturas').upsert(filasUpsert,{onConflict:'factura_id'});
+    // 1) Borrado lógico de lo previo de esta EECC. 2) Insertar lo del archivo.
+    if(previas){
+      const {error:delErr}=await SB.from('rca_facturas')
+        .update({estado_registro:'Eliminado',updated_at:nowISO(),updated_by:quien()})
+        .eq('eecc_id',eeccId).neq('estado_registro','Eliminado');
+      if(delErr) throw delErr;
+    }
+    const {error}=await SB.from('rca_facturas').insert(filasNuevas);
     if(error) throw error;
     await cargarFacturas(RCA_ACTUAL.rca_id); renderDetalle();
-    toast(`✅ ${nuevasC} nueva(s) · ${updC} actualizada(s)${incompletas?` · ${incompletas} incompleta(s) omitida(s)`:''} — ${okC} regionales · ${pendC} por revisar · ${noReg} fuera de región`,'ok');
-    if(dupArchivo.length||cambios.length) alertaMontos(dupArchivo,cambios);
+    toast(`✅ ${filasNuevas.length} factura(s) cargadas${previas?` (reemplazaron a ${previas})`:''}${incompletas?` · ${incompletas} incompleta(s) omitida(s)`:''} — ${okC} regionales · ${pendC} por revisar · ${noReg} fuera de región`,'ok');
+    if(dupArchivo.length) alertaMontos(dupArchivo,[]);
     else if(pendC) verAlertas();
-    else if(_facturasAbiertas===eeccId) verFacturas(eeccId);   // refrescar montos en la ventana abierta
+    else if(_facturasAbiertas===eeccId) verFacturas(eeccId);   // refrescar la ventana abierta
   }catch(err){ toast('Error al procesar: '+err.message,'err'); }
 }
 
