@@ -184,6 +184,7 @@ Hay un **usuario maestro** (`rol: 'admin'`) que decide quién entra a qué.
 | `centinela` | Faena Centinela | |
 | `antucoya` | Faena Antucoya | |
 | `zaldivar` | Faena Zaldívar | |
+| `rca` | RCA (cumplimiento) | tener `principal` también la habilita |
 | `lector` | — | **no es un módulo**: flag de solo-lectura |
 
 Un `admin` pasa todos los chequeos de `tiene_acceso()` sin tener los slugs.

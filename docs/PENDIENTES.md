@@ -927,6 +927,25 @@ Un módulo nuevo nace invisible — nadie lo tiene todavía.
 
 ---
 
+## P-15 · Retirar la versión vieja de "Compromiso RCA" de Proveedores
+
+El módulo nuevo `modules/rca/` reemplaza el seguimiento de compromiso RCA que
+había quedado **a medio hacer dentro de Proveedores**, en dos formas paralelas:
+
+- `modules/proveedores/proveedores-rca.js` + tablas `rca_empresas`,
+  `rca_documentos` (fichas por empresa con el 10% y documentos).
+- El sistema `KB.contratistas` / `compras` en `proveedores.js`
+  (`rcaProcesarExcelCompras`, `renderRCA`), con import de compras pero **sin**
+  cruce por RUT contra un registro de validados ni validación regional.
+
+El nuevo `modules/rca/` sí hace el cruce por RUT, la validación regional y el
+avance del 10% sobre el monto declarado por carta formal. **Pendiente:** una vez
+que RC valide el módulo nuevo con datos reales, retirar la pestaña "Compromiso
+RCA" del `index.html` de Proveedores y decidir si se migran o archivan
+`rca_empresas` / `compras`. No borrar nada hasta confirmarlo (Regla 1).
+
+---
+
 ## Orden sugerido
 
 | # | Pendiente | Estado | Por qué en esa posición |

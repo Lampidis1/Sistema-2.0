@@ -154,6 +154,19 @@ window.AM_MODULES = [
     // sin 'homeTier': va en el bloque chico de abajo ("el resto"), igual que admin
   },
   {
+    id: 'rca',
+    nombre: 'RCA',
+    descripcion: 'Cumplimiento de compromisos ambientales: 10% de compras a proveedores regionales por empresa colaboradora.',
+    icono: '📄',
+    ruta: 'modules/rca/',
+    acceso: 'rca',
+    accesoAlterno: 'principal',   // el equipo de Proveedores lo opera
+    estado: 'activo',
+    visibleEnHome: true,
+    doc: 'docs/modulos/rca.md',
+    // sin 'homeTier': va en el bloque chico de abajo, junto a Planer y Gestión de usuarios
+  },
+  {
     id: 'admin',
     nombre: 'Gestión de usuarios',
     descripcion: 'Aprobar o rechazar solicitudes de acceso al sistema.',
