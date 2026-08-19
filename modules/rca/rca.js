@@ -235,7 +235,6 @@ function tarjetaEECC(e){
     </div>
     <div class="eecc-barra"><div class="eecc-barra-in" style="width:${c.avance}%;background:${col}"></div></div>
     <div class="eecc-montos">
-      <div><span>Declarado</span><b>${_clp(c.decl)}</b></div>
       <div><span>Meta ${(+RCA_ACTUAL.pct_meta||10)}%</span><b>${_clp(c.meta)}</b></div>
       <div><span>Reportado</span><b style="color:#1e7e34">${_clp(c.rep)}</b></div>
       <div><span>Avance</span><b style="color:${col}">${c.avance}%</b></div>
@@ -463,7 +462,7 @@ async function procesarExcel(eeccId,file){
 
     // Se recorre el Excel a un mapa por clave: si el mismo N° de factura viene
     // dos veces en el archivo, queda una sola (gana la última fila).
-    const porClave={}; let incompletas=0;
+    const porClave={}, vistoArchivo={}, dupArchivo=[]; let incompletas=0;
     for(const r of filas){
       const rut=pickCol(r,['rut']);
       const canon=rutCanon(rut);
@@ -483,7 +482,13 @@ async function procesarExcel(eeccId,file){
         if(!razon) razon=reg.razon_social||'';
         if(!comuna) comuna=reg.comuna||'';
       }
-      porClave[claveFactura(rut,numFact)]={
+      const _clv=claveFactura(rut,numFact);
+      // Misma factura repetida DENTRO del archivo con distinto monto → a revisar.
+      if(vistoArchivo[_clv]!=null && Number(vistoArchivo[_clv])!==monto){
+        dupArchivo.push({num:numFact,rut:rutFmt(rut),antes:vistoArchivo[_clv],despues:monto});
+      }
+      vistoArchivo[_clv]=monto;
+      porClave[_clv]={
         rca_id:RCA_ACTUAL.rca_id, eecc_id:eeccId,
         anio:String(pickCol(r,['ano','anio','year'])||'').trim(),
         mes:String(pickCol(r,['mes','month'])||'').trim(),
@@ -501,10 +506,13 @@ async function procesarExcel(eeccId,file){
       return;
     }
     // Separar en nuevas (insert) y ya existentes (update, mismo factura_id).
-    const filasUpsert=[]; let nuevasC=0, updC=0, okC=0, pendC=0, noReg=0;
+    const filasUpsert=[], cambios=[]; let nuevasC=0, updC=0, okC=0, pendC=0, noReg=0;
     claves.forEach(k=>{
       const fac=porClave[k]; const ex=existentes[k];
-      if(ex){ fac.factura_id=ex.factura_id; updC++; }
+      if(ex){ fac.factura_id=ex.factura_id; updC++;
+        // Misma factura YA cargada pero con otro monto → cambio a revisar.
+        if(Number(ex.monto_clp)!==Number(fac.monto_clp)) cambios.push({num:fac.num_factura,rut:fac.rut_proveedor,antes:ex.monto_clp,despues:fac.monto_clp});
+      }
       else { fac.factura_id=uid('fac'); fac.created_by=quien(); nuevasC++; }
       if(fac.estado_revision==='ok') okC++; else if(fac.estado_revision==='pendiente') pendC++; else noReg++;
       filasUpsert.push(fac);
@@ -513,8 +521,30 @@ async function procesarExcel(eeccId,file){
     if(error) throw error;
     await cargarFacturas(RCA_ACTUAL.rca_id); renderDetalle();
     toast(`✅ ${nuevasC} nueva(s) · ${updC} actualizada(s)${incompletas?` · ${incompletas} incompleta(s) omitida(s)`:''} — ${okC} regionales · ${pendC} por revisar · ${noReg} fuera de región`,'ok');
-    if(pendC) verAlertas();
+    if(dupArchivo.length||cambios.length) alertaMontos(dupArchivo,cambios);
+    else if(pendC) verAlertas();
   }catch(err){ toast('Error al procesar: '+err.message,'err'); }
+}
+
+// ══ ALERTA: mismo N° de factura con distinto monto ═══════════════════════════
+// Se dispara al cargar un Excel donde una factura ya cargada (o repetida dentro
+// del archivo) trae un monto distinto. Los montos ya se actualizaron (para
+// permitir correcciones de auditoría), pero se avisa para que se revise que no
+// sea una carga duplicada por error.
+function alertaMontos(dupArchivo,cambios){
+  const fila=x=>`<div class="alert-row"><div class="alert-info">
+    <div class="alert-rut">Factura ${esc(x.num||'—')} · ${esc(rutFmt(x.rut)||'')}</div>
+    <div class="alert-sub">Monto anterior <b>${_clp(x.antes)}</b> → nuevo <b>${_clp(x.despues)}</b></div>
+  </div></div>`;
+  abrirModal(`
+    <h3>⚠ Revisar montos de facturas</h3>
+    <p class="modal-nota">Se cargaron facturas con el <b>mismo N° pero distinto monto</b>. El sistema tomó el
+    monto nuevo (útil si corregiste algo en la auditoría), pero revisa que no sea una carga duplicada por error.</p>
+    ${dupArchivo.length?`<div class="sub-t" style="font-size:1rem;margin:8px 0 6px">Repetidas dentro del mismo Excel (${dupArchivo.length})</div>
+      <div class="alert-lista">${dupArchivo.map(fila).join('')}</div>`:''}
+    ${cambios.length?`<div class="sub-t" style="font-size:1rem;margin:12px 0 6px">Cambiaron respecto a lo ya cargado (${cambios.length})</div>
+      <div class="alert-lista">${cambios.map(fila).join('')}</div>`:''}
+    <div class="modal-acc"><span></span><button class="btn ghost" onclick="cerrarModal()">Entendido</button></div>`);
 }
 
 // ══ ALERTAS: proveedores no reconocidos ══════════════════════════════════════
@@ -608,7 +638,10 @@ function verFacturas(eeccId){
       </tr>`).join('')}</tbody>
     </table></div>`}
     <div class="modal-acc">
-      <button class="btn ghost" onclick="exportarInforme('${eeccId}')">⬇ Descargar (auditoría)</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost" onclick="exportarInforme('${eeccId}')">⬇ Descargar para auditar</button>
+        <button class="btn primary" onclick="importarExcel('${eeccId}')">📥 Cargar Excel auditado</button>
+      </div>
       <button class="btn ghost" onclick="cerrarModal()">Cerrar</button>
     </div>`);
 }

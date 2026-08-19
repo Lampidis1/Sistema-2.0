@@ -125,7 +125,7 @@ main{padding:22px 28px 48px;max-width:1200px;margin:0 auto}
 .eecc-rut{font-size:.78rem;color:var(--text-muted);font-weight:500}
 .eecc-barra{background:#eef2f3;border-radius:6px;height:9px;overflow:hidden;margin-bottom:10px}
 .eecc-barra-in{height:9px;border-radius:6px;transition:width .3s}
-.eecc-montos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.eecc-montos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
 .eecc-montos>div{display:flex;flex-direction:column}
 .eecc-montos span{font-size:.68rem;color:var(--text-muted);text-transform:uppercase}
 .eecc-montos b{font-size:.9rem}
