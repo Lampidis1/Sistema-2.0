@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feria Laboral · CV Minero QR · Antofagasta Minerals</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="../../config/supabase.config.js"></script>
+<link rel="stylesheet" href="feria-postulante.css?v=20260819b">
+<link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
+</head>
+<body>
+<div id="app">
+  <header class="fp-header">
+    <img src="../../shared/assets/logo-amsa-873.png" alt="Antofagasta Minerals">
+    <div>
+      <div class="fp-h-t">Feria Laboral Minera</div>
+      <div class="fp-h-s">CV Minero · Antofagasta Minerals</div>
+    </div>
+  </header>
+
+  <!-- Paso 0 · Portada + consentimiento -->
+  <section class="fp-step active" id="step-inicio">
+    <div class="fp-card fp-portada">
+      <div class="fp-badge">CV Minero QR</div>
+      <h1>Arma tu Currículum Minero y postula en la feria</h1>
+      <p>Toma una foto de tu CV, súbelo en PDF o Word, o créalo aquí. Te generamos tu credencial con código QR para postular a las empresas.</p>
+      <label class="fp-field"><span>Código de la feria</span>
+        <input id="fpCodigo" placeholder="Ej: FERIA2026" autocomplete="off"></label>
+      <label class="fp-check">
+        <input type="checkbox" id="fpConsent">
+        <span>Autorizo a Antofagasta Minerals a tratar mis datos personales (RUT, contacto y CV) para participar en la feria laboral y ser contactado por las empresas. Mis datos se guardan de forma segura y no se comparten con terceros ajenos a la feria.</span>
+      </label>
+      <div id="fpInicioErr" class="fp-err"></div>
+      <button class="fp-btn" onclick="fpComenzar()">Comenzar</button>
+    </div>
+  </section>
+
+  <!-- Paso 1 · RUT -->
+  <section class="fp-step" id="step-rut">
+    <div class="fp-card">
+      <div class="fp-paso">Paso 1 de 4</div>
+      <h2>Tu RUT</h2>
+      <p>Buscamos si ya tienes un CV cargado. Si no, lo creamos juntos.</p>
+      <label class="fp-field"><span>RUT</span>
+        <input id="fpRut" placeholder="12.345.678-9" onkeydown="if(event.key==='Enter')fpBuscar()"></label>
+      <div id="fpRutErr" class="fp-err"></div>
+      <button class="fp-btn" id="fpBtnBuscar" onclick="fpBuscar()">Buscar mi CV</button>
+      <button class="fp-btn ghost" onclick="fpIr('inicio')">← Volver</button>
+    </div>
+  </section>
+
+  <!-- Paso 2 · Origen del CV -->
+  <section class="fp-step" id="step-origen">
+    <div class="fp-card">
+      <div class="fp-paso">Paso 2 de 4</div>
+      <h2 id="fpOrigenT">¿Cómo cargamos tu CV?</h2>
+      <p id="fpOrigenMsg"></p>
+      <div class="fp-origen-grid">
+        <button class="fp-origen" onclick="fpArchivo()">
+          <div class="fp-origen-ic">📷</div><b>Subir foto o archivo</b>
+          <span>Foto del CV, PDF o Word. Lo leemos con reconocimiento de texto.</span>
+        </button>
+        <button class="fp-origen" onclick="fpDesdeCero()">
+          <div class="fp-origen-ic">✍️</div><b>Crear desde cero</b>
+          <span>Llenas tú mismo los datos, paso a paso.</span>
+        </button>
+      </div>
+      <button class="fp-btn ghost" onclick="fpIr('rut')">← Volver</button>
+    </div>
+    <input type="file" id="fpFile" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx" style="display:none" onchange="fpLeerArchivo(this)">
+  </section>
+
+  <!-- Paso 3 · Editor Currículum Minero -->
+  <section class="fp-step" id="step-cv">
+    <div class="fp-card fp-editor">
+      <div class="fp-paso">Paso 3 de 4</div>
+      <h2>Tu Currículum Minero</h2>
+      <p>Revisa y corrige. Mientras más completo, mejores empresas te recomendamos.</p>
+
+      <div class="fp-sec">Datos personales</div>
+      <div class="fp-grid2">
+        <label class="fp-field"><span>Nombres</span><input id="cvNombres"></label>
+        <label class="fp-field"><span>Apellidos</span><input id="cvApellidos"></label>
+        <label class="fp-field"><span>RUT</span><input id="cvRut" readonly></label>
+        <label class="fp-field"><span>Teléfono</span><input id="cvTelefono" placeholder="+569…"></label>
+        <label class="fp-field"><span>Correo</span><input id="cvEmail"></label>
+        <label class="fp-field"><span>Comuna</span><input id="cvComuna" placeholder="Antofagasta, Calama…"></label>
+      </div>
+
+      <div class="fp-sec">Perfil laboral</div>
+      <label class="fp-field"><span>Resumen (una o dos líneas)</span><textarea id="cvResumen" rows="2" placeholder="Ej: Operador con experiencia en faena, disponible turno 7x7."></textarea></label>
+      <div class="fp-grid2">
+        <label class="fp-field"><span>Oficio o especialidad</span><input id="cvOficios" placeholder="Operador CAEX, mantención, etc."></label>
+        <label class="fp-field"><span>Años de experiencia</span><input id="cvAnios" placeholder="Ej: 5"></label>
+        <label class="fp-field"><span>Experiencia en minería</span><input id="cvExpMin" placeholder="Faenas, cargos mineros"></label>
+        <label class="fp-field"><span>Equipos / maquinaria</span><input id="cvEquipos" placeholder="Komatsu 930E, LHD, etc."></label>
+      </div>
+      <label class="fp-field"><span>Experiencia (una por línea: cargo — empresa)</span><textarea id="cvExperiencia" rows="4"></textarea></label>
+
+      <div class="fp-sec">Licencias, cursos y estudios</div>
+      <div class="fp-grid2">
+        <label class="fp-field"><span>Licencia de conducir</span><input id="cvLicencia" placeholder="Clase B, D, etc."></label>
+        <label class="fp-field"><span>Disponibilidad de turno</span><input id="cvDisp" placeholder="7x7, 4x3, etc."></label>
+        <label class="fp-field"><span>Nivel educacional</span><input id="cvEducacion" placeholder="Media, técnico, etc."></label>
+      </div>
+      <label class="fp-field"><span>Cursos y certificaciones (uno por línea)</span><textarea id="cvCursos" rows="3" placeholder="Trabajo en altura&#10;Manejo de extintores"></textarea></label>
+
+      <div id="fpCvErr" class="fp-err"></div>
+      <button class="fp-btn" id="fpBtnGuardar" onclick="fpGuardar()">Guardar y generar mi QR</button>
+      <button class="fp-btn ghost" onclick="fpIr('origen')">← Volver</button>
+    </div>
+  </section>
+
+  <!-- Paso 4 · Credencial + empresas -->
+  <section class="fp-step" id="step-listo">
+    <div class="fp-card fp-credencial-wrap">
+      <div class="fp-paso">Paso 4 de 4 · ¡Listo!</div>
+      <h2>Tu credencial de la feria</h2>
+      <p>Muéstrala en cada stand: el monitor escanea tu QR y ve tu CV al instante.</p>
+      <div class="fp-credencial" id="fpCredencial">
+        <div class="fp-cred-top">
+          <div class="fp-cred-feria" id="fpCredFeria">Feria Laboral Minera</div>
+        </div>
+        <div class="fp-cred-nombre" id="fpCredNombre"></div>
+        <div class="fp-cred-sub" id="fpCredSub"></div>
+        <div class="fp-qr" id="fpQR"></div>
+        <div class="fp-cred-pie">Credencial CV Minero · Antofagasta Minerals</div>
+      </div>
+      <div class="fp-cred-acc">
+        <button class="fp-btn" onclick="fpDescargarCredencial()">⬇ Descargar credencial (PDF)</button>
+        <button class="fp-btn ghost" onclick="fpVerEmpresas()">Ver empresas recomendadas →</button>
+      </div>
+    </div>
+
+    <div class="fp-card" id="fpEmpresasCard" style="display:none">
+      <h2>Empresas recomendadas para ti</h2>
+      <p>Ordenadas por compatibilidad con tu perfil. Puedes postular directo.</p>
+      <div id="fpEmpresas" class="fp-empresas"></div>
+    </div>
+  </section>
+</div>
+
+<div id="fpOverlay" class="fp-overlay"><div class="fp-overlay-box"><div class="fp-spin"></div><div id="fpOverlayTxt">Procesando…</div></div></div>
+<div class="fp-toast" id="fpToast"></div>
+
+<script src="../empleabilidad/empleabilidad-lectura.js?v=20260816a"></script>
+<script src="../empleabilidad/empleabilidad-match.js?v=20260816a"></script>
+<script src="feria-postulante.js?v=20260819b"></script>
+</body>
+</html>
