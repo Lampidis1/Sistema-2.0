@@ -484,8 +484,9 @@ async function guardarEdit(){
 
     // hotelería: incluye contratos + servicios + total
     const json=JSON.stringify({total,contratos:CONTRATOS,servicios:SERVS,simples_banio:simplesBanio,dobles_banio:doblesBanio});
-    await SB.from('hoteleria').delete().eq('proveedor_id',pid);
-    await SB.from('hoteleria').insert({hotel_id:'hot_'+pid,proveedor_id:pid,hab_simples:simples,hab_dobles:dobles,contratos_json:json,estado_registro:'Activo',updated_at:now});
+    // Upsert por hotel_id (evita "duplicate key hoteleria_pkey": el delete no
+    // borraba por RLS/trigger y el insert chocaba con la PK existente).
+    await SB.from('hoteleria').upsert({hotel_id:'hot_'+pid,proveedor_id:pid,hab_simples:simples,hab_dobles:dobles,contratos_json:json,estado_registro:'Activo',updated_at:now},{onConflict:'hotel_id'});
     HOT[pid]={total,simples,dobles,simples_banio:simplesBanio,dobles_banio:doblesBanio,contratos:CONTRATOS.slice(),servicios:SERVS.slice()};
 
     // log

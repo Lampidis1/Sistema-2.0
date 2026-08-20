@@ -262,9 +262,13 @@ async function planGuardarFila(pid){
       const h=HOT[pid]||{contratos:[],servicios:[]};
       const json=JSON.stringify({ total:sp+sc+dp+dc, contratos:h.contratos||[], servicios:h.servicios||[],
                                   simples_banio:sp, dobles_banio:dp });
-      await SB.from('hoteleria').delete().eq('proveedor_id',pid);
-      const {error}=await SB.from('hoteleria').insert({hotel_id:'hot_'+pid, proveedor_id:pid,
-        hab_simples:sp+sc, hab_dobles:dp+dc, contratos_json:json, estado_registro:'Activo', updated_at:now});
+      // Upsert por hotel_id (siempre 'hot_'+proveedor_id): si la fila ya existe
+      // la actualiza, si no la crea. Antes se hacía delete+insert, pero el delete
+      // no borraba (RLS sin política DELETE + trigger trg_bloq_borrado) y el
+      // insert chocaba con la PK -> "duplicate key value violates hoteleria_pkey".
+      const {error}=await SB.from('hoteleria').upsert({hotel_id:'hot_'+pid, proveedor_id:pid,
+        hab_simples:sp+sc, hab_dobles:dp+dc, contratos_json:json, estado_registro:'Activo', updated_at:now},
+        {onConflict:'hotel_id'});
       if(error) throw error;
       HOT[pid]={simples:sp+sc, dobles:dp+dc, simples_banio:sp, dobles_banio:dp,
                 total:sp+sc+dp+dc, contratos:h.contratos||[], servicios:h.servicios||[]};

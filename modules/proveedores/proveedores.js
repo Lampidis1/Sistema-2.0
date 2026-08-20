@@ -3583,15 +3583,15 @@ async function gSyncPush(proveedorId){
     }));
     if(cs.length) await SUPA.client.from('contactos').insert(cs);
 
-    await SUPA.client.from('hoteleria').delete().eq('proveedor_id',pid);
-    const h=DB.hoteles[proveedorId];
-    if(h && (h.simples||h.dobles||h.total||(h.contratos||[]).length||(h.servicios||[]).length||h.simples_banio||h.dobles_banio)){
-      await SUPA.client.from('hoteleria').insert({
-        hotel_id:'hot_'+pid, proveedor_id:pid,
-        hab_simples:h.simples||0, hab_dobles:h.dobles||0,
-        contratos_json:JSON.stringify({total:h.total||0,contratos:h.contratos||[],servicios:h.servicios||[],simples_banio:h.simples_banio||0,dobles_banio:h.dobles_banio||0}), estado_registro:'Activo', updated_at:now
-      });
-    }
+    // Upsert por hotel_id (evita "duplicate key hoteleria_pkey": el delete no
+    // borraba por RLS/trigger y el insert chocaba con la PK existente). Si el
+    // hostal quedó sin datos, se guarda una fila en cero en vez de borrarla.
+    const h=DB.hoteles[proveedorId]||{};
+    await SUPA.client.from('hoteleria').upsert({
+      hotel_id:'hot_'+pid, proveedor_id:pid,
+      hab_simples:h.simples||0, hab_dobles:h.dobles||0,
+      contratos_json:JSON.stringify({total:h.total||0,contratos:h.contratos||[],servicios:h.servicios||[],simples_banio:h.simples_banio||0,dobles_banio:h.dobles_banio||0}), estado_registro:'Activo', updated_at:now
+    },{onConflict:'hotel_id'});
 
     await SUPA.client.from('acuerdos').delete().eq('proveedor_id',pid);
     const acs=(DB.acuerdos[proveedorId]||[]).map((a,i)=>({
