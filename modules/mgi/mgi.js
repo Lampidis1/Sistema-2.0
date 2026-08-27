@@ -145,6 +145,39 @@ function renderResumen(){
     </div>`;
 }
 
+// ── Selección + exportación a Excel del modo lista ──────────────────────────
+let MGI_SEL = new Set();
+function mgiToast(msg){
+  let t=document.getElementById('mgiToast');
+  if(!t){ t=document.createElement('div'); t.id='mgiToast'; t.className='mgi-toast'; document.body.appendChild(t); }
+  t.textContent=msg; t.classList.add('show'); clearTimeout(t._to); t._to=setTimeout(()=>t.classList.remove('show'),2800);
+}
+function mgiSelTog(pid,on){ if(on) MGI_SEL.add(pid); else MGI_SEL.delete(pid);
+  const c=document.getElementById('mgiSelCount'); if(c) c.textContent=MGI_SEL.size+' seleccionado(s)'; }
+function mgiSelTodos(on){ const data=filtered();
+  if(on) data.forEach(p=>MGI_SEL.add(p.proveedor_id)); else data.forEach(p=>MGI_SEL.delete(p.proveedor_id)); render(); }
+// Exporta los seleccionados; si no hay ninguno, exporta todo el listado filtrado.
+function mgiExportarLista(){
+  const data=filtered();
+  let sel=data.filter(p=>MGI_SEL.has(p.proveedor_id));
+  if(!sel.length) sel=data;
+  if(!sel.length){ mgiToast('No hay proveedores para exportar'); return; }
+  const esHot=MGI_SECCION==='hoteleria';
+  const secN={hoteleria:'Hoteleria',lavanderias:'Lavanderia',alimentacion:'Alimentacion'}[MGI_SECCION]||'MGI';
+  const head=['Razón social','Nombre fantasía','RUT','Localidad','Dirección','Teléfono empresa','Correo empresa','Contacto','Cargo','Teléfono contacto','Correo contacto','Rubro'];
+  if(esHot) head.push('Hab. total','Hab. simples','Hab. dobles');
+  const aoa=[head];
+  sel.forEach(p=>{ const h=HOT[p.proveedor_id]||{}; const cs=CONT[p.proveedor_id]||[]; const cp=cs.find(c=>String(c.principal).toUpperCase()==='TRUE')||cs[0]||{};
+    const row=[p.razon_social||'',p.nombre_fantasia||'',p.rut_empresa||'',p.localidad||'',p.direccion||'',p.fono_empresa||'',p.correo_empresa||'',cp.nombre||'',cp.cargo||'',cp.fono||'',cp.correo||'',p.rubros_norm||''];
+    if(esHot) row.push(h.total||0,h.simples||0,h.dobles||0);
+    aoa.push(row);
+  });
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),secN.slice(0,31));
+  XLSX.writeFile(wb,'MGI_'+secN+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  mgiToast('Exportados '+sel.length+' proveedor(es) a Excel');
+}
+
 function setView(v){ VIEW=v;
   const bp=document.getElementById('bPlan'); if(bp) bp.classList.toggle('active',v==='planilla');
   document.getElementById('bCards').classList.toggle('active',v==='cards');
@@ -154,6 +187,7 @@ function setView(v){ VIEW=v;
 let MGI_SECCION='hoteleria';
 function setSeccionMGI(sec,btn){
   MGI_SECCION=sec;
+  MGI_SEL.clear();   // la selección de la lista es por sección
   // La planilla es solo de hospedajes; en lavandería y alimentación se vuelve a fichas
   if(sec!=='hoteleria' && VIEW==='planilla') VIEW='cards';
   else if(sec==='hoteleria' && VIEW==='cards') VIEW='planilla';
@@ -256,8 +290,26 @@ function render(){
     return;
   }
   if(VIEW==='list'){
-    cont.innerHTML='<table><thead><tr><th>Proveedor</th><th>Localidad</th><th>Hab. total</th><th>Contacto</th><th></th></tr></thead><tbody>'+
-      data.map(p=>{ const h=HOT[p.proveedor_id]||{}; const cs=CONT[p.proveedor_id]||[]; const cp=cs[0]||{}; return `<tr onclick="abrirEdit('${p.proveedor_id}')"><td><b>${esc(dispName(p))}</b></td><td>${esc(p.localidad||'')}</td><td>${h.total||0}</td><td>${esc(cp.nombre||'')}${cp.fono?' · '+esc(cp.fono):''}</td><td>✏</td></tr>`; }).join('')+'</tbody></table>';
+    const esHot=MGI_SECCION==='hoteleria';
+    const allSel=data.length && data.every(p=>MGI_SEL.has(p.proveedor_id));
+    cont.innerHTML=
+      `<div class="mgi-lista-tools">
+        <label class="mgi-selall"><input type="checkbox" ${allSel?'checked':''} onclick="mgiSelTodos(this.checked)"> Seleccionar todos</label>
+        <span class="mgi-sel-count" id="mgiSelCount">${MGI_SEL.size} seleccionado(s)</span>
+        <button class="mgi-exp-btn" onclick="mgiExportarLista()">⬇ Exportar a Excel</button>
+      </div>`+
+      '<table><thead><tr><th style="width:34px"></th><th>Proveedor</th><th>Localidad</th><th>Contacto</th><th>Teléfono</th>'+(esHot?'<th>Hab.</th>':'')+'<th></th></tr></thead><tbody>'+
+      data.map(p=>{ const h=HOT[p.proveedor_id]||{}; const cs=CONT[p.proveedor_id]||[]; const cp=cs.find(c=>String(c.principal).toUpperCase()==='TRUE')||cs[0]||{};
+        const fono=(cp.fono)||p.fono_empresa||'';
+        return `<tr>
+          <td onclick="event.stopPropagation()" style="text-align:center"><input type="checkbox" ${MGI_SEL.has(p.proveedor_id)?'checked':''} onclick="mgiSelTog('${p.proveedor_id}',this.checked)"></td>
+          <td onclick="abrirEdit('${p.proveedor_id}')" style="cursor:pointer"><b>${esc(dispName(p))}</b></td>
+          <td>${esc(p.localidad||'')}</td>
+          <td>${esc(cp.nombre||'')}</td>
+          <td>${esc(fono)}</td>
+          ${esHot?`<td>${h.total||0}</td>`:''}
+          <td onclick="abrirEdit('${p.proveedor_id}')" style="cursor:pointer" title="Editar">✏</td>
+        </tr>`; }).join('')+'</tbody></table>';
     return;
   }
   cont.innerHTML='<div class="grid">'+data.map(p=>{

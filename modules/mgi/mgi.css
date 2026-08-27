@@ -276,3 +276,17 @@ body.is-user .solo-admin{ display:none !important; }
 .pl-fl{margin-left:4px;font-size:.7rem}
 .pl-fl.off{opacity:.35;font-weight:400}
 .pl-th-ord.activo .pl-fl{opacity:1}
+
+/* ── Barra de selección + exportación del modo lista (lavandería/alimentación/hotelería) ── */
+.mgi-lista-tools{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px;
+  background:#fff;border:1px solid var(--border);border-radius:10px;padding:9px 14px}
+.mgi-selall{display:flex;align-items:center;gap:7px;font-size:.85rem;font-weight:600;color:#5b4fcf;cursor:pointer}
+.mgi-selall input{width:17px;height:17px}
+.mgi-sel-count{font-size:.82rem;color:var(--text-muted)}
+.mgi-exp-btn{margin-left:auto;background:#5b4fcf;color:#fff;border:none;border-radius:8px;
+  padding:8px 15px;font-weight:700;font-size:.85rem;cursor:pointer}
+.mgi-exp-btn:hover{background:#4338ca}
+.mgi-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#1C2632;color:#fff;padding:12px 22px;border-radius:10px;font-size:.9rem;z-index:11000;
+  box-shadow:0 8px 30px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.mgi-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
