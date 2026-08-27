@@ -4776,7 +4776,8 @@ function renderVisitaForm(){
   document.getElementById('visV3Parts').innerHTML=v.participantes.map((pt,i)=>`
     <div class="vis-part-row">
       <b>${esc(pt.nombre)}</b> · ${esc(pt.empresa)} ${pt.correo?'· '+esc(pt.correo):''} ${pt.telefono?'· '+esc(pt.telefono):''}
-      <button onclick="delParticipante(${i})" class="mini-btn" style="float:right">🗑</button>
+      <button onclick="delParticipante(${i})" class="mini-btn" style="float:right" title="Eliminar">🗑</button>
+      <button onclick="editParticipante(${i})" class="mini-btn" style="float:right" title="Editar">✏</button>
     </div>`).join('')||'<div class="kb-empty">Sin participantes</div>';
   // compromisos
   document.getElementById('visV3Comps').innerHTML=v.compromisos.map((c,ci)=>`
@@ -4791,8 +4792,20 @@ function renderVisitaForm(){
     </div>`).join('')||'<div class="kb-empty">Sin compromisos</div>';
 }
 
+// Vuelca lo que el usuario tiene escrito en los campos del formulario a
+// VISITA_ACT ANTES de re-renderizar. Sin esto, agregar un participante o un
+// compromiso llamaba a renderVisitaForm(), que reescribe los inputs desde
+// VISITA_ACT y borraba el título/resumen recién tipeados.
+function _syncVisitaCampos(){
+  const v=VISITA_ACT; if(!v) return;
+  const t=document.getElementById('visV3Titulo'); if(t) v.titulo=t.value;
+  const r=document.getElementById('visV3Resumen'); if(r) v.resumen=r.value;
+  const f=document.getElementById('visV3Fecha'); if(f && f.value) v.fecha=f.value;
+}
+
 // participantes
 function addParticipante(){
+  _syncVisitaCampos();
   const n=document.getElementById('vpNombre').value.trim();
   const e=document.getElementById('vpEmpresa').value.trim();
   if(!n||!e){ showToast('Nombre y empresa son obligatorios','err'); return; }
@@ -4800,17 +4813,31 @@ function addParticipante(){
   ['vpNombre','vpEmpresa','vpCorreo','vpTel'].forEach(id=>document.getElementById(id).value='');
   renderVisitaForm();
 }
-function delParticipante(i){ VISITA_ACT.participantes.splice(i,1); renderVisitaForm(); }
+// Editar un participante: lo carga de vuelta a los campos y lo saca de la lista,
+// para que al corregir y «Agregar» vuelva a quedar bien (arregla nombres mal escritos).
+function editParticipante(i){
+  _syncVisitaCampos();
+  const p=VISITA_ACT.participantes[i]; if(!p) return;
+  document.getElementById('vpNombre').value=p.nombre||'';
+  document.getElementById('vpEmpresa').value=p.empresa||'';
+  document.getElementById('vpCorreo').value=p.correo||'';
+  document.getElementById('vpTel').value=p.telefono||'';
+  VISITA_ACT.participantes.splice(i,1);
+  renderVisitaForm();
+  document.getElementById('vpNombre').focus();
+}
+function delParticipante(i){ _syncVisitaCampos(); VISITA_ACT.participantes.splice(i,1); renderVisitaForm(); }
 
 // compromisos
 function addCompromiso(){
+  _syncVisitaCampos();
   const d=document.getElementById('vcDesc').value.trim();
   if(!d){ showToast('Describe el compromiso','err'); return; }
   VISITA_ACT.compromisos.push({descripcion:d, responsables:[]});
   document.getElementById('vcDesc').value='';
   renderVisitaForm();
 }
-function delCompromiso(ci){ VISITA_ACT.compromisos.splice(ci,1); renderVisitaForm(); }
+function delCompromiso(ci){ _syncVisitaCampos(); VISITA_ACT.compromisos.splice(ci,1); renderVisitaForm(); }
 let _respCompIdx=null;
 function addResponsable(ci){
   _respCompIdx=ci;
@@ -4841,9 +4868,10 @@ function guardarResp(){
   const fl=document.getElementById('respFecha').value;
   VISITA_ACT.compromisos[ci].responsables.push({nombre,area,fecha_limite:fl,origen:v==='__otro'?'otro':'asistente'});
   cerrarResp();
+  _syncVisitaCampos();
   renderVisitaForm();
 }
-function delResponsable(ci,ri){ VISITA_ACT.compromisos[ci].responsables.splice(ri,1); renderVisitaForm(); }
+function delResponsable(ci,ri){ _syncVisitaCampos(); VISITA_ACT.compromisos[ci].responsables.splice(ri,1); renderVisitaForm(); }
 
 // ═══ ESTANDARIZACIÓN DE HABITABILIDAD v2 (criterios ponderados + hitos, compartida con MGI) ═══
 const EST_RUBROS=['Hotelería','Lavandería','Alimentación'];
