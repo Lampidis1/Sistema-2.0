@@ -11,7 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="empleabilidad.css?v=20260816a">
+<link rel="stylesheet" href="empleabilidad.css?v=20260911a">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -75,6 +75,7 @@
   <nav class="tabs">
     <button class="tab active" data-page="directorio" onclick="showPage('directorio',this)">👥 Directorio CV</button>
     <button class="tab" data-page="ofertas" onclick="showPage('ofertas',this)">💼 Ofertas</button>
+    <button class="tab" data-page="intermediacion" onclick="showPage('intermediacion',this)">🔗 Intermediación</button>
     <button class="tab" data-page="becados" onclick="showPage('becados',this)">🎓 Becados</button>
     <button class="tab" data-page="kanban" onclick="showPage('kanban',this)">📋 Kanban</button>
   </nav>
@@ -126,6 +127,9 @@
   </div>
 
   <!-- ══ PÁGINA KANBAN (compartida con Proveedores, misma tabla kanban_cards) ══ -->
+  <!-- ══ PÁGINA INTERMEDIACIÓN LABORAL ══ -->
+  <div class="page" id="page-intermediacion"></div>
+
   <div class="page" id="page-kanban">
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="kbNav">
       <button class="kb-nav active" data-board="empleo" onclick="kbSelect('empleo',this)">💼 Gestión de empleo</button>
@@ -250,10 +254,11 @@
   onAcceso: function(user){ return _empOnAcceso(user); }
 };</script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="empleabilidad.js?v=20260816a"></script>
+<script src="empleabilidad.js?v=20260911a"></script>
 <script src="empleabilidad-lectura.js?v=20260816a"></script>
 <script src="empleabilidad-match.js?v=20260816a"></script>
 <script src="empleabilidad-harvard.js?v=20260816a"></script>
+<script src="empleabilidad-intermediacion.js?v=20260911a"></script>
 
 </body>
 </html>
