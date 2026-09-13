@@ -12,6 +12,7 @@ async function _movilOnAcceso(user){
   document.getElementById('hUser').textContent=(user.email||'').split('@')[0];
   await cargarLevantados();
   construirCuestionario();
+  if(typeof rcRender==='function') rcRender();   // pinta la Recepción (pestaña de entrada)
 }
 
 // ═══════════ NAVEGACIÓN ═══════════
@@ -24,6 +25,7 @@ function movTab(p,btn){
   document.querySelectorAll('.tabbar button, .navtabs button').forEach(b=>{
     b.classList.toggle('active', b.dataset.p===p);
   });
+  if(p==='recepcion' && typeof rcRender==='function')rcRender();
   if(p==='listado')renderListado();
   if(p==='cuestionario')refrescarCuestionarioActual();
   window.scrollTo(0,0);

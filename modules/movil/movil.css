@@ -176,3 +176,18 @@ main{padding:22px 28px 40px;max-width:1240px;margin:0 auto}
   .btn-row-final{justify-content:stretch}
   .toast{bottom:74px}
 }
+
+/* ── Recepción (rc-*) · Fase C ─────────────────────────────────────────────── */
+.rc-nota{font-size:.8rem;color:var(--text-muted,#6b7780);margin:6px 0;line-height:1.5}
+.rc-link{color:var(--teal,#006973);font-weight:700;cursor:pointer;text-decoration:underline}
+.rc-serv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
+.rc-serv-btn{background:#fff;border:1.5px solid var(--border,#D7DEE4);border-radius:13px;padding:16px 12px;text-align:center;cursor:pointer;font-family:inherit;transition:border-color .15s,box-shadow .15s}
+.rc-serv-btn:hover{border-color:var(--teal,#006973)}
+.rc-serv-btn.on{border-color:var(--teal,#006973);box-shadow:0 0 0 3px rgba(0,105,115,.14);background:var(--teal-lt,#E4F6F5)}
+.rc-serv-ic{font-size:1.9rem;margin-bottom:4px}
+.rc-serv-btn b{display:block;color:var(--dark,#1C2632);margin-bottom:3px}
+.rc-serv-btn span{font-size:.74rem;color:var(--text-muted,#6b7780);display:block;line-height:1.35}
+.rc-vac{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--border,#D7DEE4);border-radius:11px;padding:11px 13px;margin-bottom:8px}
+.rc-vac-cargo{font-weight:700;font-size:.95rem}
+.rc-vac-emp{font-size:.78rem;color:var(--text-muted,#6b7780)}
+@media(max-width:560px){ .rc-serv{grid-template-columns:1fr} }

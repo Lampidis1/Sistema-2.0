@@ -11,7 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="movil.css?v=20260816a">
+<link rel="stylesheet" href="movil.css?v=20260913a">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -67,14 +67,18 @@
   <!-- Pestañas de arriba: escritorio y tableta. En teléfono manda la barra
        inferior, que se alcanza con el pulgar. -->
   <nav class="navtabs">
-    <button class="active" data-p="captura" onclick="movTab('captura',this)">👤 Captura</button>
+    <button class="active" data-p="recepcion" onclick="movTab('recepcion',this)">🎯 Recepción</button>
+    <button data-p="captura" onclick="movTab('captura',this)">👤 Captura</button>
     <button data-p="cuestionario" onclick="movTab('cuestionario',this)">📋 Cuestionario</button>
     <button data-p="listado" onclick="movTab('listado',this)">📇 Levantados</button>
   </nav>
 
   <main>
+    <!-- PÁGINA: RECEPCIÓN (encuesta que deriva a apresto / intermediación / formación) -->
+    <div class="page active" id="page-recepcion"></div>
+
     <!-- PÁGINA: CAPTURA -->
-    <div class="page active" id="page-captura">
+    <div class="page" id="page-captura">
       <div class="card card-ancho">
         <div class="sec-t">🔎 Buscar o crear</div>
         <div class="rut-warn" id="rutWarn"></div>
@@ -166,7 +170,8 @@
   </main>
 
   <div class="tabbar">
-    <button class="active" data-p="captura" onclick="movTab('captura',this)"><span class="ic">👤</span>Captura</button>
+    <button class="active" data-p="recepcion" onclick="movTab('recepcion',this)"><span class="ic">🎯</span>Recepción</button>
+    <button data-p="captura" onclick="movTab('captura',this)"><span class="ic">👤</span>Captura</button>
     <button data-p="cuestionario" onclick="movTab('cuestionario',this)"><span class="ic">📋</span>Cuestionario</button>
     <button data-p="listado" onclick="movTab('listado',this)"><span class="ic">📇</span>Listado</button>
   </div>
@@ -183,5 +188,6 @@
   onAcceso: function(user){ return _movilOnAcceso(user); }
 };</script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="movil.js?v=20260816a"></script></body>
+<script src="movil.js?v=20260913a"></script>
+<script src="movil-recepcion.js?v=20260913a"></script></body>
 </html>
