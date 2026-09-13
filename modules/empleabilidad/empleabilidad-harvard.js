@@ -99,6 +99,10 @@ function generarCVHarvard(cv, opciones){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:'mm', format:'a4'});
   let y=HV.top;
+  // Títulos de sección: por defecto los del formato Harvard; se pueden sobrescribir
+  // con opciones.titulos (p.ej. el armador de CV usa los del Modelo CV de AMSA).
+  const T=Object.assign({perfil:'Perfil',educacion:'Educación',experiencia:'Experiencia',
+    cursos:'Cursos y certificaciones',habilidades:'Habilidades'}, (opciones&&opciones.titulos)||{});
 
   // ── Encabezado: nombre y una línea de contacto. Sin foto, como el estándar.
   doc.setFont('helvetica','bold'); doc.setFontSize(16);
@@ -118,7 +122,7 @@ function generarCVHarvard(cv, opciones){
 
   // ── Perfil (opcional; el estándar no lo exige pero lo acepta si es corto)
   if(hvLimpio(cv.resumen)){
-    y=hvSeccion(doc,y,'Perfil');
+    y=hvSeccion(doc,y,T.perfil);
     doc.setFont('helvetica','normal'); doc.setFontSize(HV.base-0.5);
     doc.splitTextToSize(hvLimpio(cv.resumen).slice(0,420), HV.ancho).forEach(l=>{
       doc.text(l, HV.mx, y); y+=HV.salto-0.5;
@@ -128,7 +132,7 @@ function generarCVHarvard(cv, opciones){
 
   // ── Educación primero: así lo define el formato Harvard.
   if((cv.academico||[]).length){
-    y=hvSeccion(doc,y,'Educación');
+    y=hvSeccion(doc,y,T.educacion);
     cv.academico.forEach(a=>{
       if(y>262){ doc.addPage(); y=HV.top; }
       y=hvEntrada(doc,y, a.titulo||'Estudios', a.periodo||'', [a.institucion,a.ciudad].filter(Boolean).join(', '));
@@ -138,7 +142,7 @@ function generarCVHarvard(cv, opciones){
 
   // ── Experiencia, de lo más reciente a lo más antiguo.
   if((cv.experiencia||[]).length){
-    y=hvSeccion(doc,y,'Experiencia');
+    y=hvSeccion(doc,y,T.experiencia);
     const exp=cv.experiencia.slice().sort((a,b)=>String(b.desde||'').localeCompare(String(a.desde||'')));
     exp.forEach(e=>{
       if(y>258){ doc.addPage(); y=HV.top; }
@@ -150,7 +154,7 @@ function generarCVHarvard(cv, opciones){
 
   // ── Cursos y certificaciones
   if((cv.cursos||[]).length){
-    y=hvSeccion(doc,y,'Cursos y certificaciones');
+    y=hvSeccion(doc,y,T.cursos);
     cv.cursos.forEach(c=>{
       if(y>268){ doc.addPage(); y=HV.top; }
       y=hvEntrada(doc,y, c.evento||c.tema||'', c.anio||'', c.institucion||'');
@@ -167,7 +171,7 @@ function generarCVHarvard(cv, opciones){
   if(hvLimpio(cv.disponibilidad))  hab.push('Disponibilidad: '+hvLimpio(cv.disponibilidad));
   if(hab.length){
     if(y>258){ doc.addPage(); y=HV.top; }
-    y=hvSeccion(doc,y,'Habilidades');
+    y=hvSeccion(doc,y,T.habilidades);
     y=hvVinetas(doc,y,hab);
   }
 

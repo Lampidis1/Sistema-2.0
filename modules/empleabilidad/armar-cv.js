@@ -152,8 +152,10 @@ function acMerge(p){
 }
 
 // ── Mapear CV → objeto para el exportador Harvard / payload ──────────────────
-function _expH(){ return CV.experiencia.map(e=>({cargo:e.cargo,empresa:e.empresa,ciudad:e.ciudad,periodo:e.periodo,
+function _expH(){ return CV.experiencia.map(e=>({cargo:e.cargo,empresa:e.empresa,ciudad:e.ciudad,periodo:e.periodo,desde:e.periodo,
   funciones:[e.funcion_general].concat((e.funciones_txt||'').split('\n')).map(s=>s.trim()).filter(Boolean),logro:e.logro})); }
+// Títulos exactos del Modelo CV de AMSA para el PDF (el exportador Harvard los acepta por opción).
+const AC_TITULOS={perfil:'Resumen Profesional',educacion:'Antecedentes Académicos',experiencia:'Antecedentes Laborales',cursos:'Seminarios y Cursos',habilidades:'Información Adicional'};
 function _acaH(){ return CV.academico.map(a=>({titulo:(a.nivel?a.nivel+' · ':'')+(a.titulo||''),institucion:(a.institucion||'')+(a.ciudad?', '+a.ciudad:''),periodo:a.periodo})); }
 function _curH(){ return CV.cursos.map(c=>({evento:c.evento,tema:'',institucion:(c.institucion||'')+(c.ciudad?', '+c.ciudad:''),anio:c.anio})); }
 
@@ -163,7 +165,7 @@ function acDescargarPDF(){
     const cvH={ nombres:CV.nombres,apellidos:CV.apellidos,rut:CV.rut,direccion:CV.direccion,comuna:CV.comuna,
       telefono:CV.telefono,email:CV.email,resumen:CV.resumen,
       experiencia:_expH(), academico:_acaH(), cursos:_curH(), idiomas:CV.idiomas, software:CV.software };
-    const doc=generarCVHarvard(cvH);
+    const doc=generarCVHarvard(cvH, {titulos:AC_TITULOS});
     doc.save('CV_'+((CV.apellidos||CV.nombres||CV.rut||'curriculum').replace(/\W+/g,'_'))+'.pdf');
   }catch(e){ acToast('No se pudo generar el PDF: '+e.message,'err'); }
 }
