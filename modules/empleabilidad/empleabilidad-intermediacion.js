@@ -73,7 +73,8 @@ function ilRenderBody(){
 // ── VACANTES ─────────────────────────────────────────────────────────────────
 function ilVacantesHTML(){
   return `<div class="il-sub"><div class="il-sub-t">Puestos disponibles</div>
-    <div style="display:flex;gap:8px"><button class="il-btn g" onclick="ilExportVacantes()">⬇ Excel</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="il-btn g" onclick="ilLinkCV()">🔗 Link para armar CV</button>
+    <button class="il-btn g" onclick="ilExportVacantes()">⬇ Excel</button>
     <button class="il-btn" onclick="ilVacanteModal()">➕ Nueva vacante</button></div></div>
     ${!IL.vacantes.length?`<div class="il-vacio">Aún no hay vacantes. Crea la primera con «Nueva vacante».</div>`
     :`<div class="il-grid">${IL.vacantes.map(ilVacCard).join('')}</div>`}`;
@@ -275,3 +276,31 @@ function ilDescargar(aoa,hoja,nombre){
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),hoja);
   XLSX.writeFile(wb,nombre+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
+
+// ── Link para armar CV (apresto) ─────────────────────────────────────────────
+// Genera un link personal por token (no expone el RUT en la URL, Regla 5) para
+// que la persona arme/edite su CV en armar-cv.html.
+function ilLinkCV(){
+  ilModal(`<h3>🔗 Link para armar CV</h3>
+    <div class="il-nota">Genera un link personal para que la persona arme o edite su CV (apresto). Va por token; no expone el RUT.</div>
+    <div class="il-g2"><div><label>RUT</label><input id="lkRut" placeholder="12.345.678-9"></div>
+      <div><label>Nombre (opcional)</label><input id="lkNom"></div></div>
+    <div id="lkOut"></div>
+    <div class="il-modal-acc"><span></span><div>
+      <button class="il-btn g" onclick="ilCerrar()">Cerrar</button>
+      <button class="il-btn" onclick="ilGenerarLink()">Generar link</button></div></div>`);
+}
+async function ilGenerarLink(){
+  const rut=ilVal('lkRut'); if(!rut){ toast('Escribe el RUT','err'); return; }
+  try{
+    const {data,error}=await SB.from('cv_links').insert({rut, nombre:ilVal('lkNom')||null, created_by:miNombre()}).select('token').single();
+    if(error) throw error;
+    const url=location.origin+location.pathname.replace(/[^/]*$/,'')+'armar-cv.html?t='+data.token;
+    document.getElementById('lkOut').innerHTML=`<div class="il-nota" style="margin-top:12px">Link generado — cópialo y compártelo:</div>
+      <div style="display:flex;gap:8px"><input id="lkUrl" readonly value="${esc(url)}" style="flex:1">
+      <button class="il-btn" onclick="ilCopiarLink()">Copiar</button></div>
+      <div class="il-nota"><a href="${esc(url)}" target="_blank" rel="noopener">Abrir en una pestaña nueva ↗</a></div>`;
+  }catch(e){ toast('Error al generar link: '+e.message,'err'); }
+}
+function ilCopiarLink(){ const i=document.getElementById('lkUrl'); if(!i) return; i.select();
+  try{ navigator.clipboard.writeText(i.value); }catch(e){ try{document.execCommand('copy');}catch(_){} } toast('🔗 Link copiado','ok'); }

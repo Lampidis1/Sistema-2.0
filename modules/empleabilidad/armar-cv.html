@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arma tu CV · Apresto Laboral · Antofagasta Minerals</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="../../config/supabase.config.js"></script>
+<link rel="stylesheet" href="armar-cv.css?v=20260911a">
+<link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
+</head>
+<body>
+<header class="ac-header">
+  <img src="../../shared/assets/logo-amsa-873.png" alt="Antofagasta Minerals">
+  <div><div class="ac-h-t">Arma tu Currículum</div><div class="ac-h-s">Apresto Laboral · Antofagasta Minerals</div></div>
+  <div class="ac-h-acc">
+    <button class="ac-btn g" id="acBtnPDF" onclick="acDescargarPDF()">⬇ PDF</button>
+    <button class="ac-btn" id="acBtnGuardar" onclick="acGuardar()">Guardar</button>
+  </div>
+</header>
+
+<div id="acErr" class="ac-err"></div>
+
+<main class="ac-split">
+  <!-- IZQUIERDA · formulario del Currículum Minero (Modelo CV) -->
+  <section class="ac-form" id="acForm">
+    <div class="ac-intro">Completa tu CV siguiendo la plantilla. A la derecha puedes ver tu CV adjunto para copiar los datos.</div>
+
+    <div class="ac-sec">Datos personales</div>
+    <div class="ac-g2">
+      <label class="ac-f"><span>Nombres</span><input id="fNombres"></label>
+      <label class="ac-f"><span>Apellidos</span><input id="fApellidos"></label>
+      <label class="ac-f"><span>RUT</span><input id="fRut"></label>
+      <label class="ac-f"><span>Teléfono</span><input id="fTelefono"></label>
+      <label class="ac-f"><span>Correo</span><input id="fEmail"></label>
+      <label class="ac-f"><span>Comuna</span><input id="fComuna"></label>
+    </div>
+    <label class="ac-f"><span>Dirección</span><input id="fDireccion"></label>
+
+    <div class="ac-sec">Resumen Profesional</div>
+    <label class="ac-f"><span>Un párrafo: profesión/oficio, años de experiencia, rubros y 3 fortalezas ligadas al cargo</span>
+      <textarea id="fResumen" rows="4"></textarea></label>
+
+    <div class="ac-sec">Antecedentes Laborales <button class="ac-add" onclick="acAdd('exp')">＋ agregar</button></div>
+    <div id="acExp"></div>
+
+    <div class="ac-sec">Antecedentes Académicos <button class="ac-add" onclick="acAdd('aca')">＋ agregar</button></div>
+    <div id="acAca"></div>
+
+    <div class="ac-sec">Seminarios y Cursos <button class="ac-add" onclick="acAdd('cur')">＋ agregar</button></div>
+    <div id="acCur"></div>
+
+    <div class="ac-sec">Información Adicional</div>
+    <div class="ac-sub">Idiomas <button class="ac-add" onclick="acAdd('idi')">＋</button></div>
+    <div id="acIdi"></div>
+    <div class="ac-sub">Software <button class="ac-add" onclick="acAdd('sof')">＋</button></div>
+    <div id="acSof"></div>
+    <label class="ac-f"><span>Otros (voluntariados, actividades continuas, habilidades blandas)</span>
+      <textarea id="fOtros" rows="2"></textarea></label>
+
+    <div class="ac-form-acc">
+      <button class="ac-btn g" onclick="acDescargarPDF()">⬇ Descargar PDF</button>
+      <button class="ac-btn" onclick="acGuardar()">Guardar mi CV</button>
+    </div>
+  </section>
+
+  <!-- DERECHA · CV adjunto -->
+  <aside class="ac-adjunto">
+    <div class="ac-adj-head">
+      <div class="ac-adj-t">Tu CV adjunto</div>
+      <button class="ac-btn g" onclick="document.getElementById('acFile').click()">📎 Subir CV</button>
+      <input type="file" id="acFile" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx" style="display:none" onchange="acCargarArchivo(this)">
+    </div>
+    <div class="ac-adj-body" id="acAdjBody">
+      <div class="ac-adj-vacio">
+        <div style="font-size:2.2rem">📄</div>
+        <p>Sube tu CV en <b>foto, PDF o Word</b>. Lo leemos y prellenamos la plantilla; luego revisa y corrige a la izquierda.</p>
+        <button class="ac-btn" onclick="document.getElementById('acFile').click()">Subir mi CV</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<div id="acOverlay" class="ac-overlay"><div class="ac-ov-box"><div class="ac-spin"></div><div id="acOvTxt">Procesando…</div></div></div>
+<div class="ac-toast" id="acToast"></div>
+
+<script src="empleabilidad-lectura.js?v=20260816a"></script>
+<script src="empleabilidad-harvard.js?v=20260816a"></script>
+<script src="armar-cv.js?v=20260911a"></script>
+</body>
+</html>
