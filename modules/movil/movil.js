@@ -11,7 +11,6 @@ async function _movilOnAcceso(user){
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('hUser').textContent=(user.email||'').split('@')[0];
   await cargarLevantados();
-  construirCuestionario();
   if(typeof rcRender==='function') rcRender();   // pinta la Recepción (pestaña de entrada)
 }
 
@@ -27,7 +26,7 @@ function movTab(p,btn){
   });
   if(p==='recepcion' && typeof rcRender==='function')rcRender();
   if(p==='listado')renderListado();
-  if(p==='cuestionario')refrescarCuestionarioActual();
+  if(p==='cuestionario' && typeof dbRender==='function')dbRender();
   window.scrollTo(0,0);
 }
 

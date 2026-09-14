@@ -171,6 +171,7 @@ function showPage(p,btn){
   if(p==='kanban') renderKanban();
   if(p==='ofertas') renderOfertas();
   if(p==='intermediacion') renderIntermediacion();
+  if(p==='formacion') renderFormacion();
   if(p==='becados') renderBecados();
 }
 // ═══════════════════════ KANBAN (compartido con Proveedores · tabla kanban_cards) ═══════════════════════

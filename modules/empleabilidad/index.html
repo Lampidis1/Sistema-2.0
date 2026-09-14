@@ -76,6 +76,7 @@
     <button class="tab active" data-page="directorio" onclick="showPage('directorio',this)">👥 Directorio CV</button>
     <button class="tab" data-page="ofertas" onclick="showPage('ofertas',this)">💼 Ofertas</button>
     <button class="tab" data-page="intermediacion" onclick="showPage('intermediacion',this)">🔗 Intermediación</button>
+    <button class="tab" data-page="formacion" onclick="showPage('formacion',this)">🎓 Formación</button>
     <button class="tab" data-page="becados" onclick="showPage('becados',this)">🎓 Becados</button>
     <button class="tab" data-page="kanban" onclick="showPage('kanban',this)">📋 Kanban</button>
   </nav>
@@ -129,6 +130,8 @@
   <!-- ══ PÁGINA KANBAN (compartida con Proveedores, misma tabla kanban_cards) ══ -->
   <!-- ══ PÁGINA INTERMEDIACIÓN LABORAL ══ -->
   <div class="page" id="page-intermediacion"></div>
+
+  <div class="page" id="page-formacion"></div>
 
   <div class="page" id="page-kanban">
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="kbNav">
@@ -254,11 +257,12 @@
   onAcceso: function(user){ return _empOnAcceso(user); }
 };</script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="empleabilidad.js?v=20260911a"></script>
+<script src="empleabilidad.js?v=20260913a"></script>
 <script src="empleabilidad-lectura.js?v=20260816a"></script>
 <script src="empleabilidad-match.js?v=20260816a"></script>
 <script src="empleabilidad-harvard.js?v=20260913a"></script>
 <script src="empleabilidad-intermediacion.js?v=20260913a"></script>
+<script src="empleabilidad-formacion.js?v=20260913a"></script>
 
 </body>
 </html>

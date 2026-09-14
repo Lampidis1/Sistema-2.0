@@ -191,3 +191,24 @@ main{padding:22px 28px 40px;max-width:1240px;margin:0 auto}
 .rc-vac-cargo{font-weight:700;font-size:.95rem}
 .rc-vac-emp{font-size:.78rem;color:var(--text-muted,#6b7780)}
 @media(max-width:560px){ .rc-serv{grid-template-columns:1fr} }
+
+/* ── Dashboard de atenciones (db-*) + cuestionario desplegable (rc-cuest) ──── */
+.rc-cuest-head{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.rc-caret{color:var(--teal,#006973);font-weight:800}
+.db-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.db-kpi{background:#f7fafa;border:1px solid var(--border,#D7DEE4);border-radius:11px;padding:12px;text-align:center}
+.db-kpi b{font-family:'Barlow Condensed',sans-serif;font-size:1.7rem;color:var(--teal,#006973);display:block;line-height:1}
+.db-kpi span{font-size:.68rem;color:var(--text-muted,#6b7780);display:block;margin-top:4px}
+.db-controls{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.db-controls label{font-size:.78rem;color:var(--text-muted,#6b7780);display:flex;gap:6px;align-items:center}
+.db-controls select{border:1.5px solid var(--border,#D7DEE4);border-radius:8px;padding:6px 8px;font-size:.85rem}
+.db-tipo{display:flex;gap:4px;margin-left:auto}
+.db-tbtn{border:1.5px solid var(--border,#D7DEE4);background:#fff;border-radius:8px;padding:6px 11px;font-size:.8rem;font-weight:700;color:var(--gray,#5F6973);cursor:pointer}
+.db-tbtn.on{border-color:var(--teal,#006973);color:var(--teal,#006973);background:var(--teal-lt,#E4F6F5)}
+.db-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.db-bt{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.05rem;color:var(--dark,#1C2632);text-transform:uppercase;margin-bottom:8px}
+.db-bar-row{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:.82rem}
+.db-bar-l{width:34%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.db-bar{flex:1;background:#eef2f3;border-radius:6px;height:13px;overflow:hidden}
+.db-bar>div{height:13px;background:linear-gradient(90deg,#00A399,#006973);border-radius:6px}
+.db-bar-v{width:78px;text-align:right;font-weight:700}

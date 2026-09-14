@@ -121,35 +121,24 @@ function acDel(t,i){ acSync();
   ({exp:acRenderExp,aca:acRenderAca,cur:acRenderCur,idi:acRenderIdi,sof:acRenderSof})[t]();
 }
 
-// ── CV adjunto (derecha) + OCR ───────────────────────────────────────────────
-async function acCargarArchivo(input){
-  const file=input.files&&input.files[0]; input.value='';
-  if(!file) return;
-  acMostrarAdjunto(file);
-  acOverlay('Leyendo tu CV… (si es una foto, la primera vez descarga el lector)');
-  try{
-    const lectura=await leerDocumento(file);
-    if(/\.docx?$/i.test(file.name)){ const t=document.getElementById('acAdjTxt'); if(t) t.textContent=lectura.texto||'(documento sin texto)'; }
-    const cv=estructurarCV(lectura, file.name);
-    acMerge(cv); acSync(); acLlenar();
-    acToast('Leímos tu CV, revisa y corrige a la izquierda');
-  }catch(e){ acToast('No se pudo leer: '+e.message,'err'); }
-  finally{ acOverlayOff(); }
+// ── Ayuda / ejemplos por sección (basados en el Modelo CV de AMSA) ──────────
+const AC_INFO={
+  datos:'Escribe tu nombre completo, RUT, un teléfono y correo donde te puedan contactar, y tu comuna. Ej: "Juan Pérez · +56 9 1234 5678 · juan.perez@gmail.com · Antofagasta".',
+  resumen:'Un párrafo que te presente. Pon tu oficio o profesión, de qué institución, cuántos años de experiencia, en qué rubros, y 3 fortalezas ligadas al cargo al que postulas.\n\nEjemplo:\n"Técnico en mantención del INACAP, con más de 5 años de experiencia en faenas mineras. Se ha desempeñado en mantención mecánica de equipos pesados. Responsable, con foco en la seguridad y buen trabajo en equipo."',
+  exp:'Por cada empleo (del más reciente al más antiguo): empresa, ciudad, cargo y el periodo (Mes año – Mes año).\n\n• Función general: qué hacías en general (máx. 3 líneas).\n• Funciones específicas: tareas concretas, una por línea.\n• Logro: un resultado medible que integre una habilidad blanda.\n\nEjemplo:\nEmpresa: Minera Centinela · Ciudad: Antofagasta\nCargo: Operador de camión de extracción · Periodo: Ene 2018 – Ago 2020\nFunción general: "Operación de camión tolva en botadero cumpliendo procedimientos de seguridad."\nFunción específica: "Chequeo básico del equipo y reporte de anomalías."\nLogro: "Reduje en 15% los tiempos de detención coordinando con mantención."',
+  aca:'Tus estudios, del más alto al más básico. Por cada uno: nivel (Enseñanza Media / Técnico / Título / Magíster), el título o carrera, la institución y la ciudad con los años.\n\nEjemplo:\nNivel: Técnico Nivel Superior · Título: Mantención Industrial\nInstitución: INACAP · Ciudad y años: Antofagasta · 2015 – 2018',
+  cur:'Cursos, diplomados, charlas, talleres o seminarios a los que asististe. Pon el nombre, la institución y el año.\n\nEjemplo: "Trabajo en altura" · Mutual de Seguridad · 2022.',
+  info:'Idiomas y software con su nivel, y en "Otros" actividades que reflejen habilidades blandas.\n\nEjemplos:\nIdioma: Inglés · nivel intermedio\nSoftware: MS Office · nivel intermedio\nOtros: "Voluntariado en cuerpo de bomberos."'
+};
+function acInfo(key){
+  const txt=AC_INFO[key]||''; if(!txt) return;
+  const host=document.getElementById('acInfoHost');
+  host.innerHTML='<div class="ac-info-ov" onclick="if(event.target===this)acInfoCerrar()"><div class="ac-info-box">'+
+    '<div class="ac-info-h">\u2139 Ejemplo de qué poner</div>'+
+    '<div class="ac-info-b">'+esc(txt).replace(/\n/g,'<br>')+'</div>'+
+    '<button class="ac-btn" onclick="acInfoCerrar()">Entendido</button></div></div>';
 }
-function acMostrarAdjunto(file){
-  const body=document.getElementById('acAdjBody'); const url=URL.createObjectURL(file);
-  if(/^image\//.test(file.type)||/\.(jpe?g|png|webp|bmp|tiff?)$/i.test(file.name)) body.innerHTML='<img class="ac-adj-img" src="'+url+'">';
-  else if(/pdf$/i.test(file.name)||file.type==='application/pdf') body.innerHTML='<iframe class="ac-adj-frame" src="'+url+'"></iframe>';
-  else body.innerHTML='<div class="ac-adj-txt" id="acAdjTxt">Leyendo el documento…</div>';
-}
-function acMerge(p){
-  ['nombres','apellidos','rut','telefono','email','comuna','direccion','resumen'].forEach(k=>{ if(!CV[k] && p[k]) CV[k]=p[k]; });
-  if(!CV.experiencia.length && (p.experiencia||[]).length) CV.experiencia=p.experiencia.map(e=>({empresa:e.empresa||'',ciudad:e.ciudad||'',periodo:e.periodo||'',cargo:e.cargo||'',funcion_general:'',funciones_txt:(e.funciones||[]).join('\n'),logro:e.logro||''}));
-  if(!CV.academico.length && (p.academico||[]).length) CV.academico=p.academico.map(a=>({nivel:'',titulo:a.titulo||'',institucion:a.institucion||'',ciudad:'',periodo:a.periodo||''}));
-  if(!CV.cursos.length && (p.cursos||[]).length) CV.cursos=p.cursos.map(c=>({evento:c.evento||c.tema||'',institucion:c.institucion||'',ciudad:'',anio:c.anio||''}));
-  if(!CV.idiomas.length && (p.idiomas||[]).length) CV.idiomas=p.idiomas.map(i=>({idioma:i.idioma||'',nivel:i.nivel||''}));
-  if(!CV.software.length && (p.software||[]).length) CV.software=p.software.map(s=>({nombre:s.nombre||'',nivel:s.nivel||''}));
-}
+function acInfoCerrar(){ const h=document.getElementById('acInfoHost'); if(h) h.innerHTML=''; }
 
 // ── Mapear CV → objeto para el exportador Harvard / payload ──────────────────
 function _expH(){ return CV.experiencia.map(e=>({cargo:e.cargo,empresa:e.empresa,ciudad:e.ciudad,periodo:e.periodo,desde:e.periodo,
