@@ -19,28 +19,19 @@ let RC = { servicio:null, vacantes:[], vacLoaded:false, cursos:[], curLoaded:fal
            did:{apresto:false,intermediacion:false,formacion:false}, cuestAbierto:false };
 
 function rcVal(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
-function rcPersona(){ return { rut:rcVal('rcRut'), nombre:rcVal('rcNombre'), telefono:rcVal('rcTel'), comuna:rcVal('rcComuna'), sexo:rcVal('rcSexo') }; }
+// La persona sale de los campos de identificación (ya estáticos en la página).
+function rcPersona(){ return { rut:rcVal('cRut'), nombre:[rcVal('fNombres'),rcVal('fApellidos')].filter(Boolean).join(' '),
+  telefono:rcVal('fTel'), comuna:rcVal('fComuna'), sexo:rcVal('fSexo') }; }
 
+// Desplegable "Datos completos del CV" (el contenido es estático en el HTML).
+function rcToggleDatos(){ const b=document.getElementById('rcDatosBody'), c=document.getElementById('rcDatosCaret'); if(!b) return;
+  const abrir=b.style.display==='none'; b.style.display=abrir?'':'none'; if(c) c.textContent=abrir?'▲':'▼'; }
+
+// rcRender ahora solo pinta la parte dinámica (#rcBody): encuesta, servicios y
+// cuestionario. La identificación y los datos completos son estáticos.
 function rcRender(){
-  const cont=document.getElementById('page-recepcion'); if(!cont) return;
-  const a=ACTUAL||{};
-  const rut=(a.rut)||'', nom=[a.nombres,a.apellidos].filter(Boolean).join(' '), tel=a.telefono||'', com=a.comuna||'', sx=a.sexo||'';
+  const cont=document.getElementById('rcBody'); if(!cont) return;
   cont.innerHTML=`
-    <div class="card card-ancho">
-      <div class="sec-t">🎯 Recepción · ¿a quién atiendes?</div>
-      <div class="g2">
-        <div class="fld"><label>RUT</label><input id="rcRut" value="${esc(rut)}" placeholder="12.345.678-9"></div>
-        <div class="fld"><label>Nombre y apellido</label><input id="rcNombre" value="${esc(nom)}"></div>
-      </div>
-      <div class="g2">
-        <div class="fld"><label>Teléfono</label><input id="rcTel" value="${esc(tel)}" inputmode="tel"></div>
-        <div class="fld"><label>Comuna</label><input id="rcComuna" value="${esc(com)}"></div>
-      </div>
-      <div class="fld"><label>Sexo</label><select id="rcSexo"><option value="">—</option>
-        <option ${sx==='Femenino'?'selected':''}>Femenino</option><option ${sx==='Masculino'?'selected':''}>Masculino</option><option ${sx==='Otro'?'selected':''}>Otro</option></select></div>
-      <div class="rc-nota">Para el CV completo puedes ir a <span class="rc-link" onclick="movTab('captura',document.querySelector('.navtabs button[data-p=captura]'))">👤 Captura</span>.</div>
-    </div>
-
     <div class="card">
       <div class="sec-t">📋 Encuesta breve</div>
       <div class="g2">
@@ -74,9 +65,17 @@ function rcRender(){
     </div>
 
     <div class="btn-row btn-row-final">
-      <button class="btn" onclick="rcGuardarAtencion()">💾 Guardar atención</button>
+      <button class="btn" onclick="rcGuardarTodo()">💾 Guardar atención</button>
     </div>`;
   rcRenderPanel();
+}
+
+// Guarda el CV completo (cv_personas) y la atención en un solo paso, para que no
+// se pierdan datos al cruzar entre secciones.
+async function rcGuardarTodo(){
+  if(!rcVal('fNombres') && !rcVal('fApellidos') && !rcVal('cRut')){ toast('Identifica a la persona (RUT o nombre)','err'); return; }
+  if(typeof guardarRegistro==='function'){ try{ await guardarRegistro(); }catch(e){} }
+  await rcGuardarAtencion();
 }
 
 function rcToggleCuest(){ RC.cuestAbierto=!RC.cuestAbierto;

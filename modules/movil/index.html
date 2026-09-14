@@ -12,7 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="movil.css?v=20260913b">
+<link rel="stylesheet" href="movil.css?v=20260914a">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -69,81 +69,74 @@
        inferior, que se alcanza con el pulgar. -->
   <nav class="navtabs">
     <button class="active" data-p="recepcion" onclick="movTab('recepcion',this)">🎯 Recepción</button>
-    <button data-p="captura" onclick="movTab('captura',this)">👤 Captura</button>
     <button data-p="cuestionario" onclick="movTab('cuestionario',this)">📊 Dashboard</button>
     <button data-p="listado" onclick="movTab('listado',this)">📇 Levantados</button>
   </nav>
 
   <main>
-    <!-- PÁGINA: RECEPCIÓN (encuesta que deriva a apresto / intermediación / formación) -->
-    <div class="page active" id="page-recepcion"></div>
-
-    <!-- PÁGINA: CAPTURA -->
-    <div class="page" id="page-captura">
+    <!-- PÁGINA: RECEPCIÓN (identificación + datos + encuesta que deriva a 3 rutas) -->
+    <div class="page active" id="page-recepcion">
       <div class="card card-ancho">
-        <div class="sec-t">🔎 Buscar o crear</div>
+        <div class="sec-t">🎯 Recepción · ¿a quién atiendes?</div>
         <div class="rut-warn" id="rutWarn"></div>
-        <div class="fld"><label>RUT (buscar si ya existe)</label>
-          <input id="cRut" placeholder="12345678-9" oninput="buscarPorRut()"></div>
-        <div class="btn-row">
-          <button class="btn sec" onclick="nuevoRegistro()">＋ Nuevo</button>
-          <button class="btn gray" onclick="document.getElementById('cvArch').click()">📄 Cargar CV</button>
-          <input type="file" id="cvArch" accept=".pdf,.doc,.docx" style="display:none" onchange="cargarArchivo(this.files)">
+        <div class="g2">
+          <div class="fld"><label>RUT (se busca si ya existe)</label><input id="cRut" placeholder="12.345.678-9" oninput="buscarPorRut()"></div>
+          <div class="fld"><label>Sexo</label><select id="fSexo"><option value="">—</option><option>Femenino</option><option>Masculino</option><option>Otro</option></select></div>
         </div>
-      </div>
-
-      <div class="cols">
-      <div class="card">
-        <div class="sec-t">👤 Datos personales</div>
         <div class="g2">
           <div class="fld"><label>Nombre(s)</label><input id="fNombres"></div>
           <div class="fld"><label>Apellido(s)</label><input id="fApellidos"></div>
         </div>
         <div class="g2">
-          <div class="fld"><label>Fecha nacimiento</label><input id="fNac" placeholder="dd-mm-aaaa"></div>
-          <div class="fld"><label>Sexo</label><select id="fSexo"><option value="">—</option><option>Femenino</option><option>Masculino</option><option>Otro</option></select></div>
-        </div>
-        <div class="g2">
-          <div class="fld"><label>Nacionalidad</label><input id="fNacion" value="Chilena"></div>
-          <div class="fld"><label>¿Residencia definitiva?</label><select id="fResid"><option value="">—</option><option>Sí</option><option>No</option></select></div>
-        </div>
-        <div class="g2">
+          <div class="fld"><label>Teléfono</label><input id="fTel" inputmode="tel" placeholder="+56912345678" onblur="normFono(this)"></div>
           <div class="fld"><label>Comuna</label><input id="fComuna"></div>
-          <div class="fld"><label>Región</label><input id="fRegion"></div>
         </div>
-        <div class="fld"><label>Dirección</label><input id="fDir"></div>
-        <div class="g2">
-          <div class="fld"><label>Teléfono</label><input id="fTel" inputmode="tel"></div>
-          <div class="fld"><label>Correo</label><input id="fEmail" inputmode="email"></div>
+        <div class="btn-row">
+          <button class="btn sec" onclick="nuevoRegistro()">＋ Nuevo</button>
+          <button class="btn gray" onclick="document.getElementById('cvArch').click()">📄 Cargar CV (PDF/Word)</button>
+          <input type="file" id="cvArch" accept=".pdf,.doc,.docx" style="display:none" onchange="cargarArchivo(this.files)">
         </div>
+        <div id="editInfo" style="text-align:center;font-size:.74rem;color:var(--text-muted);margin-top:6px"></div>
       </div>
 
+      <!-- Datos completos del CV (desplegable, misma página) -->
       <div class="card">
-        <div class="sec-t">🚗 Laboral</div>
-        <div class="g2">
-          <div class="fld"><label>Licencia de conducir</label><select id="fLic"><option value="">—</option><option>Sí</option><option>No</option></select></div>
-          <div class="fld"><label>Tipo de licencia</label><input id="fTipoLic" placeholder="B, A2, D..."></div>
+        <div class="rc-cuest-head" onclick="rcToggleDatos()">
+          <div class="sec-t" style="margin:0">📄 Datos completos del CV</div><span class="rc-caret" id="rcDatosCaret">▼</span>
         </div>
-        <div class="fld"><label>Disponibilidad laboral</label><input id="fDisp" placeholder="Inmediata, por turnos..."></div>
-        <div class="g2">
-          <div class="fld"><label>¿Experiencia en minería?</label><select id="fMineria"><option value="">—</option><option>Sí</option><option>No</option></select></div>
-          <div class="fld"><label>Años de experiencia</label><input id="fAnios" inputmode="numeric"></div>
+        <div id="rcDatosBody" style="display:none">
+          <div class="g2">
+            <div class="fld"><label>Fecha nacimiento</label><input id="fNac" placeholder="dd-mm-aaaa"></div>
+            <div class="fld"><label>Nacionalidad</label><input id="fNacion" value="Chilena"></div>
+          </div>
+          <div class="g2">
+            <div class="fld"><label>¿Residencia definitiva?</label><select id="fResid"><option value="">—</option><option>Sí</option><option>No</option></select></div>
+            <div class="fld"><label>Región</label><input id="fRegion"></div>
+          </div>
+          <div class="fld"><label>Dirección</label><input id="fDir"></div>
+          <div class="fld"><label>Correo</label><input id="fEmail" inputmode="email"></div>
+          <div class="g2">
+            <div class="fld"><label>Licencia de conducir</label><select id="fLic"><option value="">—</option><option>Sí</option><option>No</option></select></div>
+            <div class="fld"><label>Tipo de licencia</label><input id="fTipoLic" placeholder="B, A2, D..."></div>
+          </div>
+          <div class="fld"><label>Disponibilidad laboral</label><input id="fDisp" placeholder="Inmediata, por turnos..."></div>
+          <div class="g2">
+            <div class="fld"><label>¿Experiencia en minería?</label><select id="fMineria"><option value="">—</option><option>Sí</option><option>No</option></select></div>
+            <div class="fld"><label>Años de experiencia</label><input id="fAnios" inputmode="numeric"></div>
+          </div>
+          <div class="fld"><label>Oficios / cargos de experiencia</label><input id="fOficios"></div>
+          <div class="fld"><label>Máximo nivel de estudios</label>
+            <select id="fEstudios"><option value="">—</option><option>Media completa</option><option>Técnico nivel medio completo</option><option>Técnico nivel superior completo</option><option>Profesional completa</option><option>Profesional con especialización</option></select></div>
+          <div class="fld"><label>Educación / especialización (detalle)</label><input id="fEducacion"></div>
+          <div class="fld"><label>Cursos realizados</label><textarea id="fCursos" placeholder="Uno por línea"></textarea></div>
+          <div class="fld"><label>Certificaciones</label><textarea id="fCertif" placeholder="Uno por línea"></textarea></div>
+          <div class="fld"><label>Observaciones</label><textarea id="fObs"></textarea></div>
+          <div class="btn-row"><button class="btn gold" onclick="exportarCVactual()">📄 CV PDF</button></div>
         </div>
-        <div class="fld"><label>Oficios / cargos de experiencia</label><input id="fOficios"></div>
-        <div class="fld"><label>Máximo nivel de estudios</label>
-          <select id="fEstudios"><option value="">—</option><option>Media completa</option><option>Técnico nivel medio completo</option><option>Técnico nivel superior completo</option><option>Profesional completa</option><option>Profesional con especialización</option></select></div>
-        <div class="fld"><label>Educación / especialización (detalle)</label><input id="fEducacion"></div>
-        <div class="fld"><label>Cursos realizados</label><textarea id="fCursos" placeholder="Uno por línea"></textarea></div>
-        <div class="fld"><label>Certificaciones</label><textarea id="fCertif" placeholder="Uno por línea"></textarea></div>
-        <div class="fld"><label>Observaciones</label><textarea id="fObs"></textarea></div>
       </div>
-      </div><!-- /.cols -->
 
-      <div class="btn-row btn-row-final">
-        <button class="btn" onclick="guardarRegistro()">💾 Guardar</button>
-        <button class="btn gold" onclick="exportarCVactual()">📄 CV PDF</button>
-      </div>
-      <div id="editInfo" style="text-align:center;font-size:.74rem;color:var(--text-muted);margin-top:8px"></div>
+      <!-- Encuesta + servicios + cuestionario + guardar (dinámico) -->
+      <div id="rcBody"></div>
     </div>
 
     <!-- PÁGINA: DASHBOARD (reemplaza el cuestionario) -->
@@ -164,7 +157,6 @@
 
   <div class="tabbar">
     <button class="active" data-p="recepcion" onclick="movTab('recepcion',this)"><span class="ic">🎯</span>Recepción</button>
-    <button data-p="captura" onclick="movTab('captura',this)"><span class="ic">👤</span>Captura</button>
     <button data-p="cuestionario" onclick="movTab('cuestionario',this)"><span class="ic">📊</span>Dashboard</button>
     <button data-p="listado" onclick="movTab('listado',this)"><span class="ic">📇</span>Listado</button>
   </div>
@@ -181,7 +173,7 @@
   onAcceso: function(user){ return _movilOnAcceso(user); }
 };</script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="movil.js?v=20260913b"></script>
-<script src="movil-recepcion.js?v=20260913b"></script>
-<script src="movil-dashboard.js?v=20260913b"></script></body>
+<script src="movil.js?v=20260914a"></script>
+<script src="movil-recepcion.js?v=20260914a"></script>
+<script src="movil-dashboard.js?v=20260914a"></script></body>
 </html>

@@ -56,7 +56,7 @@ function formToObj(){
     cv_id:(ACTUAL&&ACTUAL.cv_id)||('cv_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
     rut:document.getElementById('cRut').value.trim(), nombres:g('fNombres'), apellidos:g('fApellidos'),
     fecha_nacimiento:g('fNac'), sexo:g('fSexo'), nacionalidad:g('fNacion'), comuna:g('fComuna'), region:g('fRegion'),
-    direccion:g('fDir'), telefono:g('fTel'), email:g('fEmail'),
+    direccion:g('fDir'), telefono:fonoFmt(g('fTel')), email:g('fEmail'),
     licencia:g('fLic'), tipo_licencia:g('fTipoLic'), disponibilidad:g('fDisp'),
     exp_mineria:g('fMineria'), anios_exp:g('fAnios'), oficios:g('fOficios'),
     educacion:[g('fEstudios'),g('fEducacion')].filter(Boolean).join(' — '),
@@ -77,20 +77,33 @@ function objToForm(c){
   if(c.educacion){ const parts=c.educacion.split(' — '); document.getElementById('fEstudios').value=parts[0]||''; document.getElementById('fEducacion').value=parts.slice(1).join(' — '); }
 }
 
-// ═══════════ BUSCAR POR RUT ═══════════
-let _rutTimer=null;
+// ═══════════ TELÉFONO (formato +569XXXXXXXX) ═══════════
+function fonoFmt(v){
+  let d=String(v||'').replace(/\D/g,'').replace(/^56/,'');   // quitar prefijo país
+  if(d[0]==='9') d=d.slice(1);                                // quitar el 9 de móvil
+  d=d.slice(-8);                                              // dejar los 8 dígitos finales
+  return d.length===8 ? '+569'+d : String(v||'').trim();
+}
+function normFono(el){ if(el) el.value=fonoFmt(el.value); }
+
+// ═══════════ BUSCAR POR RUT (precarga automática) ═══════════
+let _rutTimer=null, _rutCargado=null;
 function normRut(r){ return String(r||'').replace(/[.\-\s]/g,'').toLowerCase(); }
 function buscarPorRut(){
   clearTimeout(_rutTimer);
   _rutTimer=setTimeout(async()=>{
     const rut=normRut(document.getElementById('cRut').value); const warn=document.getElementById('rutWarn');
-    if(rut.length<7){ warn.style.display='none'; return; }
+    if(rut.length<7){ warn.style.display='none'; _rutCargado=null; return; }
     const encontrado=LEVANTADOS.find(c=>normRut(c.rut)===rut);
     if(encontrado){
-      warn.style.display='block';
-      warn.innerHTML='⚠ Ya existe: <b>'+esc((encontrado.nombres||'')+' '+(encontrado.apellidos||''))+'</b>. <span style="color:var(--teal);text-decoration:underline;cursor:pointer" onclick="complementar(\''+encontrado.cv_id+'\')">Complementar este registro</span>';
-    } else { warn.style.display='none'; }
-  },350);
+      // Precarga automática (una sola vez por persona): trae todos sus datos.
+      if(_rutCargado!==encontrado.cv_id){
+        _rutCargado=encontrado.cv_id;
+        complementar(encontrado.cv_id);
+        toast('Datos precargados: '+((encontrado.nombres||'')+' '+(encontrado.apellidos||'')).trim(),'ok');
+      }
+    } else { warn.style.display='none'; _rutCargado=null; }
+  },400);
 }
 function complementar(id){
   const c=LEVANTADOS.find(x=>x.cv_id===id); if(!c)return;
