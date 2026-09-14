@@ -206,3 +206,9 @@
 .il-est.descartada{color:#c0311b;border-color:#f0b8ad}
 .il-seg{width:100%;min-width:130px;border:1px solid #d7dee4;border-radius:6px;padding:4px 7px;font-size:.8rem}
 @media(max-width:599px){ .il-g2,.il-g3{grid-template-columns:1fr} }
+
+/* estados de derivación (trazabilidad) */
+.il-est.reg{color:#5f6973}
+.il-est.eval{color:#b8860b;border-color:#e6c96b}
+.il-est.ok{color:#1e7e34;border-color:#a5d6b3}
+.il-est.no{color:#c0311b;border-color:#f0b8ad}

@@ -223,18 +223,27 @@ async function ilGuardarDerivacion(vacanteId){
     ilCerrar(); await ilCargar(); IL.vista='derivaciones'; ilRender(); toast('✅ Derivación registrada','ok');
   }catch(e){ toast('Error: '+e.message,'err'); }
 }
+const IL_ESTADOS=['registrada','en evaluación','contratado','rechazado'];
+function ilEstCls(s){ return {'registrada':'reg','en evaluación':'eval','contratado':'ok','rechazado':'no'}[s]||'reg'; }
 function ilDerivHTML(){
   const d=IL.derivaciones;
-  const badge=s=>`<select class="il-est ${s}" onchange="ilCambiarEstado(this)">${['registrada','efectiva','descartada'].map(o=>`<option ${o===s?'selected':''}>${o}</option>`).join('')}</select>`;
-  return `<div class="il-sub"><div class="il-sub-t">Seguimiento de derivaciones</div>
-    <button class="il-btn g" onclick="ilExportDerivaciones()">⬇ Excel</button></div>
+  const badge=s=>`<select class="il-est ${ilEstCls(s)}" onchange="ilCambiarEstado(this)">${IL_ESTADOS.map(o=>`<option ${o===s?'selected':''}>${o}</option>`).join('')}</select>`;
+  // resumen por estado
+  const cnt=est=>d.filter(x=>(x.estado||'registrada')===est).length;
+  return `<div class="il-sub"><div class="il-sub-t">Derivados (trazabilidad)</div>
+    <button class="il-btn g" onclick="ilExportDerivaciones()">⬇ Excel por cargo</button></div>
+    <div class="il-kpis" style="margin-bottom:12px">
+      <div class="il-kpi"><b>${d.length}</b><span>Derivados</span></div>
+      <div class="il-kpi"><b>${cnt('en evaluación')}</b><span>En evaluación</span></div>
+      <div class="il-kpi"><b style="color:#1e7e34">${cnt('contratado')}</b><span>Contratados</span></div>
+      <div class="il-kpi"><b style="color:#c0311b">${cnt('rechazado')}</b><span>Rechazados</span></div></div>
     ${!d.length?`<div class="il-vacio">Sin derivaciones. Usa «Derivar» en una vacante.</div>`
-    :`<div class="il-scroll"><table class="il-tabla"><thead><tr><th>Fecha</th><th>Vacante</th><th>Nombre</th><th>RUT</th><th>Teléfono</th><th>EECC</th><th>Estado</th><th>Seguimiento EECC</th><th></th></tr></thead>
+    :`<div class="il-scroll"><table class="il-tabla"><thead><tr><th>Fecha</th><th>Cargo</th><th>Nombre y apellido</th><th>RUT</th><th>Teléfono</th><th>Comuna/localidad</th><th>Estado</th><th>Seguimiento</th><th></th></tr></thead>
       <tbody>${d.map(r=>`<tr data-id="${r.derivacion_id}">
         <td>${esc((r.fecha_derivacion||'').slice(0,10))}</td>
         <td>${esc(r.cargo_txt||'')}</td>
         <td>${esc([r.nombre,r.apellidos].filter(Boolean).join(' '))}</td>
-        <td>${esc(r.rut||'')}</td><td>${esc(r.telefono||'')}</td><td>${esc(r.eecc||'')}</td>
+        <td>${esc(r.rut||'')}</td><td>${esc(r.telefono||'')}</td><td>${esc(r.localidad||'')}</td>
         <td>${badge(r.estado||'registrada')}</td>
         <td><input class="il-seg" value="${esc(r.seguimiento_eecc||'')}" onchange="ilGuardarSeguimiento(this)" placeholder="respuesta EECC…"></td>
         <td><button class="il-mini d" onclick="ilBorrarDerivacion('${r.derivacion_id}')">🗑</button></td>
@@ -244,7 +253,7 @@ function _ilRowId(el){ const tr=el.closest('tr'); return tr&&tr.getAttribute('da
 async function ilCambiarEstado(sel){
   const id=_ilRowId(sel); if(!id) return;
   try{ await SB.from('derivaciones').update({estado:sel.value,updated_at:ilNow(),updated_by:miNombre()}).eq('derivacion_id',id);
-    const d=IL.derivaciones.find(x=>x.derivacion_id===id); if(d) d.estado=sel.value; sel.className='il-est '+sel.value;
+    const d=IL.derivaciones.find(x=>x.derivacion_id===id); if(d) d.estado=sel.value; sel.className='il-est '+ilEstCls(sel.value); ilRender();
   }catch(e){ toast('Error: '+e.message,'err'); }
 }
 async function ilGuardarSeguimiento(inp){
@@ -268,9 +277,11 @@ function ilExportVacantes(){
   ilDescargar(aoa,'Vacantes','intermediacion_vacantes');
 }
 function ilExportDerivaciones(){
-  const aoa=[['Fecha Derivación','EECC','Localidad','Vacante derivada','Nombre','Apellidos','RUT','Número','Estado','Seguimiento EECC','Comentarios']];
-  IL.derivaciones.forEach(d=>aoa.push([(d.fecha_derivacion||'').slice(0,10),d.eecc||'',d.localidad||'',d.cargo_txt||'',d.nombre||'',d.apellidos||'',d.rut||'',d.telefono||'',d.estado||'',d.seguimiento_eecc||'',d.comentarios||'']));
-  ilDescargar(aoa,'Derivaciones','intermediacion_derivaciones');
+  const aoa=[['Cargo','Nombre y apellido','RUT','Teléfono','Comuna/localidad','Empresa (EECC)','Estado','Fecha derivación','Seguimiento EECC','Comentarios']];
+  IL.derivaciones.slice().sort((a,b)=>String(a.cargo_txt||'').localeCompare(String(b.cargo_txt||''),'es'))
+    .forEach(d=>aoa.push([d.cargo_txt||'',[d.nombre,d.apellidos].filter(Boolean).join(' '),d.rut||'',d.telefono||'',
+      d.localidad||'',d.eecc||'',d.estado||'registrada',(d.fecha_derivacion||'').slice(0,10),d.seguimiento_eecc||'',d.comentarios||'']));
+  ilDescargar(aoa,'Derivados','derivados_por_cargo');
 }
 function ilDescargar(aoa,hoja,nombre){
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),hoja);
