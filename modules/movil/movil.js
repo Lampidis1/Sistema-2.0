@@ -89,21 +89,35 @@ function normFono(el){ if(el) el.value=fonoFmt(el.value); }
 // ═══════════ BUSCAR POR RUT (precarga automática) ═══════════
 let _rutTimer=null, _rutCargado=null;
 function normRut(r){ return String(r||'').replace(/[.\-\s]/g,'').toLowerCase(); }
-function buscarPorRut(){
+// Formatea 123456789 → 12.345.678-9 (puntos de miles + guion antes del dígito verificador)
+function rutFmt(v){
+  let s=String(v||'').replace(/[^0-9kK]/g,'').toUpperCase();
+  if(s.length<2) return s;
+  const dv=s.slice(-1); let cuerpo=s.slice(0,-1), out='';
+  for(let i=cuerpo.length; i>0; i-=3){ out=cuerpo.slice(Math.max(0,i-3),i)+(out?'.'+out:''); }
+  return out+'-'+dv;
+}
+// Al salir del campo: deja el RUT con formato y dispara la búsqueda de inmediato.
+function rutBlur(el){ if(!el) return; el.value=rutFmt(el.value); buscarPorRut(true); }
+function buscarPorRut(inmediato){
   clearTimeout(_rutTimer);
-  _rutTimer=setTimeout(async()=>{
+  const run=async()=>{
     const rut=normRut(document.getElementById('cRut').value); const warn=document.getElementById('rutWarn');
-    if(rut.length<7){ warn.style.display='none'; _rutCargado=null; return; }
+    if(rut.length<7){ if(warn){warn.style.display='none';} _rutCargado=null; return; }
     const encontrado=LEVANTADOS.find(c=>normRut(c.rut)===rut);
     if(encontrado){
+      const nom=((encontrado.nombres||'')+' '+(encontrado.apellidos||'')).trim()||'registro existente';
+      if(warn){ warn.style.display='block'; warn.textContent='✔ Ya existe: '+nom+' — datos precargados'; }
       // Precarga automática (una sola vez por persona): trae todos sus datos.
       if(_rutCargado!==encontrado.cv_id){
         _rutCargado=encontrado.cv_id;
         complementar(encontrado.cv_id);
-        toast('Datos precargados: '+((encontrado.nombres||'')+' '+(encontrado.apellidos||'')).trim(),'ok');
+        if(warn){ warn.style.display='block'; warn.textContent='✔ Ya existe: '+nom+' — datos precargados'; }
+        toast('Datos precargados: '+nom,'ok');
       }
-    } else { warn.style.display='none'; _rutCargado=null; }
-  },400);
+    } else { if(warn){warn.style.display='none';} _rutCargado=null; }
+  };
+  if(inmediato===true){ run(); } else { _rutTimer=setTimeout(run,400); }
 }
 function complementar(id){
   const c=LEVANTADOS.find(x=>x.cv_id===id); if(!c)return;

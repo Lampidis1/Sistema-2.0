@@ -12,7 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="movil.css?v=20260914a">
+<link rel="stylesheet" href="movil.css?v=20260914b">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -80,7 +80,7 @@
         <div class="sec-t">🎯 Recepción · ¿a quién atiendes?</div>
         <div class="rut-warn" id="rutWarn"></div>
         <div class="g2">
-          <div class="fld"><label>RUT (se busca si ya existe)</label><input id="cRut" placeholder="12.345.678-9" oninput="buscarPorRut()"></div>
+          <div class="fld"><label>RUT (se busca si ya existe)</label><input id="cRut" placeholder="12.345.678-9" oninput="buscarPorRut()" onblur="rutBlur(this)"></div>
           <div class="fld"><label>Sexo</label><select id="fSexo"><option value="">—</option><option>Femenino</option><option>Masculino</option><option>Otro</option></select></div>
         </div>
         <div class="g2">
@@ -173,7 +173,7 @@
   onAcceso: function(user){ return _movilOnAcceso(user); }
 };</script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="movil.js?v=20260914a"></script>
-<script src="movil-recepcion.js?v=20260914a"></script>
-<script src="movil-dashboard.js?v=20260914a"></script></body>
+<script src="movil.js?v=20260914b"></script>
+<script src="movil-recepcion.js?v=20260914b"></script>
+<script src="movil-dashboard.js?v=20260914b"></script></body>
 </html>
