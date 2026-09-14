@@ -250,3 +250,26 @@ Ambos escriben en `cv_personas`, y `movil` además registra auditoría en
 **Es el módulo con más datos personales de todo el sistema**: RUT, nombres,
 teléfonos, correos y CVs completos de personas de las comunidades. Cualquier
 cambio acá se revisa contra `SEGURIDAD.md`.
+
+## Pestañas nuevas (2026-09)
+
+### 🔗 Intermediación Laboral (`empleabilidad-intermediacion.js`)
+Reemplaza las planillas "Ficha Vacantes EECC-AMSA" y "Seguimiento Derivaciones".
+- **Vacantes** (`vacantes`): empresa (EECC), compañía/faena, tipo de contrato
+  propio (AMSA/faena → código obligatorio) o externo (EECC → código
+  autogenerado), cargo, cupos, formación, turno, campamento, fecha, residencia,
+  datos adicionales y **competencias marcadas excluyente / no excluyente**.
+  Sin match % (se guarda para después; la pestaña "Ofertas" con % queda intacta).
+- **Derivaciones** (`derivaciones`): persona derivada a una vacante, con estado
+  (registrada/efectiva/descartada) y seguimiento EECC. Export a Excel.
+- Botón **"Link para armar CV"**: crea un `cv_links` y comparte el link del armador.
+
+### 🎓 Formación (`empleabilidad-formacion.js`)
+CRUD de **cursos** (`cursos`): nombre, institución, área, modalidad, cupos, ruta
+(AMSA/EECC), fecha. El Móvil los lista en su ruta de Formación para inscribir.
+
+### Armador de CV (`armar-cv.html` / `armar-cv.js`) — apresto, público
+Página pública por **token** (`cv_links`, RPCs `cv_link_abrir` / `cv_link_guardar`,
+anónimas): la persona **crea** su CV en una sola columna (phone-first), con
+botones de info ℹ y ejemplos del Modelo CV, y lo descarga en PDF (formato Harvard
+con los títulos del Modelo CV) — queda en `cv_personas` por RUT.

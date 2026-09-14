@@ -963,3 +963,20 @@ RCA" del `index.html` de Proveedores y decidir si se migran o archivan
 | 9 | **P-7** módulo admin | 🔴 | Ya aprobado, es el que más comodidad da |
 | 9 | P-5, P-11, P-13 | 🔴 | Mejoras sin urgencia |
 | 11 | **P-8** partir `proveedores.js` | 🔴 | El más grande. Al final y por partes |
+
+---
+
+## P-16 · Retirar el cuestionario viejo del Móvil (código muerto)
+
+Con la reestructuración de 2026-09, el cuestionario dejó de ser una pestaña
+propia: ahora vive en la Recepción (`movil-recepcion.js`) y la antigua pestaña
+"Cuestionario" pasó a ser el Dashboard (`movil-dashboard.js`).
+
+Quedaron sin uso en `modules/movil/movil.js`:
+- `construirCuestionario()` y `refrescarCuestionarioActual()` (apuntaban a `#qForm`,
+  que ya no existe en el DOM).
+- `guardarCuestionario()` (guardaba desde `#qForm`).
+
+No se borraron para no arriesgar (Regla 1). `exportarCuestionario()` SÍ se sigue
+usando en la pestaña Levantados y no se toca. Retirar las 3 funciones muertas en
+un cambio aparte, verificando que ningún `onclick` las llame.

@@ -74,3 +74,17 @@ reglas explícitas de cifrado y borrado tras sincronizar. No se improvisa.
 Alta: datos personales capturados en terreno. Además suele usarse en equipos
 compartidos, lo que hace que la regla de no dejar nada en `localStorage`
 importe todavía más acá.
+
+## Recepción y Dashboard (2026-09)
+
+La pestaña de entrada es **🎯 Recepción** (`movil-recepcion.js`): se recibe con
+una encuesta breve + el **cuestionario completo desplegable**, y se deriva a
+**Apresto** (genera el link del armador de CV), **Intermediación** (lista las
+`vacantes` y crea una `derivación`) o **Formación** (lista los `cursos` e
+inscribe en `formaciones`). Al "Guardar atención" se registra una fila en
+`atenciones` con día/hora automáticos, comuna, sexo y qué servicios se hicieron.
+
+La antigua pestaña "Cuestionario" pasó a ser un **📊 Dashboard**
+(`movil-dashboard.js`, Chart.js): totales, cuestionarios completos, % por
+servicio, combinaciones, por comuna y por sexo, y un gráfico barra/línea con
+X = tiempo (día/semana/mes/año) cruzando por servicio/comuna/sexo.
