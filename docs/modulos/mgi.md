@@ -75,7 +75,7 @@ información contractual.
 
 ## Columnas de la planilla
 
-Son 29. Nadie las usa todas a la vez: para la llamada semanal bastan nueve, y
+Son 31. Nadie las usa todas a la vez: para la llamada semanal bastan once, y
 con las otras 20 en pantalla hay que ir y volver con el scroll horizontal para
 anotar un dato.
 
@@ -86,7 +86,7 @@ El botón **🧩 Columnas** abre un panel con cuatro vistas armadas:
 | 📞 **Llamada semanal** | A quién llamo, a qué número, cuánto le queda y cuándo vuelvo a llamar |
 | 🛏 **Capacidad** | Habitaciones por tipo de baño, totales y camas |
 | 👥 **Contactos** | Encargado y dueño, con sus correos y teléfonos |
-| **Todas** | Las 29 |
+| **Todas** | Las 31 |
 
 Además cada columna se puede marcar o desmarcar por separado. La elección se
 guarda en `localStorage` (`am_mgi_columnas`) y se recuerda entre sesiones: es
@@ -127,6 +127,26 @@ en la propia planilla. Solo aparece en hospedajes ya guardados; si la línea
 tiene cambios sin guardar, avisa antes de abrir.
 
 
+## "Por llamar" y "OK": marcado manual (2026-09-15)
+
+El conteo **Por llamar** ya no depende solo de la fecha de *volver a llamar*.
+En el grupo **Seguimiento**, justo después de esa fecha y antes de **Notas**,
+hay dos casillas de estado que se marcan con un clic:
+
+- **Por llamar** — cuadro que queda **rojo** al marcarlo. Suma al conteo y al
+  filtro *Por llamar* aunque el hospedaje no tenga contrato por vencer. Otro
+  clic lo desmarca.
+- **OK** — cuadro que queda **verde** al marcarlo (gestión hecha / revisado).
+  Otro clic lo devuelve a blanco. Es independiente de *Por llamar*.
+
+Ambas se guardan en `hospedajes_mgi` (`por_llamar`, `ok_check`, booleanas con
+RLS heredada de la tabla) junto con el resto de la línea. El marcado repinta la
+casilla y actualiza el número **Por llamar** al instante, sin rearmar la tabla.
+
+La tarjeta **Por llamar** del resumen es clicable: filtra la planilla dejando
+solo los por llamar (los marcados a mano más los que vencieron). `planPorLlamar()`
+es la definición única que usan el conteo, el filtro y la exportación a Excel.
+
 ## Ordenar y marcar filas
 
 Dos maneras de ordenar la planilla:
@@ -139,6 +159,8 @@ Dos maneras de ordenar la planilla:
 Para hacer las llamadas, lo habitual es ordenar por **Establecimiento** o por
 **Encargado**. La **fila de títulos queda fija** al desplazarse por la lista, y
 las columnas Código y Establecimiento quedan fijas al desplazarse en horizontal.
+Al ordenar o filtrar se conserva el **scroll horizontal**, así no se salta de
+vuelta a la primera columna y no se pierde la fila que se estaba mirando.
 
 Al **hacer clic en una fila** se marca completa en ámbar — sirve para no perder
 de vista qué hospedaje se está mirando mientras se llama por teléfono. Un clic

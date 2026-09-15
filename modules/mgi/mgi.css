@@ -199,6 +199,22 @@ body.is-user .solo-admin{ display:none !important; }
 .pl-sug{background:#eef0ff;border:1px solid #ccd0f5;border-radius:11px;padding:2px 8px;
         font-size:.68rem;color:#4338ca;cursor:pointer;white-space:nowrap}
 .c-llam{min-width:150px}
+
+/* Casillas de estado: cuadro que cambia de color al hacer clic (toggle).
+   por_llamar → rojo · ok_check → verde. Vacío = blanco. */
+.c-chk{min-width:52px;text-align:center}
+.pl-check{width:24px;height:24px;padding:0;border:2px solid #c3c7cd;border-radius:6px;
+          background:#fff;cursor:pointer;vertical-align:middle;transition:background .12s,border-color .12s,transform .06s}
+.pl-check:hover{border-color:#9aa0a6}
+.pl-check:active{transform:scale(.9)}
+.pl-check.rojo.on{background:#e5484d;border-color:#c0311b}
+.pl-check.verde.on{background:#30a46c;border-color:#1e7e34}
+.pl-check.on::after{content:'';display:block;width:6px;height:11px;margin:1px auto 0;
+          border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+/* La tarjeta "Por llamar" es clicable: filtra la tabla al tocarla. */
+.pl-kpi.clickable{cursor:pointer;transition:box-shadow .12s,border-color .12s}
+.pl-kpi.clickable:hover{border-color:#5b4fcf;box-shadow:0 2px 8px rgba(91,79,207,.15)}
+.pl-kpi.clickable.sel{border-color:#5b4fcf;box-shadow:0 0 0 2px rgba(91,79,207,.25)}
 @media(max-width:599px){
   .pl-tabla th.c-nom,.pl-tabla td.c-nom{position:static}
   .pl-tabla th.c-cod,.pl-tabla td.c-cod{position:static}

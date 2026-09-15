@@ -49,7 +49,7 @@ function planFilas(){
       const p=DATA.find(x=>x.proveedor_id===pid); if(p) arr.push(p);
     }
   });
-  if(PLAN_FILTRO==='llamar')      arr=arr.filter(p=>planDiasLlamar(p.proveedor_id)!==null && planDiasLlamar(p.proveedor_id)<=0 && !planV(p,'baja'));
+  if(PLAN_FILTRO==='llamar')      arr=arr.filter(p=>planPorLlamar(p.proveedor_id));
   else if(PLAN_FILTRO==='arrendados') arr=arr.filter(p=>planV(p,'arrendado_completo')===true);
   else if(PLAN_FILTRO==='disponibles') arr=arr.filter(p=>!planV(p,'arrendado_completo') && !planV(p,'baja'));
   else if(PLAN_FILTRO==='baja')   arr=arr.filter(p=>planV(p,'baja'));
@@ -132,6 +132,8 @@ function planV(p, campo){
     case 'dobles_priv':   return parseInt(h.dobles_banio)||0;
     case 'dobles_comp':   return Math.max(0,(parseInt(h.dobles)||0)-(parseInt(h.dobles_banio)||0));
     case 'arrendado_completo': return m.arrendado_completo===true;
+    case 'por_llamar':  return m.por_llamar===true;
+    case 'ok_check':    return m.ok_check===true;
     case 'baja':        return m.baja===true;
     default:            return m[campo]!=null?m[campo]:'';
   }
@@ -174,6 +176,39 @@ function planLlamarHTML(pid){
 function planSugerirLlamada(pid){
   planSet(pid,'volver_a_llamar', String(planV(pid,'contrato_fin')).slice(0,10));
   planRender();
+}
+// "Por llamar" real: ya no depende solo de la fecha del contrato. Cuenta si el
+// usuario lo marcó a mano (cuadro rojo) O si venció el "volver a llamar".
+function planPorLlamar(pid){
+  if(planV(pid,'baja')===true) return false;
+  if(planV(pid,'por_llamar')===true) return true;
+  const d=planDiasLlamar(pid);
+  return d!==null && d<=0;
+}
+// Recuenta la tarjeta "Por llamar" sin rearmar toda la tabla (fluidez al marcar).
+function planActualizarPorLlamar(){
+  const el=document.getElementById('plKpiLlamar'); if(!el) return;
+  const n=planFilas().filter(p=>!planV(p,'baja') && planPorLlamar(p.proveedor_id)).length;
+  const num=el.querySelector('.pl-kn'); if(num) num.textContent=n;
+  el.classList.toggle('alerta', n>0);
+}
+
+// ── Casillas de estado (cuadro que cambia de color al hacer clic) ────────────
+// por_llamar → rojo · ok_check → verde. Toggle: un clic marca, otro desmarca.
+function planCheck(pid,campo,cls){
+  const on = planV(pid,campo)===true;
+  return `<button type="button" class="pl-check ${cls} ${on?'on':''}"
+    aria-pressed="${on}" title="${on?'Marcado (clic para quitar)':'Sin marcar (clic para marcar)'}"
+    onclick="planToggleCheck(event,this,'${pid}','${campo}')"></button>`;
+}
+function planToggleCheck(ev,el,pid,campo){
+  if(ev) ev.stopPropagation();               // no marcar la fila entera
+  const ahora = !(planV(pid,campo)===true);
+  planSet(pid,campo,ahora);
+  el.classList.toggle('on',ahora);
+  el.setAttribute('aria-pressed',ahora);
+  el.setAttribute('title',ahora?'Marcado (clic para quitar)':'Sin marcar (clic para marcar)');
+  if(campo==='por_llamar') planActualizarPorLlamar();
 }
 
 // ── Edición ─────────────────────────────────────────────────────────────────
@@ -281,7 +316,7 @@ async function planGuardarFila(pid){
     // ── hospedajes_mgi ──
     const CAMPOS_MGI=['codigo_mgi','participa','camas_instaladas','eecc_hospeda','es_eecc_mcen',
       'contrato_inicio','contrato_fin','arrendado_completo','hab_disponibles','n_hospedados',
-      'camas_disponibles','al_dia_pagos','volver_a_llamar','notas','baja','baja_motivo'];
+      'camas_disponibles','al_dia_pagos','volver_a_llamar','por_llamar','ok_check','notas','baja','baja_motivo'];
     const mgiCambios={};
     CAMPOS_MGI.forEach(k=>{ if(k in cambios) mgiCambios[k]=cambios[k]===''?null:cambios[k]; });
     if(Object.keys(mgiCambios).length || nueva){
@@ -437,6 +472,10 @@ const PLAN_COLUMNAS = [
 
   {k:'volver_a_llamar', grupo:'Seguimiento', th:'Volver a llamar', clase:'c-llam',
    td:pid=>`<div id="plLlam_${pid}">${planLlamarHTML(pid)}</div>${fecha(pid,'volver_a_llamar')}`},
+  {k:'por_llamar', grupo:'Seguimiento', th:'Por<br>llamar', clase:'c-chk',
+   td:pid=>planCheck(pid,'por_llamar','rojo')},
+  {k:'ok_check', grupo:'Seguimiento', th:'OK', clase:'c-chk',
+   td:pid=>planCheck(pid,'ok_check','verde')},
   {k:'notas', grupo:'Seguimiento', th:'Notas', clase:'c-not', td:pid=>txt(pid,'notas',220)},
 ];
 
@@ -444,7 +483,8 @@ const PLAN_COLUMNAS = [
 // columnas: a quién llamo, a qué número, cuánto le queda y cuándo vuelvo.
 const PLAN_VISTAS = {
   llamada:   {n:'📞 Llamada semanal', cols:['codigo_mgi','nombre','enc_nombre','enc_fono',
-              'arrendado_completo','hab_disponibles','camas_disponibles','volver_a_llamar','notas']},
+              'arrendado_completo','hab_disponibles','camas_disponibles','volver_a_llamar',
+              'por_llamar','ok_check','notas']},
   capacidad: {n:'🛏 Capacidad', cols:['codigo_mgi','nombre','direccion','simples_priv','simples_comp',
               'dobles_priv','dobles_comp','hab_totales','cap_maxima','camas_instaladas']},
   contactos: {n:'👥 Contactos', cols:['codigo_mgi','nombre','direccion','rut','enc_nombre','enc_correo',
@@ -532,7 +572,8 @@ const PLAN_ETIQ={codigo_mgi:'código MGI',participa:'participación',rut:'RUT',n
   contrato_inicio:'inicio de contrato',contrato_fin:'término de contrato',
   arrendado_completo:'arrendado completo',hab_disponibles:'habitaciones disponibles',
   n_hospedados:'hospedados',camas_disponibles:'camas disponibles',al_dia_pagos:'al día con pagos',
-  volver_a_llamar:'volver a llamar',notas:'notas',baja:'baja del conteo',baja_motivo:'motivo de baja'};
+  volver_a_llamar:'volver a llamar',por_llamar:'por llamar',ok_check:'OK',
+  notas:'notas',baja:'baja del conteo',baja_motivo:'motivo de baja'};
 
 function txt(pid,campo,ancho){
   return `<input class="pl-in" style="width:${ancho||110}px" value="${esc(planV(pid,campo))}"
@@ -557,6 +598,10 @@ function sel(pid,campo,opciones){
 
 function planRender(){
   const cont=document.getElementById('cont');
+  // Al ordenar o filtrar se rearma la tabla; conservar el scroll horizontal para
+  // no "saltar" de vuelta a la primera columna (se pierde la fila que se miraba).
+  const _prev=document.querySelector('.pl-wrap');
+  const _sx=_prev?_prev.scrollLeft:0, _sy=_prev?_prev.scrollTop:0;
   const filas=planFilas();
 
   // resumen de arriba: lo que MGI reporta
@@ -564,14 +609,16 @@ function planRender(){
   const tHab=vivos.reduce((s,p)=>s+planTotalHab(p.proveedor_id),0);
   const tCap=vivos.reduce((s,p)=>s+planCapMax(p.proveedor_id),0);
   const arr=vivos.filter(p=>planV(p,'arrendado_completo')).length;
-  const porLlamar=vivos.filter(p=>{const d=planDiasLlamar(p.proveedor_id); return d!==null&&d<=0;}).length;
+  const porLlamar=vivos.filter(p=>planPorLlamar(p.proveedor_id)).length;
 
   let h=`<div class="pl-kpis">
       <div class="pl-kpi"><div class="pl-kn">${vivos.length}</div><div class="pl-kl">Hospedajes en el programa</div></div>
       <div class="pl-kpi"><div class="pl-kn">${tHab}</div><div class="pl-kl">Habitaciones</div></div>
       <div class="pl-kpi"><div class="pl-kn">${tCap}</div><div class="pl-kl">Capacidad máxima (camas)</div></div>
       <div class="pl-kpi"><div class="pl-kn">${arr}</div><div class="pl-kl">Arrendados completos</div></div>
-      <div class="pl-kpi ${porLlamar?'alerta':''}"><div class="pl-kn">${porLlamar}</div><div class="pl-kl">Por llamar</div></div>
+      <div class="pl-kpi clickable ${porLlamar?'alerta':''} ${PLAN_FILTRO==='llamar'?'sel':''}" id="plKpiLlamar"
+           onclick="planSetFiltro('llamar')" title="Ver solo los por llamar">
+        <div class="pl-kn">${porLlamar}</div><div class="pl-kl">Por llamar ▸</div></div>
     </div>
     <div class="pl-tools">
       ${[['todos','Todos'],['disponibles','Con disponibilidad'],['arrendados','Arrendados completos'],
@@ -650,6 +697,8 @@ function planRender(){
 
   h+='</tbody></table></div>';
   cont.innerHTML=h;
+  const _now=document.querySelector('.pl-wrap');
+  if(_now){ _now.scrollLeft=_sx; _now.scrollTop=_sy; }
   planBarra();
 }
 
@@ -677,6 +726,7 @@ function planExportar(){
       'Habitaciones disponibles':planV(pid,'hab_disponibles'), 'Nº hospedados':planV(pid,'n_hospedados'),
       'Camas disponibles':planV(pid,'camas_disponibles'), 'Al dia con pagos':planV(pid,'al_dia_pagos'),
       'Volver a llamar':String(planV(pid,'volver_a_llamar')||'').slice(0,10),
+      'Por llamar':planPorLlamar(pid)?'SI':'', 'OK':planV(pid,'ok_check')?'SI':'',
       'Notas':planV(pid,'notas'),
       'Fuera del conteo':planV(pid,'baja')?('SI — '+(planV(pid,'baja_motivo')||'')):'',
     };
