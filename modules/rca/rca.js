@@ -667,9 +667,26 @@ function verFacturas(eeccId){
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn ghost" onclick="exportarInforme('${eeccId}')">⬇ Descargar para auditar</button>
         <button class="btn primary" onclick="importarExcel('${eeccId}')">📥 Cargar Excel auditado</button>
+        ${facts.length?`<button class="btn danger ghost" onclick="borrarFacturasEECC('${eeccId}')">🗑 Eliminar todo el Excel (${facts.length})</button>`:''}
       </div>
       <button class="btn ghost" onclick="cerrarModal()">Cerrar</button>
     </div>`);
+}
+// Borrado masivo: vacía TODAS las facturas cargadas de una EECC (el Excel que se
+// subió), sin tener que borrarlas una por una. Borrado lógico, como el resto.
+async function borrarFacturasEECC(eeccId){
+  const e=RCA_EECC.find(x=>x.eecc_id===eeccId);
+  const n=RCA_FACT.filter(f=>f.eecc_id===eeccId).length;
+  if(!n){ toast('No hay facturas cargadas para esta EECC','err'); return; }
+  if(!confirm(`¿Eliminar TODAS las ${n} factura(s) cargadas de «${e?e.nombre:''}»?\n\nEsto vacía el Excel subido para esta EECC y deja de sumar a la meta. Puedes volver a cargar el Excel cuando quieras.`)) return;
+  try{
+    const {error}=await SB.from('rca_facturas')
+      .update({estado_registro:'Eliminado',updated_at:nowISO(),updated_by:quien()})
+      .eq('eecc_id',eeccId).neq('estado_registro','Eliminado');
+    if(error) throw error;
+    await cargarFacturas(RCA_ACTUAL.rca_id); renderDetalle(); verFacturas(eeccId);
+    toast(`🗑 ${n} factura(s) eliminadas`,'ok');
+  }catch(err){ toast('Error: '+err.message,'err'); }
 }
 async function borrarFactura(id,eeccId){
   if(!confirm('¿Eliminar esta factura?')) return;
@@ -807,7 +824,18 @@ function exportarValidados(){
 // ══ modal genérico ═══════════════════════════════════════════════════════════
 function abrirModal(html){
   const host=document.getElementById('modalHost');
-  host.innerHTML=`<div class="modal-ov" onclick="if(event.target===this)cerrarModal()"><div class="modal-box">${html}</div></div>`;
+  host.innerHTML=`<div class="modal-ov"><div class="modal-box">${html}</div></div>`;
+  // El modal se cierra SOLO con un clic deliberado en el fondo oscuro: la
+  // presión debe empezar Y terminar sobre el overlay. Antes bastaba con que el
+  // clic terminara ahí (onclick), así que arrastrar para seleccionar texto en un
+  // campo y soltar el mouse fuera de la caja cerraba el formulario y se perdía lo
+  // escrito. Ahora un clic que empieza dentro de la caja nunca la cierra.
+  const ov=host.querySelector('.modal-ov'); if(!ov) return;
+  let _downOv=false;
+  ov.addEventListener('pointerdown', e=>{ _downOv=(e.target===ov); });
+  ov.addEventListener('pointerup',   e=>{ if(_downOv && e.target===ov) cerrarModal(); _downOv=false; });
 }
 function cerrarModal(){ document.getElementById('modalHost').innerHTML=''; _facturasAbiertas=null; }
+// Escape también cierra el modal abierto (un solo listener para todo el módulo).
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && document.querySelector('.modal-ov')) cerrarModal(); });
 function val(id){ const el=document.getElementById(id); return el?el.value:''; }

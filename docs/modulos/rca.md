@@ -26,6 +26,17 @@ Este módulo hace el seguimiento de ese compromiso, por RCA y por EECC.
 5. Se ve el **avance por EECC** y el **avance global** de la RCA, y se puede
    exportar un **informe Excel** (resumen + facturas).
 
+En la ventana **🧾 Facturas** de una EECC se pueden borrar facturas una por una
+(🗑 en cada fila) o **vaciar todo el Excel cargado** de esa EECC con **🗑 Eliminar
+todo el Excel**, sin ir borrando línea por línea. Es un borrado lógico
+(`estado_registro='Eliminado'`): la EECC deja de sumar hasta que se vuelva a
+cargar un Excel.
+
+> **Modales:** el formulario se cierra solo con un clic **deliberado** en el
+> fondo oscuro (la presión empieza y termina ahí) o con **Escape**. Un clic
+> dentro de la caja, o arrastrar para seleccionar texto y soltar afuera, ya no
+> lo cierra: antes eso cerraba el formulario y se perdía lo escrito.
+
 Tiene dos pestañas: **Proveedores** (operativa) y **Mano de Obra Local**
 (reservada, se desarrollará después).
 
