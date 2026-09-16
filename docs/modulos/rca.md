@@ -33,6 +33,31 @@ para cumplir la meta** — así se ve de un vistazo cuánto le queda por cumplir
 cuánto tiempo de contrato le queda. Los días y el % faltante también salen en el
 informe Excel.
 
+### Reporte HTML (gerencia / por EECC)
+
+Dos botones generan un **documento HTML autónomo** (estilos incrustados, sin
+dependencias; se abre en el navegador y se descarga como respaldo):
+
+- **📄 Reporte gerencia** (barra superior del detalle): un **resumen general** de
+  todas las EECC (meta, reportado, avance global, facturas contadas/reportadas) +
+  **una hoja por cada EECC**.
+- **📄 Reporte** (en cada tarjeta EECC): solo la hoja de esa EECC, para enviársela
+  a la empresa colaboradora.
+
+Cada hoja muestra el **avance de lo comprometido** (reportado que suma vs meta) y
+la **gestión de facturas**: cuántas se reportaron (total del Excel) vs cuántas
+realmente se contaron, y los montos que **no sumaron**, en tres listas
+desplegables (clic para ver el detalle de cada factura mal): **datos incompletos**
+(sin N° de factura o sin fecha, con el motivo), **otra comuna** (fuera de región) y
+**por revisar** (proveedor no reconocido).
+
+> ⚠️ **Cambio en la carga (2026-09-16):** antes, las filas sin N° de factura, RUT
+> o monto se **descartaban en silencio**. Ahora se **guardan** con
+> `estado_revision='incompleta'` y `motivo_descarte` para poder listarlas en el
+> reporte. Además una fila **sin fecha** (sin año ni mes) también cuenta como
+> incompleta y **no suma** — antes sí sumaba. No cambia lo ya cargado; aplica a
+> las próximas cargas de Excel.
+
 En la ventana **🧾 Facturas** de una EECC se pueden borrar facturas una por una
 (🗑 en cada fila) o por **día de carga**. La caja **«Excel cargados (por día)»**
 agrupa las facturas por la fecha (`created_at`) en que se subió el Excel y permite
