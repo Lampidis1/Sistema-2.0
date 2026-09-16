@@ -118,7 +118,10 @@ main{padding:22px 28px 48px;max-width:1200px;margin:0 auto}
 .sub-t{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:var(--dark);text-transform:uppercase}
 
 /* ── EECC ─────────────────────────────────────────────────────────────────── */
-.eecc-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+/* En pantalla ancha, 2 EECC por fila: la ficha queda más extendida y se ve con
+   más detalle. Bajo 720px pasa a una sola columna. */
+.eecc-lista{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+@media(max-width:720px){ .eecc-lista{grid-template-columns:1fr} }
 .eecc-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .eecc-h{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px}
 .eecc-nom{font-weight:700;font-size:1rem}
