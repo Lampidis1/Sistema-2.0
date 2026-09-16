@@ -43,9 +43,16 @@ hallazgo:
   (nivel ERROR del linter). Es la vista pública de hoteles; corre con permisos
   del creador. Revisar si conviene `security_invoker=on` o acotar columnas.
   [doc](https://supabase.com/docs/guides/database/database-linter?lint=0010_security_definer_view)
-- 🔴 **PENDIENTE (bajo) — `search_path` mutable** en 4 funciones (`rut_valido`,
-  `_hot_ocupadas`, `_norm_dir`, `_norm_fono`). Agregar `SET search_path` a cada
-  una. Endurecimiento, sin exposición conocida.
+- 🟢 **RESUELTO (2026-09-16) — `search_path` mutable** en 4 funciones (`rut_valido`,
+  `_hot_ocupadas`, `_norm_dir`, `_norm_fono`). Se fijó `SET search_path =
+  public, pg_temp` en cada una (migración `endurecer_funciones_search_path_y_execute`).
+- 🟢 **RESUELTO (2026-09-16) — EXECUTE de funciones sensibles.** El `EXECUTE`
+  venía de la concesión por defecto a `PUBLIC`. Se revocó a PUBLIC y se devolvió
+  solo a `authenticated` en las 3 de admin (`aprobar_usuario_v2`,
+  `rechazar_usuario`, `listar_solicitudes`) → `anon` ya no las ve. En las 2 de
+  trigger (`bloquear_borrado_logico`, `on_auth_user_created`) se revocó a todos
+  (el trigger igual se dispara). `registrar_solicitud` se dejó accesible a `anon`
+  porque se usa durante el registro. Migración `revocar_execute_public_admin_triggers`.
 - 🟡 **Contraseñas filtradas** → ver **P-15** (bloqueado por plan de Supabase).
 - 🟡 **Google Fonts expone IP** → ver **P-5**. · **JWT en localStorage** → **P-11**.
 
