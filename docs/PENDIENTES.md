@@ -13,6 +13,42 @@ Estado: 🔴 sin decidir · 🟡 aprobado, sin hacer · 🟢 resuelto
 
 ## Seguridad y privacidad
 
+### P-17 · Revisión de seguridad del sistema completo (2026-09-16)
+
+Revisión con los *advisors* de Supabase + lectura del frontend. Estado por
+hallazgo:
+
+- 🟢 **RESUELTO — Tablas de respaldo expuestas a `anon`.** Cuatro snapshots con
+  datos personales (`respaldo_contactos_fono_20260817` 101 teléfonos,
+  `respaldo_direcciones_20260817` 68 direcciones, `respaldo_valores_libres_20260814`,
+  `_respaldo_programas_20260809`) tenían **RLS desactivada** y eran **legibles por
+  cualquiera** con la anon key pública vía `/rest/v1/...` (viola Regla 5). Se
+  activó RLS **sin políticas** (migración `rls_tablas_respaldo_cerrar_anon`): los
+  datos quedan solo para `service_role` (backend/consola) y ningún módulo del
+  frontend las consultaba, así que no cambia comportamiento. **Era el único
+  hallazgo crítico y ya está cerrado.**
+- 🟢 **VERIFICADO OK — Funciones de administración.** `aprobar_usuario_v2`,
+  `rechazar_usuario` y `listar_solicitudes` aparecen como "ejecutables por anon",
+  pero **todas validan `es_admin()` internamente** y tienen `search_path` fijo:
+  no hay escalación de privilegios. Endurecimiento opcional: `REVOKE EXECUTE ...
+  FROM anon` como defensa en profundidad.
+- 🟢 **VERIFICADO OK — RCA.** Existen 6 tablas (`rca_normativas`, `rca_eecc`,
+  `rca_facturas`, `rca_proveedores_validados`, `rca_documentos`, `rca_empresas`),
+  todas con **RLS activa** y política `tiene_acceso('rca') OR es_principal()`.
+- 🟢 **VERIFICADO OK — Frontend.** No hay `service_role` en el repo (solo la anon
+  key, pública por diseño). No hay `eval`/`new Function`/`document.write`. El
+  `esc()` escapa `& < > " '` y se usa en los `innerHTML`. `localStorage` solo
+  guarda preferencias de interfaz, no datos personales.
+- 🔴 **PENDIENTE (bajo) — Vista `hoteles_sg_publico` con `SECURITY DEFINER`**
+  (nivel ERROR del linter). Es la vista pública de hoteles; corre con permisos
+  del creador. Revisar si conviene `security_invoker=on` o acotar columnas.
+  [doc](https://supabase.com/docs/guides/database/database-linter?lint=0010_security_definer_view)
+- 🔴 **PENDIENTE (bajo) — `search_path` mutable** en 4 funciones (`rut_valido`,
+  `_hot_ocupadas`, `_norm_dir`, `_norm_fono`). Agregar `SET search_path` a cada
+  una. Endurecimiento, sin exposición conocida.
+- 🟡 **Contraseñas filtradas** → ver **P-15** (bloqueado por plan de Supabase).
+- 🟡 **Google Fonts expone IP** → ver **P-5**. · **JWT en localStorage** → **P-11**.
+
 ### P-1 · 🟢 RESUELTO — P-1a y P-1b aplicados (2026-08-05)
 
 > **P-1a EJECUTADO EN PRODUCCIÓN el 2026-08-05.** La enumeración anónima quedó
