@@ -26,11 +26,28 @@ Este módulo hace el seguimiento de ese compromiso, por RCA y por EECC.
 5. Se ve el **avance por EECC** y el **avance global** de la RCA, y se puede
    exportar un **informe Excel** (resumen + facturas).
 
+Cada EECC lleva **inicio y término de contrato** (`fecha_desde` / `fecha_hasta`).
+Con eso, la tarjeta muestra un **conteo de días de contrato restantes** (verde si
+faltan más de 30, ámbar si 30 o menos, rojo si ya venció) junto al **% que falta
+para cumplir la meta** — así se ve de un vistazo cuánto le queda por cumplir y
+cuánto tiempo de contrato le queda. Los días y el % faltante también salen en el
+informe Excel.
+
 En la ventana **🧾 Facturas** de una EECC se pueden borrar facturas una por una
-(🗑 en cada fila) o **vaciar todo el Excel cargado** de esa EECC con **🗑 Eliminar
-todo el Excel**, sin ir borrando línea por línea. Es un borrado lógico
-(`estado_registro='Eliminado'`): la EECC deja de sumar hasta que se vuelva a
-cargar un Excel.
+(🗑 en cada fila) o por **día de carga**. La caja **«Excel cargados (por día)»**
+agrupa las facturas por la fecha (`created_at`) en que se subió el Excel y permite
+**eliminar la carga de un día concreto** (útil para deshacer un Excel subido con
+errores sin tocar los otros). Cuando hay más de un día, aparece además **🗑 Eliminar
+todos**. Todo es borrado lógico (`estado_registro='Eliminado'`); la EECC deja de
+sumar hasta que se vuelva a cargar.
+
+> ⚠️ Hoy cada **carga de Excel reemplaza** las facturas previas de esa EECC (el
+> Excel auditado es la fuente de verdad), así que normalmente hay **un solo día de
+> carga** por EECC. La columna **Cargado** y el borrado por día muestran esa fecha
+> y permiten eliminarla. Si se quisiera que las cargas **se acumulen** por día
+> (para comparar varios Excel), habría que cambiar la carga de "reemplazar" a
+> "sumar" — es un cambio con riesgo de doble conteo, por eso queda anotado y no se
+> hizo de oficio.
 
 > **Modales:** el formulario se cierra solo con un clic **deliberado** en el
 > fondo oscuro (la presión empieza y termina ahí) o con **Escape**. Un clic

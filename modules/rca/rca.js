@@ -160,6 +160,16 @@ async function cargarFacturas(rcaId){
 }
 
 // Avance de una EECC: reportado = suma de facturas OK (regional validado).
+// Fecha de hoy en ISO (a medianoche, sin hora) para contar días de contrato.
+function rcaHoyISO(){ const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+// Días que faltan hasta una fecha (negativo = ya vencida, null = sin fecha).
+function diasRestantes(fecha){
+  if(!fecha) return null;
+  const a=new Date(rcaHoyISO()+'T00:00:00'), b=new Date(String(fecha).slice(0,10)+'T00:00:00');
+  if(isNaN(b)) return null;
+  return Math.round((b-a)/86400000);
+}
 function calcEECC(e){
   const pct=+RCA_ACTUAL.pct_meta||10;
   const decl=+e.monto_declarado||0;
@@ -168,7 +178,17 @@ function calcEECC(e){
   const rep=facts.filter(f=>f.estado_revision==='ok').reduce((a,f)=>a+(+f.monto_clp||0),0);
   const pend=facts.filter(f=>f.estado_revision==='pendiente').length;
   const avance=meta>0?Math.min(100,Math.round(rep/meta*100)):0;
-  return {decl,meta,rep,pend,avance,nfact:facts.length};
+  const faltaPct=Math.max(0,100-avance);          // cuánto falta para cumplir la meta
+  const faltaClp=Math.max(0,meta-rep);            // lo mismo en pesos regionales
+  const dias=diasRestantes(e.fecha_hasta);        // días de contrato restantes
+  return {decl,meta,rep,pend,avance,faltaPct,faltaClp,dias,nfact:facts.length};
+}
+// Etiqueta de días de contrato, con color según urgencia.
+function chipDias(dias){
+  if(dias===null) return '<span class="chip dias sinf">📅 sin fecha de término</span>';
+  if(dias>0)   return `<span class="chip dias ${dias<=30?'gold':'ok'}">⏳ ${dias} día${dias===1?'':'s'} de contrato</span>`;
+  if(dias===0) return '<span class="chip dias hoy">⏳ contrato vence hoy</span>';
+  return `<span class="chip dias vencido">⚠ contrato vencido hace ${-dias} día${dias===-1?'':'s'}</span>`;
 }
 
 function renderDetalle(){
@@ -229,17 +249,25 @@ function bodyProveedores(tot,avanceG,pendTot){
 function tarjetaEECC(e){
   const c=calcEECC(e);
   const col=c.avance>=80?'#1e7e34':c.avance>=40?'#b8860b':'#c0311b';
+  const cumplida=c.avance>=100;
+  const periodo=(e.fecha_desde||e.fecha_hasta)
+    ? `${e.fecha_desde?String(e.fecha_desde).slice(0,10):'—'} → ${e.fecha_hasta?String(e.fecha_hasta).slice(0,10):'—'}` : '';
   return `<div class="eecc-card">
     <div class="eecc-h">
       <div class="eecc-nom">${esc(e.nombre)}${e.rut?` <span class="eecc-rut">${esc(rutFmt(e.rut))}</span>`:''}</div>
-      ${e.numero_contrato?`<span class="chip">Contrato ${esc(e.numero_contrato)}</span>`:''}
+      <div class="eecc-chips">
+        ${chipDias(c.dias)}
+        ${e.numero_contrato?`<span class="chip">Contrato ${esc(e.numero_contrato)}</span>`:''}
+      </div>
     </div>
     <div class="eecc-barra"><div class="eecc-barra-in" style="width:${c.avance}%;background:${col}"></div></div>
     <div class="eecc-montos">
       <div><span>Meta ${(+RCA_ACTUAL.pct_meta||10)}%</span><b>${_clp(c.meta)}</b></div>
       <div><span>Reportado</span><b style="color:#1e7e34">${_clp(c.rep)}</b></div>
       <div><span>Avance</span><b style="color:${col}">${c.avance}%</b></div>
+      <div><span>Falta meta</span><b style="color:${cumplida?'#1e7e34':col}" title="${cumplida?'Meta cumplida':'Faltan '+_clp(c.faltaClp)+' regionales'}">${cumplida?'✓ cumplida':c.faltaPct+'%'}</b></div>
     </div>
+    ${periodo?`<div class="eecc-plazo">📅 Contrato: <b>${esc(periodo)}</b></div>`:''}
     <div class="eecc-info">
       🧾 ${c.nfact} factura(s)${c.pend?` · <b style="color:#c0311b">${c.pend} por revisar</b>`:''}
       ${e.carta_path?` · 📄 carta cargada`:` · <span style="color:#c0311b">sin carta</span>`}
@@ -332,6 +360,10 @@ function eeccModal(id){
       <div><label>Correo</label><input id="eCMail" value="${esc(e.contacto_correo||'')}"></div>
     </div>
     <div class="g2">
+      <div><label>Inicio de contrato</label><input id="eDesde" type="date" value="${(e.fecha_desde||'').slice(0,10)}"></div>
+      <div><label>Término de contrato</label><input id="eHasta" type="date" value="${(e.fecha_hasta||'').slice(0,10)}"></div>
+    </div>
+    <div class="g2">
       <div><label>Administrador (ADC)</label><input id="eAdc" value="${esc(e.administrador||'')}"></div>
       <div><label>Fecha carta</label><input id="eCarta" type="date" value="${(e.carta_fecha||'').slice(0,10)}"></div>
     </div>
@@ -356,6 +388,7 @@ async function guardarEECC(id){
     monto_declarado:+val('eMonto')||0, numero_contrato:val('eContrato').trim()||null,
     contacto_nombre:val('eCNom').trim()||null, contacto_fono:val('eCFono').trim()||null,
     contacto_correo:val('eCMail').trim()||null, administrador:val('eAdc').trim()||null,
+    fecha_desde:val('eDesde')||null, fecha_hasta:val('eHasta')||null,
     carta_fecha:val('eCarta')||null, notas:val('eNotas').trim()||null,
     updated_at:nowISO(), updated_by:quien()
   };
@@ -646,17 +679,38 @@ async function marcarFueraRegion(rutE){
 }
 
 // ══ FACTURAS DE UNA EECC ═════════════════════════════════════════════════════
+// Fecha de carga (created_at) en DD-MM-AAAA, para distinguir cada Excel subido.
+function fmtDia(iso){ if(!iso) return 'sin fecha'; const p=String(iso).slice(0,10).split('-');
+  return p.length===3?`${p[2]}-${p[1]}-${p[0]}`:String(iso).slice(0,10); }
+// Agrupa las facturas de una EECC por el día en que se cargó el Excel.
+function cargasPorDia(eeccId){
+  const g={};
+  RCA_FACT.filter(f=>f.eecc_id===eeccId).forEach(f=>{
+    const d=String(f.created_at||'').slice(0,10)||'—';
+    (g[d]=g[d]||{dia:d,n:0,monto:0}).n++; g[d].monto+=(+f.monto_clp||0);
+  });
+  return Object.values(g).sort((a,b)=>String(b.dia).localeCompare(String(a.dia)));  // más reciente arriba
+}
 function verFacturas(eeccId){
   _facturasAbiertas=eeccId;
   const e=RCA_EECC.find(x=>x.eecc_id===eeccId);
   const facts=RCA_FACT.filter(f=>f.eecc_id===eeccId).sort((a,b)=>String(b.anio+b.mes).localeCompare(String(a.anio+a.mes)));
   const badge=s=>s==='ok'?'<span class="est ok">Regional ✓</span>':s==='no_regional'?'<span class="est off">Fuera región</span>':'<span class="est pend">Por revisar</span>';
+  const cargas=cargasPorDia(eeccId);
   abrirModal(`
     <h3>🧾 Facturas · ${esc(e?e.nombre:'')}</h3>
     ${!facts.length?'<div class="vacio">Esta EECC aún no tiene facturas. Usa «Cargar Excel».</div>':`
+    ${cargas.length?`<div class="cargas-box">
+      <div class="cargas-t">Excel cargados (por día)</div>
+      ${cargas.map(g=>`<div class="carga-row">
+        <div class="carga-info">📅 <b>${fmtDia(g.dia)}</b> · ${g.n} factura(s) · ${_clp(g.monto)}</div>
+        <button class="mini danger" onclick="borrarCargaDia('${eeccId}','${g.dia}')" title="Eliminar el Excel cargado ese día">🗑 Eliminar esta carga</button>
+      </div>`).join('')}
+    </div>`:''}
     <div class="tabla-scroll"><table class="tabla-fact">
-      <thead><tr><th>Año</th><th>Mes</th><th>N° factura</th><th>RUT</th><th>Proveedor</th><th>Comuna</th><th>Monto CLP</th><th>Estado</th><th></th></tr></thead>
+      <thead><tr><th>Cargado</th><th>Año</th><th>Mes</th><th>N° factura</th><th>RUT</th><th>Proveedor</th><th>Comuna</th><th>Monto CLP</th><th>Estado</th><th></th></tr></thead>
       <tbody>${facts.map(f=>`<tr class="${f.estado_revision}">
+        <td title="Día en que se cargó el Excel">${fmtDia(f.created_at)}</td>
         <td>${esc(f.anio||'')}</td><td>${esc(f.mes||'')}</td><td>${esc(f.num_factura||'')}</td>
         <td>${esc(rutFmt(f.rut_proveedor)||'')}</td><td>${esc(f.razon_social||'')}</td><td>${esc(f.comuna||'')}</td>
         <td style="text-align:right">${_clp(f.monto_clp)}</td><td>${badge(f.estado_revision)}</td>
@@ -667,18 +721,34 @@ function verFacturas(eeccId){
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn ghost" onclick="exportarInforme('${eeccId}')">⬇ Descargar para auditar</button>
         <button class="btn primary" onclick="importarExcel('${eeccId}')">📥 Cargar Excel auditado</button>
-        ${facts.length?`<button class="btn danger ghost" onclick="borrarFacturasEECC('${eeccId}')">🗑 Eliminar todo el Excel (${facts.length})</button>`:''}
+        ${cargas.length>1?`<button class="btn danger ghost" onclick="borrarFacturasEECC('${eeccId}')">🗑 Eliminar todos (${facts.length})</button>`:''}
       </div>
       <button class="btn ghost" onclick="cerrarModal()">Cerrar</button>
     </div>`);
 }
-// Borrado masivo: vacía TODAS las facturas cargadas de una EECC (el Excel que se
-// subió), sin tener que borrarlas una por una. Borrado lógico, como el resto.
+// Elimina solo las facturas cargadas un día concreto (un Excel subido ese día),
+// para deshacer una carga con errores sin tocar las de otros días.
+async function borrarCargaDia(eeccId,dia){
+  const e=RCA_EECC.find(x=>x.eecc_id===eeccId);
+  const ids=RCA_FACT.filter(f=>f.eecc_id===eeccId && String(f.created_at||'').slice(0,10)===dia).map(f=>f.factura_id);
+  if(!ids.length){ toast('No hay facturas de esa carga','err'); return; }
+  if(!confirm(`¿Eliminar el Excel cargado el ${fmtDia(dia)} de «${e?e.nombre:''}» (${ids.length} factura(s))?\n\nSirve para deshacer una carga con errores. No toca las facturas cargadas otros días.`)) return;
+  try{
+    const {error}=await SB.from('rca_facturas')
+      .update({estado_registro:'Eliminado',updated_at:nowISO(),updated_by:quien()})
+      .in('factura_id',ids);
+    if(error) throw error;
+    await cargarFacturas(RCA_ACTUAL.rca_id); renderDetalle(); verFacturas(eeccId);
+    toast(`🗑 Carga del ${fmtDia(dia)} eliminada (${ids.length})`,'ok');
+  }catch(err){ toast('Error: '+err.message,'err'); }
+}
+// Borrado masivo: vacía TODAS las facturas cargadas de una EECC (todos los días),
+// sin tener que borrarlas una por una. Borrado lógico, como el resto.
 async function borrarFacturasEECC(eeccId){
   const e=RCA_EECC.find(x=>x.eecc_id===eeccId);
   const n=RCA_FACT.filter(f=>f.eecc_id===eeccId).length;
   if(!n){ toast('No hay facturas cargadas para esta EECC','err'); return; }
-  if(!confirm(`¿Eliminar TODAS las ${n} factura(s) cargadas de «${e?e.nombre:''}»?\n\nEsto vacía el Excel subido para esta EECC y deja de sumar a la meta. Puedes volver a cargar el Excel cuando quieras.`)) return;
+  if(!confirm(`¿Eliminar TODAS las ${n} factura(s) cargadas de «${e?e.nombre:''}» (de todos los días)?\n\nEsto vacía el Excel subido para esta EECC y deja de sumar a la meta. Puedes volver a cargar el Excel cuando quieras.`)) return;
   try{
     const {error}=await SB.from('rca_facturas')
       .update({estado_registro:'Eliminado',updated_at:nowISO(),updated_by:quien()})
@@ -706,9 +776,12 @@ function exportarInforme(eeccId){
   const eecc = eeccId ? RCA_EECC.filter(e=>e.eecc_id===eeccId) : RCA_EECC;
   const facts = eeccId ? RCA_FACT.filter(f=>f.eecc_id===eeccId) : RCA_FACT;
   const resumen=[['RCA',r.codigo,r.nombre||''],['Meta',(+r.pct_meta||10)+'%'],[],
-    ['EECC','RUT','Monto declarado','Meta','Reportado regional','Avance %','Facturas','Por revisar']];
+    ['EECC','RUT','Monto declarado','Meta','Reportado regional','Avance %','Falta %',
+     'Contrato desde','Contrato hasta','Días de contrato','Facturas','Por revisar']];
   eecc.forEach(e=>{ const c=calcEECC(e);
-    resumen.push([e.nombre,rutFmt(e.rut||''),c.decl,c.meta,c.rep,c.avance,c.nfact,c.pend]); });
+    resumen.push([e.nombre,rutFmt(e.rut||''),c.decl,c.meta,c.rep,c.avance,c.faltaPct,
+      String(e.fecha_desde||'').slice(0,10), String(e.fecha_hasta||'').slice(0,10),
+      c.dias===null?'':c.dias, c.nfact,c.pend]); });
   const fdet=[['Año','Mes','N° de Factura','EE.CC','RUT','Razón social o nombre de fantasía',
     'Comuna casa matriz','Bien o servicio contratado','Clasificación','CLP Monto de la contratación','Estado revisión']];
   facts.forEach(f=>{ const e=RCA_EECC.find(x=>x.eecc_id===f.eecc_id);

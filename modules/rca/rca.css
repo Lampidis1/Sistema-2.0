@@ -125,12 +125,26 @@ main{padding:22px 28px 48px;max-width:1200px;margin:0 auto}
 .eecc-rut{font-size:.78rem;color:var(--text-muted);font-weight:500}
 .eecc-barra{background:#eef2f3;border-radius:6px;height:9px;overflow:hidden;margin-bottom:10px}
 .eecc-barra-in{height:9px;border-radius:6px;transition:width .3s}
-.eecc-montos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.eecc-montos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
 .eecc-montos>div{display:flex;flex-direction:column}
 .eecc-montos span{font-size:.68rem;color:var(--text-muted);text-transform:uppercase}
 .eecc-montos b{font-size:.9rem}
 .eecc-info{font-size:.8rem;color:var(--text-muted);margin-bottom:10px;line-height:1.5}
 .eecc-acc{display:flex;gap:6px;flex-wrap:wrap}
+.eecc-chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.eecc-plazo{font-size:.78rem;color:var(--text-muted);margin-bottom:10px}
+/* Chip de días de contrato, coloreado por urgencia. */
+.chip.dias.ok{background:#e8f6ec;color:#1e7e34}
+.chip.dias.gold{background:#fff3cd;color:#8a6100}
+.chip.dias.hoy{background:#fff3cd;color:#8a6100}
+.chip.dias.vencido{background:#fdecea;color:#c0311b}
+.chip.dias.sinf{background:#eef2f3;color:#5f6973}
+/* Bloque "Excel cargados por día" dentro de la ventana Facturas. */
+.cargas-box{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px;background:#fafbfc}
+.cargas-t{font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px}
+.carga-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:5px 0;border-top:1px solid #eef2f3}
+.carga-row:first-of-type{border-top:none}
+.carga-info{font-size:.85rem}
 
 /* ── MODAL ────────────────────────────────────────────────────────────────── */
 .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10030;display:flex;
