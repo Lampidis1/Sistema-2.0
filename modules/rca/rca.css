@@ -189,6 +189,8 @@ main{padding:22px 28px 48px;max-width:1200px;margin:0 auto}
 .est.off{background:#f6e4e2;color:var(--red)}
 .est.pend{background:#fff2cf;color:var(--amber)}
 .est.inc{background:#ffe6d6;color:#c0311b}
+.rca-linkbox{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rca-linkbox input{flex:1;min-width:220px;border:1.5px solid var(--border);border-radius:9px;padding:9px 11px;font-size:.85rem;background:#f6f9f9;color:#1f2a2c}
 .bp-tot{font-size:.82rem;color:var(--text-muted);margin-bottom:8px}
 
 /* ── TOAST ────────────────────────────────────────────────────────────────── */

@@ -299,6 +299,7 @@ Ya no está vacío. Lo que vive ahí hoy:
 |---|---|---|
 | `js/auth-guard.js` | Bloque de login unificado (`window.AUTH_CFG`) | movil, empleabilidad, admin, planer |
 | `js/faena-consulta.js` | Consulta de solo lectura por faena | centinela, antucoya, zaldivar |
+| `js/rca-reporte.js` | Render del reporte RCA (`window.RCAReporte`) | rca (app + página pública `reporte.html`) |
 | `css/faena-consulta.css` | Estilos de lo anterior | centinela, antucoya, zaldivar |
 | `css/ficha-modal.css` | **Ficha emergente del proveedor** | proveedores, mgi |
 | `css/responsive.css` | **Ajustes de tableta y teléfono** | **los 10 puntos de entrada** |

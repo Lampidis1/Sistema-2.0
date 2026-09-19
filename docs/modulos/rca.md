@@ -51,6 +51,26 @@ desplegables (clic para ver el detalle de cada factura mal): **datos incompletos
 (sin N° de factura o sin fecha, con el motivo), **otra comuna** (fuera de región) y
 **por revisar** (proveedor no reconocido).
 
+Además de descargar el HTML, cada botón abre un **link compartible** (página
+pública `reporte.html?t=<token>`, sin login):
+
+- **Gerencia:** un **link constante por RCA** (se reusa el mismo token). Muestra
+  el resumen general + todas las EECC y **se actualiza solo** (tipo dashboard)
+  cada vez que se abre. Ideal para dejarlo fijo a gerencia.
+- **EECC:** un botón **genera un link con solo esa EECC** al momento de reportar,
+  con **caducidad opcional** (7 / 30 / 90 días o sin caducidad).
+
+El link lleva un **token UUID aleatorio**, nunca RUT ni nombres en la URL
+(Regla 5). La página pública no lee tablas: entra por la función
+`SECURITY DEFINER` **`rca_reporte_publico(token)`**, que devuelve solo el reporte
+de ese token (todas las EECC o una). La tabla **`rca_reportes`** (token, rca_id,
+eecc_id, tipo, activo, expira) tiene RLS `tiene_acceso('rca') or es_principal()`.
+El render lo comparten la app y la página pública desde
+**`shared/js/rca-reporte.js`** (`window.RCAReporte`), así se ven idénticos.
+
+> Para **revocar** un link basta con `update rca_reportes set activo=false` (o
+> `delete`) desde la consola; la página pública responde "Reporte no disponible".
+
 > ⚠️ **Cambio en la carga (2026-09-16):** antes, las filas sin N° de factura, RUT
 > o monto se **descartaban en silencio**. Ahora se **guardan** con
 > `estado_revision='incompleta'` y `motivo_descarte` para poder listarlas en el

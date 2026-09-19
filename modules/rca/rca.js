@@ -214,7 +214,7 @@ function renderDetalle(){
       <div class="det-acc">
         <button class="btn ghost" onclick="rcaModal('${r.rca_id}')">✏ Editar RCA</button>
         <button class="btn ghost" onclick="exportarInforme()">⬇ Informe Excel</button>
-        <button class="btn primary" onclick="generarReporteRCA('gerencia')" title="Resumen general + una hoja por EECC, para gerencia">📄 Reporte gerencia</button>
+        <button class="btn primary" onclick="rcaAbrirReporteGerencia()" title="Link constante + descarga">📄 Reporte gerencia</button>
       </div>
     </div>
     <div class="det-titulo">
@@ -287,7 +287,7 @@ function tarjetaEECC(e){
     <div class="eecc-acc">
       <button class="mini" onclick="importarExcel('${e.eecc_id}')">📥 Cargar Excel</button>
       <button class="mini" onclick="verFacturas('${e.eecc_id}')">🧾 Facturas</button>
-      <button class="mini" onclick="generarReporteRCA('eecc','${e.eecc_id}')" title="Reporte solo de esta EECC">📄 Reporte</button>
+      <button class="mini" onclick="rcaAbrirReporteEECC('${e.eecc_id}')" title="Link + descarga de esta EECC">📄 Reporte</button>
       <button class="mini" onclick="eeccModal('${e.eecc_id}')">✏ Editar</button>
       ${e.carta_path?`<button class="mini" onclick="verCarta('${esc(e.carta_path)}')">👁 Ver carta</button>`:''}
       <button class="mini" onclick="subirCarta('${e.eecc_id}')">📄 ${e.carta_path?'Reemplazar carta':'Subir carta'}</button>
@@ -830,191 +830,117 @@ function exportarInforme(eeccId){
 }
 
 // ══ REPORTE HTML (gerencia / por EECC) ═══════════════════════════════════════
-// Genera un documento HTML autónomo (estilos incrustados, sin dependencias) con:
-//  · modo 'gerencia': resumen general de todas las EECC + una hoja por cada una.
-//  · modo 'eecc':      solo la hoja de la EECC elegida.
-// Cada hoja muestra el avance de lo comprometido y el detalle de gestión de
-// facturas (reportadas vs contadas) con listas desplegables de lo que no sumó.
+// El render vive en shared/js/rca-reporte.js (window.RCAReporte), compartido con
+// la página pública reporte.html. Acá solo se arman los datos, la descarga y los
+// links compartibles.
 
-// Tabla de facturas para el reporte (una lista de un estado).
-function _repTablaFact(facts, opts){
-  opts=opts||{};
-  if(!facts.length) return '<div class="rp-vacio">Sin facturas en esta categoría.</div>';
-  const filas=facts.map(f=>`<tr>
-    <td>${esc(f.anio||'')}</td><td>${esc(f.mes||'')}</td><td>${esc(f.num_factura||'—')}</td>
-    <td>${esc(rutFmt(f.rut_proveedor)||'—')}</td><td>${esc(f.razon_social||'—')}</td>
-    <td>${esc(f.comuna||'—')}</td><td class="rp-num">${_clp(f.monto_clp)}</td>
-    ${opts.motivo?`<td>${esc(f.motivo_descarte||'')}</td>`:''}
-  </tr>`).join('');
-  return `<table class="rp-tabla">
-    <thead><tr><th>Año</th><th>Mes</th><th>N° factura</th><th>RUT</th><th>Proveedor</th>
-      <th>Comuna</th><th class="rp-num">Monto CLP</th>${opts.motivo?'<th>Motivo</th>':''}</tr></thead>
-    <tbody>${filas}</tbody></table>`;
-}
-// Lista desplegable (clic para ver) de un grupo que no sumó.
-function _repDrill(titulo, ico, facts, opts){
-  const monto=facts.reduce((a,f)=>a+(+f.monto_clp||0),0);
-  return `<details class="rp-drill"${facts.length?'':' data-vacio="1"'}>
-    <summary><span>${ico} ${esc(titulo)}</span>
-      <span class="rp-drill-n">${facts.length} factura(s) · ${_clp(monto)} <b>▸ ver</b></span></summary>
-    <div class="rp-drill-body">${_repTablaFact(facts,opts)}</div></details>`;
-}
-// Hoja de una EECC.
-function reporteSeccionEECC(e){
-  const c=calcEECC(e);
-  const col=c.avance>=80?'#1e7e34':c.avance>=40?'#b8860b':'#c0311b';
-  const periodo=(e.fecha_desde||e.fecha_hasta)
-    ? `${e.fecha_desde?fmtDia(e.fecha_desde):'—'} → ${e.fecha_hasta?fmtDia(e.fecha_hasta):'—'}` : 'sin fechas de contrato';
-  const diasTxt=c.dias===null?'sin fecha de término'
-    : c.dias>0?`${c.dias} día(s) de contrato`
-    : c.dias===0?'contrato vence hoy':`contrato vencido hace ${-c.dias} día(s)`;
-  return `<section class="rp-eecc">
-    <div class="rp-eecc-h">
-      <div><h2>${esc(e.nombre)}</h2>
-        <div class="rp-sub">${e.rut?'RUT '+esc(rutFmt(e.rut))+' · ':''}Contrato ${esc(e.numero_contrato||'—')}</div></div>
-      <div class="rp-eecc-plazo"><div>📅 ${esc(periodo)}</div><div class="rp-dias ${c.dias!==null&&c.dias<=30?'urg':''}">⏳ ${esc(diasTxt)}</div></div>
-    </div>
-
-    <div class="rp-bloque">
-      <div class="rp-bloque-t">Avance de lo comprometido</div>
-      <div class="rp-barra"><div class="rp-barra-in" style="width:${c.avance}%;background:${col}"></div></div>
-      <div class="rp-cifras">
-        <div><span>Comprometido (meta ${(+RCA_ACTUAL.pct_meta||10)}%)</span><b>${_clp(c.meta)}</b></div>
-        <div><span>Reportado que suma</span><b style="color:#1e7e34">${_clp(c.rep)}</b></div>
-        <div><span>Avance</span><b style="color:${col}">${c.avance}%</b></div>
-        <div><span>Falta para la meta</span><b style="color:${col}">${c.avance>=100?'✓ cumplida':_clp(c.faltaClp)+' ('+c.faltaPct+'%)'}</b></div>
-      </div>
-      <div class="rp-nota-decl">Monto declarado por carta formal: <b>${_clp(c.decl)}</b>.</div>
-    </div>
-
-    <div class="rp-bloque">
-      <div class="rp-bloque-t">Gestión de facturas</div>
-      <div class="rp-cifras">
-        <div><span>Reportadas (total en el Excel)</span><b>${c.nTotal}</b></div>
-        <div><span>Contadas (suman al ${(+RCA_ACTUAL.pct_meta||10)}%)</span><b style="color:#1e7e34">${c.nContadas}</b></div>
-        <div><span>No sumaron</span><b style="color:#c0311b">${c.nTotal-c.nContadas}</b></div>
-        <div><span>Monto reportado vs contado</span><b>${_clp(c.montoReportado)} / <span style="color:#1e7e34">${_clp(c.montoContado)}</span></b></div>
-      </div>
-      <div class="rp-drills">
-        ${_repDrill('Datos incompletos (N° de factura o fecha)','🟠',c.fIncomp,{motivo:true})}
-        ${_repDrill('Pertenecen a otra comuna (fuera de región)','🔴',c.fNoReg,{})}
-        ${_repDrill('Por revisar (proveedor no reconocido)','🟡',c.fPend,{})}
-      </div>
-    </div>
-  </section>`;
-}
-// Resumen general (solo modo gerencia).
-function reporteResumenGeneral(lista){
-  const tot=lista.reduce((a,e)=>{const c=calcEECC(e);a.decl+=c.decl;a.meta+=c.meta;a.rep+=c.rep;
-    a.nTot+=c.nTotal;a.nOk+=c.nContadas;a.noReg+=c.nNoReg;a.inc+=c.nIncomp;a.pend+=c.nPend;return a;},
-    {decl:0,meta:0,rep:0,nTot:0,nOk:0,noReg:0,inc:0,pend:0});
-  const avG=tot.meta>0?Math.min(100,Math.round(tot.rep/tot.meta*100)):0;
-  const col=avG>=80?'#1e7e34':avG>=40?'#b8860b':'#c0311b';
-  const filas=lista.map(e=>{const c=calcEECC(e);
-    const cc=c.avance>=80?'#1e7e34':c.avance>=40?'#b8860b':'#c0311b';
-    return `<tr>
-      <td>${esc(e.nombre)}</td><td>${esc(rutFmt(e.rut)||'—')}</td>
-      <td class="rp-num">${_clp(c.meta)}</td><td class="rp-num" style="color:#1e7e34">${_clp(c.rep)}</td>
-      <td class="rp-num"><b style="color:${cc}">${c.avance}%</b></td>
-      <td class="rp-num">${c.nContadas}/${c.nTotal}</td>
-      <td class="rp-num">${c.nIncomp||''}</td><td class="rp-num">${c.nNoReg||''}</td>
-      <td>${c.dias===null?'—':c.dias>0?c.dias+' d':c.dias===0?'hoy':'vencido'}</td>
-    </tr>`;}).join('');
-  return `<section class="rp-resumen">
-    <h2>Resumen general · ${lista.length} EECC</h2>
-    <div class="rp-kpis">
-      <div class="rp-kpi"><b>${_clp(tot.meta)}</b><span>Meta comprometida (${(+RCA_ACTUAL.pct_meta||10)}%)</span></div>
-      <div class="rp-kpi"><b style="color:#1e7e34">${_clp(tot.rep)}</b><span>Reportado que suma</span></div>
-      <div class="rp-kpi"><b style="color:${col}">${avG}%</b><span>Avance global</span></div>
-      <div class="rp-kpi"><b>${tot.nOk}/${tot.nTot}</b><span>Facturas contadas / reportadas</span></div>
-    </div>
-    <table class="rp-tabla rp-resumen-tbl">
-      <thead><tr><th>EECC</th><th>RUT</th><th class="rp-num">Meta</th><th class="rp-num">Reportado</th>
-        <th class="rp-num">Avance</th><th class="rp-num">Fact. contadas/total</th>
-        <th class="rp-num">Incompl.</th><th class="rp-num">Otra comuna</th><th>Contrato</th></tr></thead>
-      <tbody>${filas}</tbody></table>
-  </section>`;
-}
-function _reporteCSS(){
-  return `*{box-sizing:border-box}body{margin:0;font-family:'Inter',system-ui,Arial,sans-serif;color:#1f2a2c;background:#eef2f3}
-  .rp-wrap{max-width:1000px;margin:0 auto;padding:24px 20px 60px}
-  .rp-head{background:#006973;color:#fff;border-radius:14px;padding:20px 24px;margin-bottom:18px}
-  .rp-head h1{margin:0 0 4px;font-size:1.5rem}.rp-head .rp-meta{opacity:.9;font-size:.9rem}
-  .rp-tag{display:inline-block;background:rgba(255,255,255,.18);border-radius:20px;padding:3px 12px;font-size:.78rem;margin-top:8px}
-  h2{font-size:1.2rem;color:#006973;margin:0 0 12px}
-  .rp-resumen,.rp-eecc{background:#fff;border:1px solid #dfe6e7;border-radius:14px;padding:20px 22px;margin-bottom:18px}
-  .rp-eecc{border-left:5px solid #006973}
-  .rp-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-  .rp-kpi{background:#f6f9f9;border:1px solid #e3ebec;border-radius:10px;padding:12px}
-  .rp-kpi b{display:block;font-size:1.15rem}.rp-kpi span{font-size:.72rem;color:#5f6973;text-transform:uppercase}
-  .rp-eecc-h{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;border-bottom:1px solid #eef2f3;padding-bottom:12px;margin-bottom:14px}
-  .rp-eecc-h h2{margin:0}.rp-sub{font-size:.82rem;color:#5f6973;margin-top:3px}
-  .rp-eecc-plazo{text-align:right;font-size:.82rem;color:#5f6973}
-  .rp-dias{margin-top:3px;font-weight:700;color:#1e7e34}.rp-dias.urg{color:#b8860b}
-  .rp-bloque{margin-top:14px}.rp-bloque-t{font-size:.75rem;font-weight:700;text-transform:uppercase;color:#006973;letter-spacing:.04em;margin-bottom:8px}
-  .rp-barra{background:#eef2f3;border-radius:6px;height:11px;overflow:hidden;margin-bottom:10px}
-  .rp-barra-in{height:11px;border-radius:6px}
-  .rp-cifras{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-  .rp-cifras>div{display:flex;flex-direction:column;background:#f6f9f9;border:1px solid #e3ebec;border-radius:8px;padding:9px 11px}
-  .rp-cifras span{font-size:.68rem;color:#5f6973;text-transform:uppercase}.rp-cifras b{font-size:.98rem;margin-top:2px}
-  .rp-nota-decl{font-size:.78rem;color:#5f6973;margin-top:8px}
-  .rp-drills{margin-top:12px;display:flex;flex-direction:column;gap:8px}
-  .rp-drill{border:1px solid #e3ebec;border-radius:9px;overflow:hidden}
-  .rp-drill[data-vacio="1"]{opacity:.55}
-  .rp-drill summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px;padding:10px 13px;background:#f6f9f9;font-size:.86rem;font-weight:600;list-style:none}
-  .rp-drill summary::-webkit-details-marker{display:none}
-  .rp-drill-n{color:#5f6973;font-weight:500}.rp-drill-n b{color:#006973}
-  .rp-drill-body{padding:6px 13px 13px;overflow-x:auto}
-  .rp-tabla{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:6px}
-  .rp-tabla th,.rp-tabla td{border:1px solid #e6ecec;padding:6px 8px;text-align:left}
-  .rp-tabla thead th{background:#f0f5f5;color:#006973}
-  .rp-num{text-align:right}.rp-vacio{font-size:.82rem;color:#8a949a;padding:8px 0}
-  .rp-resumen-tbl{margin-top:6px}
-  .rp-foot{text-align:center;color:#8a949a;font-size:.75rem;margin-top:24px}
-  @media print{body{background:#fff}.rp-eecc,.rp-resumen{break-inside:avoid;page-break-inside:avoid}.rp-drill[open] summary b{display:none}}
-  @media(max-width:640px){.rp-kpis,.rp-cifras{grid-template-columns:repeat(2,1fr)}}`;
-}
-// Arma y entrega el documento. modo='gerencia' (todas) o 'eecc' (una).
+// Descarga/abre el documento HTML del reporte (respaldo local, además del link).
 function generarReporteRCA(modo, eeccId){
   const r=RCA_ACTUAL; if(!r){ toast('Abre una RCA primero','err'); return; }
   const lista = modo==='eecc' ? RCA_EECC.filter(x=>x.eecc_id===eeccId) : RCA_EECC.slice();
   if(!lista.length){ toast('No hay EECC para reportar','err'); return; }
-  const hoy=new Date().toLocaleString('es-CL');
-  const titulo = modo==='eecc'
-    ? `Reporte EECC · ${lista[0].nombre}`
-    : `Reporte gerencia · RCA ${r.codigo}`;
-  const cuerpo = (modo==='gerencia' ? reporteResumenGeneral(lista) : '')
-    + lista.map(reporteSeccionEECC).join('');
-  const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>${esc(titulo)}</title><style>${_reporteCSS()}</style></head><body>
-    <div class="rp-wrap">
-      <div class="rp-head">
-        <h1>${esc(titulo)}</h1>
-        <div class="rp-meta">RCA ${esc(r.codigo)}${r.nombre?' · '+esc(r.nombre):''} · Meta ${(+r.pct_meta||10)}% de lo declarado por cada EECC</div>
-        <span class="rp-tag">${modo==='eecc'?'Reporte para la empresa colaboradora':'Reporte para gerencia'} · generado ${esc(hoy)}</span>
-      </div>
-      ${cuerpo}
-      <div class="rp-foot">Sistema AM · RCA Cumplimiento · Antofagasta Minerals — documento generado desde la plataforma. Los montos que no suman se listan por su motivo; haz clic en cada lista para ver el detalle.</div>
-    </div></body></html>`;
+  const html=RCAReporte.documento({rca:r, lista, facturas:RCA_FACT, modo});
   const base = modo==='eecc'
     ? `Reporte_${r.codigo}_${(lista[0].nombre||'EECC').replace(/[^\w]+/g,'_').slice(0,24)}`
     : `Reporte_gerencia_${r.codigo}`;
   _descargarHTML(html, base+'.html');
 }
-// Entrega el HTML: lo abre en una pestaña nueva para mostrarlo y deja el archivo
-// descargado como respaldo. Si el navegador bloquea la pestaña, queda el archivo.
 function _descargarHTML(html, nombre){
   try{
     const blob=new Blob([html],{type:'text/html;charset=utf-8'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=url; a.download=nombre;
     document.body.appendChild(a); a.click(); a.remove();
-    const w=window.open(url,'_blank'); // para mostrarlo de inmediato
+    const w=window.open(url,'_blank');
     setTimeout(()=>URL.revokeObjectURL(url),60000);
     toast(w?'📄 Reporte generado (se abrió y se descargó)':'📄 Reporte descargado','ok');
   }catch(e){ toast('No se pudo generar el reporte: '+e.message,'err'); }
 }
+
+// ── Links compartibles (tabla rca_reportes + página pública reporte.html) ─────
+function rcaReporteURL(token){
+  return new URL('reporte.html', location.href).href.split('#')[0].split('?')[0] + '?t=' + token;
+}
+// gerencia: token FIJO por RCA (link constante, se reusa si ya existe).
+async function rcaTokenGerencia(){
+  const {data:ex}=await SB.from('rca_reportes').select('token')
+    .eq('rca_id',RCA_ACTUAL.rca_id).eq('tipo','gerencia').eq('activo',true).maybeSingle();
+  if(ex&&ex.token) return ex.token;
+  const {data,error}=await SB.from('rca_reportes')
+    .insert({rca_id:RCA_ACTUAL.rca_id, tipo:'gerencia', eecc_id:null, created_by:quien()})
+    .select('token').single();
+  if(error){ // carrera con otro que lo creó: reintentar la lectura
+    const {data:r2}=await SB.from('rca_reportes').select('token')
+      .eq('rca_id',RCA_ACTUAL.rca_id).eq('tipo','gerencia').maybeSingle();
+    if(r2&&r2.token) return r2.token; throw error;
+  }
+  return data.token;
+}
+// eecc: token nuevo por EECC (opcional caducidad en días).
+async function rcaTokenEECC(eeccId, dias){
+  const expira = dias?new Date(Date.now()+(+dias)*86400000).toISOString():null;
+  const {data,error}=await SB.from('rca_reportes')
+    .insert({rca_id:RCA_ACTUAL.rca_id, tipo:'eecc', eecc_id:eeccId, expira, created_by:quien()})
+    .select('token').single();
+  if(error) throw error;
+  return data.token;
+}
+function _rcaLinkBox(url){
+  return `<div class="rca-linkbox">
+    <input id="rcaLinkUrl" readonly value="${esc(url)}" onclick="this.select()">
+    <button class="btn primary" onclick="rcaCopiarLink()">📋 Copiar</button>
+    <a class="btn ghost" href="${esc(url)}" target="_blank" rel="noopener">Abrir ↗</a>
+  </div>`;
+}
+function rcaCopiarLink(){
+  const i=document.getElementById('rcaLinkUrl'); if(!i) return; i.select();
+  try{ navigator.clipboard.writeText(i.value); }catch(e){ try{document.execCommand('copy');}catch(_){} }
+  toast('🔗 Link copiado','ok');
+}
+// Modal del reporte de gerencia: link constante + descarga.
+async function rcaAbrirReporteGerencia(){
+  if(!RCA_EECC.length){ toast('Agrega EECC antes de reportar','err'); return; }
+  abrirModal(`<h3>📄 Reporte para gerencia</h3><p class="modal-nota">Generando el link…</p>`);
+  try{
+    const url=rcaReporteURL(await rcaTokenGerencia());
+    abrirModal(`<h3>📄 Reporte para gerencia</h3>
+      <p class="modal-nota">Link <b>constante</b> con el resumen general y una hoja por cada EECC.
+      Siempre muestra los datos actualizados (tipo dashboard). Compártelo con gerencia.</p>
+      ${_rcaLinkBox(url)}
+      <div class="modal-acc"><span></span>
+        <button class="btn ghost" onclick="generarReporteRCA('gerencia')">⬇ Descargar HTML</button>
+        <button class="btn ghost" onclick="cerrarModal()">Cerrar</button></div>`);
+  }catch(e){ cerrarModal(); toast('Error al generar el link: '+e.message,'err'); }
+}
+// Modal del reporte de una EECC: generar link (con caducidad opcional) + descarga.
+function rcaAbrirReporteEECC(eeccId){
+  const e=RCA_EECC.find(x=>x.eecc_id===eeccId);
+  abrirModal(`<h3>📄 Reporte · ${esc(e?e.nombre:'')}</h3>
+    <p class="modal-nota">Genera un link con <b>solo esta EECC</b> para enviárselo. Puedes ponerle caducidad.</p>
+    <label>Caducidad del link</label>
+    <select id="rcaExp">
+      <option value="">Sin caducidad</option>
+      <option value="7">7 días</option>
+      <option value="30" selected>30 días</option>
+      <option value="90">90 días</option>
+    </select>
+    <div id="rcaEeccLink" style="margin-top:12px"></div>
+    <div class="modal-acc">
+      <button class="btn ghost" onclick="generarReporteRCA('eecc','${eeccId}')">⬇ Descargar HTML</button>
+      <div><button class="btn primary" onclick="rcaGenerarLinkEECC('${eeccId}')">🔗 Generar link</button>
+      <button class="btn ghost" onclick="cerrarModal()">Cerrar</button></div>
+    </div>`);
+}
+async function rcaGenerarLinkEECC(eeccId){
+  try{
+    const dias=val('rcaExp');
+    const url=rcaReporteURL(await rcaTokenEECC(eeccId, dias||null));
+    const cad=dias?`Caduca en ${dias} días.`:'Sin caducidad.';
+    document.getElementById('rcaEeccLink').innerHTML=`<p class="modal-nota" style="margin:0 0 8px">${cad}</p>${_rcaLinkBox(url)}`;
+    toast('🔗 Link creado','ok');
+  }catch(e){ toast('Error al crear el link: '+e.message,'err'); }
+}
+
 
 // ══ BASE DE PROVEEDORES VALIDADOS (Ajustes) ═════════════════════════════════
 // Registro que se acumula con el tiempo y sirve para todas las RCAs. Cada vez
