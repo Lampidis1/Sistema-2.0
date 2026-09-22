@@ -1,0 +1,63 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   lavanderias.css — Plataforma Lavanderías Sierra Gorda
+   Estilos autocontenidos (la plataforma será independiente a futuro).
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --lav-primary:#0f766e;      /* teal */
+  --lav-primary-dk:#0b5a54;
+  --lav-primary-lt:#e6f4f2;
+  --lav-green:#16a34a;
+  --lav-red:#dc2626;
+  --lav-ink:#1f2a2c;
+  --lav-muted:#5f6973;
+  --lav-border:#dfe6e7;
+  --lav-bg:#eef2f3;
+  --lav-card:#ffffff;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Inter',system-ui,Arial,sans-serif;color:var(--lav-ink);background:var(--lav-bg)}
+h1,h2,h3{font-family:'Barlow Condensed',sans-serif;letter-spacing:.01em}
+
+/* ── PÁGINA PÚBLICA DE BÚSQUEDA ─────────────────────────────────────────── */
+.lav-publico{min-height:100vh;display:flex;flex-direction:column}
+.lavp-head{display:flex;align-items:center;gap:14px;background:var(--lav-primary);color:#fff;padding:16px 22px}
+.lavp-head img{height:34px}
+.lavp-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.3rem;text-transform:uppercase;line-height:1}
+.lavp-s{font-size:.82rem;opacity:.9}
+.lavp-main{flex:1;max-width:760px;width:100%;margin:0 auto;padding:26px 18px 50px}
+.lavp-card{background:var(--lav-card);border:1px solid var(--lav-border);border-radius:16px;padding:26px 24px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.lavp-card h1{font-size:1.5rem;color:var(--lav-primary);margin:0 0 6px;text-transform:uppercase}
+.lavp-nota{font-size:.9rem;color:var(--lav-muted);margin:0 0 16px}
+.lavp-buscador{display:flex;gap:10px;flex-wrap:wrap}
+.lavp-buscador input{flex:1;min-width:180px;border:2px solid var(--lav-border);border-radius:11px;
+  padding:13px 15px;font-size:1.3rem;font-weight:700;letter-spacing:.22em;text-align:center;text-transform:uppercase;color:var(--lav-ink)}
+.lavp-buscador input:focus{outline:none;border-color:var(--lav-primary);box-shadow:0 0 0 3px rgba(15,118,110,.15)}
+.lavp-btn{background:var(--lav-primary);color:#fff;border:none;border-radius:11px;padding:13px 20px;
+  font-size:1rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.lavp-btn:hover{background:var(--lav-primary-dk)}
+.lavp-btn.ghost{background:#fff;color:var(--lav-primary);border:1.5px solid var(--lav-primary)}
+.lavp-msg{margin-top:12px;font-size:.9rem;color:var(--lav-muted);min-height:1.2em}
+.lavp-msg.err{color:var(--lav-red)}
+.lavp-foot{text-align:center;color:var(--lav-muted);font-size:.78rem;padding:18px}
+
+/* Resultado de la búsqueda */
+.lavr-card{background:var(--lav-card);border:1px solid var(--lav-border);border-radius:16px;padding:22px 24px;margin-top:18px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.lavr-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--lav-border);padding-bottom:14px;margin-bottom:14px}
+.lavr-cod{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.5rem;color:var(--lav-primary);letter-spacing:.14em}
+.lavr-lav{font-weight:700;margin-top:4px}
+.lavr-fecha{font-size:.82rem;color:var(--lav-muted);margin-top:2px}
+.lavr-kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+.lavr-kpis>div{background:var(--lav-primary-lt);border-radius:10px;padding:12px 14px;text-align:center}
+.lavr-kpis b{display:block;font-size:1.5rem;font-family:'Barlow Condensed',sans-serif;color:var(--lav-primary-dk)}
+.lavr-kpis span{font-size:.72rem;color:var(--lav-muted);text-transform:uppercase}
+.lavr-cat{margin-top:14px}
+.lavr-cat-t{font-size:.78rem;font-weight:700;text-transform:uppercase;color:var(--lav-primary);letter-spacing:.05em;margin-bottom:6px}
+.lavr-tabla{width:100%;border-collapse:collapse;font-size:.9rem}
+.lavr-tabla th,.lavr-tabla td{border:1px solid #e6ecec;padding:7px 10px;text-align:left}
+.lavr-tabla thead th{background:#f0f5f5;color:var(--lav-primary)}
+.lavr-tabla tfoot td{font-weight:700;background:#fafbfc}
+.lavr-tabla .num{text-align:right;width:110px}
+
+@media(max-width:560px){
+  .lavp-buscador input{font-size:1.1rem;letter-spacing:.12em}
+}

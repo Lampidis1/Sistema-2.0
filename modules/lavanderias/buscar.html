@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trazabilidad de bolsa · Lavanderías Sierra Gorda</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="../../config/supabase.config.js"></script>
+<link rel="stylesheet" href="lavanderias.css?v=20260922a">
+</head>
+<body class="lav-publico">
+
+<header class="lavp-head">
+  <img src="../../shared/assets/logo-amsa-873.png" alt="Antofagasta Minerals">
+  <div>
+    <div class="lavp-t">Lavanderías Sierra Gorda</div>
+    <div class="lavp-s">Trazabilidad de bolsas · consulta pública</div>
+  </div>
+</header>
+
+<main class="lavp-main">
+  <div class="lavp-card">
+    <h1>Buscar una bolsa por su código</h1>
+    <p class="lavp-nota">Ingresa el código de 7 caracteres que aparece en la bolsa para ver su contenido registrado.</p>
+    <div class="lavp-buscador">
+      <input id="cod" placeholder="Ej: A3B7K92" maxlength="7" autocomplete="off"
+             oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')"
+             onkeydown="if(event.key==='Enter')buscar()">
+      <button class="lavp-btn" onclick="buscar()">🔍 Buscar</button>
+    </div>
+    <div id="msg" class="lavp-msg"></div>
+  </div>
+
+  <div id="resultado"></div>
+</main>
+
+<footer class="lavp-foot">Sistema de trazabilidad · Lavanderías Sierra Gorda</footer>
+
+<script src="buscar.js?v=20260922a"></script>
+</body>
+</html>
