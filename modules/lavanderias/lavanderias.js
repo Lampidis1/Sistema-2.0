@@ -25,6 +25,15 @@ function toast(msg, tipo){
   t._t=setTimeout(()=>{ t.className='lav-toast'; }, 3200);
 }
 function gateErr(msg){ const e=document.getElementById('gateErr'); if(e){ e.textContent=msg||''; e.className='lavg-err'+(msg?' on':''); } }
+// Traduce errores comunes de Supabase Auth a algo entendible.
+function authMsg(error){
+  const m = String((error&&error.message)||error||'').toLowerCase();
+  if(m.includes('rate limit')) return 'Se alcanzó el límite de correos por ahora. Espera unos minutos y reintenta (o el administrador puede desactivar la confirmación por correo).';
+  if(m.includes('already registered') || m.includes('user already')) return 'Ese correo ya tiene una cuenta. Ingresa con tu contraseña o usa «¿Olvidaste tu contraseña?».';
+  if(m.includes('invalid login') || m.includes('invalid credentials')) return 'Correo o contraseña incorrectos.';
+  if(m.includes('email not confirmed')) return 'Tu correo aún no está confirmado. Revisa tu bandeja o pide al administrador que active tu acceso.';
+  return (error&&error.message)||'Ocurrió un error. Intenta de nuevo.';
+}
 function fechaHora(iso){ if(!iso) return ''; const d=new Date(iso); return d.toLocaleDateString('es-CL')+' · '+d.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}); }
 
 // ── Arranque y ruteo ─────────────────────────────────────────────────────────
@@ -56,8 +65,6 @@ function lavVer(v){
   document.getElementById('gate').classList.remove('hidden');
   ['loginStep','regStep','pendStep','adminStep','recoveryStep'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
   gateErr('');
-  document.getElementById('gate').classList.remove('hidden');
-  document.getElementById('app').classList.add('hidden');
   if(v==='admin'){ const a=document.getElementById('adminStep'); if(a) a.style.display=''; return; }
   if(v==='recovery'){ const r=document.getElementById('recoveryStep'); if(r) r.style.display=''; return; }
   if(v==='login'){ document.getElementById('loginStep').style.display=''; }
@@ -88,7 +95,7 @@ async function lavEntrar(){
   if(!email || !pass){ gateErr('Escribe correo y contraseña'); return; }
   gateErr('');
   const { error } = await SB.auth.signInWithPassword({ email, password:pass });
-  if(error){ gateErr('No se pudo ingresar: '+error.message); return; }
+  if(error){ gateErr(authMsg(error)); return; }
   try{ await SB.auth.refreshSession(); }catch(e){}
   await rutear();
 }
@@ -103,7 +110,7 @@ async function lavRegistrar(){
     const pass=document.getElementById('rgPass').value;
     if(!pass || pass.length<6){ gateErr('La contraseña debe tener al menos 6 caracteres'); return; }
     const { error } = await SB.auth.signUp({ email, password:pass });
-    if(error){ gateErr('No se pudo crear la cuenta: '+error.message); return; }
+    if(error){ gateErr(authMsg(error)); return; }
     session = (await SB.auth.getSession()).data.session;
     if(!session){ alert('Cuenta creada. Confirma tu correo, ingresa y completa el registro de la empresa.'); lavVer('login'); return; }
   }
@@ -125,7 +132,7 @@ async function lavOlvide(){
   if(!email){ return; }
   const redirectTo = location.origin + location.pathname;   // vuelve a esta misma página
   const { error } = await SB.auth.resetPasswordForEmail(email, { redirectTo });
-  if(error){ gateErr('No se pudo enviar el correo: '+error.message); return; }
+  if(error){ gateErr(authMsg(error)); return; }
   gateErr('');
   toast('📧 Te enviamos un correo para restablecer la contraseña','ok');
 }
@@ -134,7 +141,7 @@ async function lavNuevaClave(){
   if(!p1 || p1.length < 6){ gateErr('La contraseña debe tener al menos 6 caracteres'); return; }
   if(p1 !== p2){ gateErr('Las contraseñas no coinciden'); return; }
   const { error } = await SB.auth.updateUser({ password: p1 });
-  if(error){ gateErr('No se pudo cambiar la contraseña: '+error.message); return; }
+  if(error){ gateErr(authMsg(error)); return; }
   history.replaceState(null, '', location.pathname);   // limpiar el token del enlace
   toast('✅ Contraseña actualizada','ok');
   await rutear();

@@ -13,6 +13,13 @@ const esc = s => String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&
 const val = id => { const e=document.getElementById(id); return e?e.value.trim():''; };
 function toast(msg,tipo){ const t=document.getElementById('toast'); if(!t)return; t.textContent=msg; t.className='lav-toast on '+(tipo||''); clearTimeout(t._t); t._t=setTimeout(()=>t.className='lav-toast',3200); }
 function gateErr(m){ const e=document.getElementById('gateErr'); if(e){ e.textContent=m||''; e.className='lavg-err'+(m?' on':''); } }
+function authMsg(error){
+  const m=String((error&&error.message)||error||'').toLowerCase();
+  if(m.includes('rate limit')) return 'Se alcanzó el límite de correos por ahora. Espera unos minutos y reintenta.';
+  if(m.includes('invalid login')||m.includes('invalid credentials')) return 'Correo o contraseña incorrectos.';
+  if(m.includes('email not confirmed')) return 'Tu correo aún no está confirmado.';
+  return (error&&error.message)||'Ocurrió un error. Intenta de nuevo.';
+}
 
 async function adBoot(){
   SB = window.supabase.createClient(window.SUPA_CFG.url, window.SUPA_CFG.key);
@@ -43,7 +50,7 @@ async function adOlvide(){
   if(!email){ email = (prompt('Escribe tu correo y te enviaremos un enlace para restablecer la contraseña:')||'').trim(); }
   if(!email) return;
   const { error } = await SB.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
-  if(error){ gateErr('No se pudo enviar el correo: '+error.message); return; }
+  if(error){ gateErr(authMsg(error)); return; }
   gateErr(''); toast('📧 Te enviamos un correo para restablecer la contraseña','ok');
 }
 async function adNuevaClave(){
@@ -51,7 +58,7 @@ async function adNuevaClave(){
   if(!p1 || p1.length<6){ gateErr('La contraseña debe tener al menos 6 caracteres'); return; }
   if(p1!==p2){ gateErr('Las contraseñas no coinciden'); return; }
   const { error } = await SB.auth.updateUser({ password:p1 });
-  if(error){ gateErr('No se pudo cambiar la contraseña: '+error.message); return; }
+  if(error){ gateErr(authMsg(error)); return; }
   history.replaceState(null,'',location.pathname);
   toast('✅ Contraseña actualizada','ok');
   await rutear();
@@ -60,7 +67,7 @@ async function adEntrar(){
   const email=val('lgEmail'), pass=document.getElementById('lgPass').value;
   if(!email||!pass){ gateErr('Escribe correo y contraseña'); return; }
   const { error } = await SB.auth.signInWithPassword({ email, password:pass });
-  if(error){ gateErr('No se pudo ingresar: '+error.message); return; }
+  if(error){ gateErr(authMsg(error)); return; }
   try{ await SB.auth.refreshSession(); }catch(e){}
   await rutear();
 }
