@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MGI · Integraciones (API)</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
+<script src="../../config/supabase.config.js"></script>
+<style>
+  :root{--mp:#5b4fcf;--mp-dk:#4338ca;--mp-lt:#eef0ff;--ink:#1f2a2c;--mut:#5f6973;--bd:#e2e6ea;--bg:#eef2f3;--red:#c0311b;--green:#1e7e34}
+  *{box-sizing:border-box}body{margin:0;font-family:'Inter',system-ui,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  h1,h2,h3{font-family:'Barlow Condensed',sans-serif}
+  .hidden{display:none!important}
+  .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .gate-card{background:#fff;border:1px solid var(--bd);border-radius:16px;padding:28px;width:100%;max-width:400px;box-shadow:0 12px 40px rgba(0,0,0,.12)}
+  .gate-card img{height:34px;display:block;margin:0 auto 10px}
+  .gate-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.4rem;text-align:center;color:var(--mp);text-transform:uppercase}
+  .gate-s{text-align:center;font-size:.82rem;color:var(--mut);margin-bottom:14px}
+  label{display:block;font-size:.72rem;font-weight:700;color:var(--mut);text-transform:uppercase;margin:10px 0 4px}
+  input,select{width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:10px 12px;font-size:.95rem;color:var(--ink)}
+  input:focus,select:focus{outline:none;border-color:var(--mp);box-shadow:0 0 0 3px rgba(91,79,207,.14)}
+  .btn{background:var(--mp);color:#fff;border:none;border-radius:10px;padding:11px 16px;font-size:.92rem;font-weight:700;cursor:pointer}
+  .btn:hover{background:var(--mp-dk)} .btn.sec{background:#fff;color:var(--mp);border:1.5px solid var(--mp)}
+  .btn.gray{background:#eef0f2;color:var(--ink)} .btn.danger{background:var(--red)} .btn.ok{background:var(--green)}
+  .btn.wide{width:100%;margin-top:14px}
+  .err{background:#fdecea;color:#c0311b;border-radius:9px;padding:9px 11px;font-size:.84rem;margin-bottom:6px;display:none}.err.on{display:block}
+  header{display:flex;align-items:center;gap:14px;background:#fff;border-bottom:1px solid var(--bd);padding:12px 20px}
+  header img{height:28px}.h-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.15rem;color:var(--mp);text-transform:uppercase}
+  header .sp{margin-left:auto;display:flex;gap:10px}
+  header a,header button{background:var(--mp-lt);color:var(--mp);border:none;border-radius:8px;padding:7px 11px;font-size:.84rem;text-decoration:none;cursor:pointer}
+  main{max-width:900px;margin:0 auto;padding:22px 18px 60px}
+  .tabs{display:flex;gap:8px;margin-bottom:16px;max-width:420px}
+  .tab{flex:1;padding:10px;border:1.5px solid var(--bd);background:#fff;border-radius:10px;font-weight:700;cursor:pointer;color:var(--mut)}
+  .tab.on{background:var(--mp-lt);border-color:var(--mp);color:var(--mp-dk)}
+  .card{background:#fff;border:1px solid var(--bd);border-radius:13px;padding:16px 18px;margin-bottom:14px}
+  .sec-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.15rem;color:var(--mp);text-transform:uppercase;margin:0 0 10px}
+  .hint{font-size:.8rem;color:var(--mut);margin:6px 0}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .item{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:11px 12px;border:1px solid var(--bd);border-radius:10px;margin-bottom:9px;flex-wrap:wrap}
+  .mut{color:var(--mut);font-size:.82rem}
+  pre{background:#0f1720;color:#d7e3e1;border-radius:9px;padding:10px 12px;font-size:.78rem;overflow-x:auto;white-space:pre-wrap;margin:6px 0 0}
+  .empty{text-align:center;color:var(--mut);padding:18px;font-size:.9rem}
+  .keynew{background:#fff8e6;border:1px solid var(--mp);border-radius:10px;padding:11px;margin:10px 0}
+  .badge{display:inline-block;background:var(--mp-lt);color:var(--mp-dk);border-radius:20px;padding:2px 9px;font-size:.72rem;font-weight:700}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1f2a2c;color:#fff;padding:12px 18px;border-radius:10px;font-weight:600;opacity:0;pointer-events:none;transition:.2s;z-index:99}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}.toast.ok{background:var(--green)}.toast.err{background:var(--red)}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate">
+  <div class="gate-card">
+    <img src="../../shared/assets/logo-amsa-873.png" alt="AM">
+    <div class="gate-t">MGI · Integraciones</div>
+    <div class="gate-s">Acceso solo para administradores de MGI</div>
+    <div id="gateErr" class="err"></div>
+    <div id="loginStep">
+      <label>Correo</label><input id="lgEmail" type="email" autocomplete="username">
+      <label>Contraseña</label><input id="lgPass" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrar()">
+      <button class="btn wide" onclick="entrar()">Ingresar</button>
+    </div>
+    <div id="noAcc" style="display:none">
+      <div style="text-align:center;font-size:2rem">🔒</div>
+      <div style="text-align:center;font-weight:700;margin:6px 0">No tienes acceso a MGI</div>
+      <button class="btn sec wide" onclick="salir()">Cerrar sesión</button>
+    </div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header>
+    <img src="../../shared/assets/logo-amsa-873.png" alt="AM">
+    <div class="h-t">MGI · Integraciones (API)</div>
+    <div class="sp">
+      <a href="index.html">⌂ MGI</a>
+      <button onclick="salir()">Salir</button>
+    </div>
+  </header>
+  <main>
+    <div class="tabs">
+      <button class="tab on" id="tabCola" onclick="tab('cola')">📥 Cola de cambios</button>
+      <button class="tab" id="tabKeys" onclick="tab('keys')">🔑 Llaves de API</button>
+    </div>
+    <section id="vCola"></section>
+    <section id="vKeys" class="hidden"></section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="integraciones.js?v=20260922a"></script>
+</body>
+</html>
