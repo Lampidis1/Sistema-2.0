@@ -30,6 +30,10 @@ function fechaHora(iso){ if(!iso) return ''; const d=new Date(iso); return d.toL
 // ── Arranque y ruteo ─────────────────────────────────────────────────────────
 async function lavBoot(){
   SB = window.supabase.createClient(window.SUPA_CFG.url, window.SUPA_CFG.key);
+  // Restablecer contraseña: si llega desde el enlace del correo, mostrar el
+  // formulario de nueva contraseña en vez de entrar a la app.
+  SB.auth.onAuthStateChange((ev)=>{ if(ev==='PASSWORD_RECOVERY') lavVer('recovery'); });
+  if(location.hash.includes('type=recovery')){ lavVer('recovery'); return; }
   const { data:{ session } } = await SB.auth.getSession();
   if(session){ try{ await SB.auth.refreshSession(); }catch(e){} await rutear(); }
   else lavVer('login');
@@ -50,9 +54,12 @@ async function rutear(){
 function lavVer(v){
   document.getElementById('app').classList.add('hidden');
   document.getElementById('gate').classList.remove('hidden');
-  ['loginStep','regStep','pendStep','adminStep'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+  ['loginStep','regStep','pendStep','adminStep','recoveryStep'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
   gateErr('');
+  document.getElementById('gate').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
   if(v==='admin'){ const a=document.getElementById('adminStep'); if(a) a.style.display=''; return; }
+  if(v==='recovery'){ const r=document.getElementById('recoveryStep'); if(r) r.style.display=''; return; }
   if(v==='login'){ document.getElementById('loginStep').style.display=''; }
   else if(v==='reg'){
     document.getElementById('regStep').style.display='';
@@ -110,6 +117,28 @@ async function lavRegistrar(){
   }catch(e){ gateErr('No se pudo registrar: '+e.message); }
 }
 async function lavSalir(){ try{ await SB.auth.signOut(); }catch(e){} location.reload(); }
+
+// ── Restablecer contraseña ───────────────────────────────────────────────────
+async function lavOlvide(){
+  let email = val('lgEmail');
+  if(!email){ email = (prompt('Escribe tu correo y te enviaremos un enlace para restablecer la contraseña:')||'').trim(); }
+  if(!email){ return; }
+  const redirectTo = location.origin + location.pathname;   // vuelve a esta misma página
+  const { error } = await SB.auth.resetPasswordForEmail(email, { redirectTo });
+  if(error){ gateErr('No se pudo enviar el correo: '+error.message); return; }
+  gateErr('');
+  toast('📧 Te enviamos un correo para restablecer la contraseña','ok');
+}
+async function lavNuevaClave(){
+  const p1 = document.getElementById('rcPass1').value, p2 = document.getElementById('rcPass2').value;
+  if(!p1 || p1.length < 6){ gateErr('La contraseña debe tener al menos 6 caracteres'); return; }
+  if(p1 !== p2){ gateErr('Las contraseñas no coinciden'); return; }
+  const { error } = await SB.auth.updateUser({ password: p1 });
+  if(error){ gateErr('No se pudo cambiar la contraseña: '+error.message); return; }
+  history.replaceState(null, '', location.pathname);   // limpiar el token del enlace
+  toast('✅ Contraseña actualizada','ok');
+  await rutear();
+}
 
 // ── Contratos ────────────────────────────────────────────────────────────────
 async function cargarContratos(){

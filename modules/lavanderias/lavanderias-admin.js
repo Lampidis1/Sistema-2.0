@@ -16,6 +16,8 @@ function gateErr(m){ const e=document.getElementById('gateErr'); if(e){ e.textCo
 
 async function adBoot(){
   SB = window.supabase.createClient(window.SUPA_CFG.url, window.SUPA_CFG.key);
+  SB.auth.onAuthStateChange((ev)=>{ if(ev==='PASSWORD_RECOVERY') verGate('recovery'); });
+  if(location.hash.includes('type=recovery')){ verGate('recovery'); return; }
   const { data:{ session } } = await SB.auth.getSession();
   if(session){ try{ await SB.auth.refreshSession(); }catch(e){} await rutear(); }
   else verGate('login');
@@ -33,7 +35,26 @@ function verGate(v){
   document.getElementById('gate').classList.remove('hidden');
   document.getElementById('loginStep').style.display = v==='login'?'':'none';
   document.getElementById('noAdmin').style.display = v==='noadmin'?'':'none';
+  const rec=document.getElementById('recoveryStep'); if(rec) rec.style.display = v==='recovery'?'':'none';
   gateErr('');
+}
+async function adOlvide(){
+  let email = val('lgEmail');
+  if(!email){ email = (prompt('Escribe tu correo y te enviaremos un enlace para restablecer la contraseña:')||'').trim(); }
+  if(!email) return;
+  const { error } = await SB.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  if(error){ gateErr('No se pudo enviar el correo: '+error.message); return; }
+  gateErr(''); toast('📧 Te enviamos un correo para restablecer la contraseña','ok');
+}
+async function adNuevaClave(){
+  const p1=document.getElementById('rcPass1').value, p2=document.getElementById('rcPass2').value;
+  if(!p1 || p1.length<6){ gateErr('La contraseña debe tener al menos 6 caracteres'); return; }
+  if(p1!==p2){ gateErr('Las contraseñas no coinciden'); return; }
+  const { error } = await SB.auth.updateUser({ password:p1 });
+  if(error){ gateErr('No se pudo cambiar la contraseña: '+error.message); return; }
+  history.replaceState(null,'',location.pathname);
+  toast('✅ Contraseña actualizada','ok');
+  await rutear();
 }
 async function adEntrar(){
   const email=val('lgEmail'), pass=document.getElementById('lgPass').value;

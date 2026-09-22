@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="lavanderias.css?v=20260922e">
+<link rel="stylesheet" href="lavanderias.css?v=20260922f">
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
 </head>
 <body>
@@ -25,6 +25,15 @@
       <label>Contraseña</label>
       <input id="lgPass" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')adEntrar()">
       <button class="lavg-btn" onclick="adEntrar()">Ingresar</button>
+      <div class="lavg-link-row"><span class="lavg-link" onclick="adOlvide()">¿Olvidaste tu contraseña?</span></div>
+    </div>
+    <div id="recoveryStep" style="display:none">
+      <div class="lavg-sec">Restablecer contraseña</div>
+      <label>Nueva contraseña (mín. 6)</label>
+      <input id="rcPass1" type="password" autocomplete="new-password">
+      <label>Repetir contraseña</label>
+      <input id="rcPass2" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')adNuevaClave()">
+      <button class="lavg-btn" onclick="adNuevaClave()">Guardar contraseña</button>
     </div>
     <div id="noAdmin" style="display:none">
       <div class="lavg-ico">🔒</div>
@@ -63,6 +72,6 @@
 </div>
 
 <div class="lav-toast" id="toast"></div>
-<script src="lavanderias-admin.js?v=20260922e"></script>
+<script src="lavanderias-admin.js?v=20260922f"></script>
 </body>
 </html>
