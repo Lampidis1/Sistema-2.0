@@ -135,6 +135,19 @@ window.AM_MODULES = [
     // admin). La consulta pública por código es buscar.html (sin sesión).
   },
   {
+    id: 'buscar-bolsa',
+    nombre: 'Buscar bolsa',
+    descripcion: 'Consulta por código el contenido de una bolsa de lavandería. Página pública, sin clave.',
+    icono: '🔎',
+    ruta: 'modules/lavanderias/buscar.html',   // enlaza directo a la búsqueda pública
+    acceso: null,                              // pública: no pide sesión
+    publico: true,                             // el Home nunca la oculta
+    estado: 'activo',
+    visibleEnHome: true,
+    homeTier: 'medio',
+    doc: 'docs/modulos/lavanderias.md',
+  },
+  {
     id: 'centinela',
     nombre: 'CEN',
     descripcion: 'Proveedores listos para Trabajar',
