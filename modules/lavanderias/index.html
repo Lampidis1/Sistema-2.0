@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="lavanderias.css?v=20260922c">
+<link rel="stylesheet" href="lavanderias.css?v=20260922d">
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
 </head>
 <body>
@@ -52,6 +52,14 @@
       <button class="lavg-btn ghost" onclick="lavSalir()">Cerrar sesión</button>
     </div>
 
+    <div id="adminStep" style="display:none">
+      <div class="lavg-ico">🛠</div>
+      <div class="lavg-pend-t">Ingresaste como administrador</div>
+      <div class="lavg-pend-s">El panel de administración tiene las métricas y el catálogo de prendas.</div>
+      <a class="lavg-btn" href="admin.html" style="display:block;text-align:center;text-decoration:none">Ir al panel de administración</a>
+      <button class="lavg-btn ghost" onclick="lavSalir()">Cerrar sesión</button>
+    </div>
+
     <div class="lavg-pub">¿Solo quieres consultar una bolsa? <a href="buscar.html">Buscar por código →</a></div>
   </div>
 </div>
@@ -83,6 +91,6 @@
 </div>
 
 <div class="lav-toast" id="toast"></div>
-<script src="lavanderias.js?v=20260922c"></script>
+<script src="lavanderias.js?v=20260922d"></script>
 </body>
 </html>

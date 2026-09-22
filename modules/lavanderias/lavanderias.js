@@ -40,6 +40,7 @@ async function rutear(){
     const { data, error } = await SB.rpc('lav_mi_acceso');
     if(error) throw error;
     const est = data.estado;
+    if(data.rol==='admin'){ lavVer('admin'); return; }   // admin → panel de administración
     if(est==='aprobado'){ EMP=data.empresa; mostrarApp(); await cargarContratos(); }
     else if(est==='pendiente'){ lavVer('pend'); }
     else if(est==='no_registrado'){ YA_LOGUEADO=true; lavVer('reg'); }
@@ -49,8 +50,9 @@ async function rutear(){
 function lavVer(v){
   document.getElementById('app').classList.add('hidden');
   document.getElementById('gate').classList.remove('hidden');
-  ['loginStep','regStep','pendStep'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+  ['loginStep','regStep','pendStep','adminStep'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
   gateErr('');
+  if(v==='admin'){ const a=document.getElementById('adminStep'); if(a) a.style.display=''; return; }
   if(v==='login'){ document.getElementById('loginStep').style.display=''; }
   else if(v==='reg'){
     document.getElementById('regStep').style.display='';

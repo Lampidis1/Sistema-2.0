@@ -53,9 +53,15 @@ los **3 meses** la bolsa vence (`expira_at`) y el código se puede **reutilizar*
   siempre (marca el acceso 🧺 Lavanderías). Ya registrado en el Home
   (`config/modules.config.js`) y el slug en CLAUDE.md §5.
 
+- **`admin.html`** — panel del administrador del sistema (solo `es_admin`):
+  **métricas** (bolsas, prendas y kilos por lavandería, con detalle por prenda) y
+  **catálogo de prendas** (agregar/quitar prendas de cama/trabajo, globales o por
+  lavandería). Ese catálogo es el que valida «agregar prenda» en la app. RPCs
+  `lav_admin_metricas / lav_admin_empresas / lav_admin_catalogo /
+  lav_admin_prenda_crear / lav_admin_prenda_borrar`. Al abrir `index.html`, un
+  admin es enviado a este panel.
+
 ## Pendiente (Fase 2)
 
 - **API para sistemas externos** de las lavanderías (llaves por empresa) para que
   se vinculen a sus propios sistemas.
-- **Panel de administración**: cantidad de prendas lavadas y kilos por lavandería;
-  administrar el catálogo de prendas (cama/trabajo) por empresa.

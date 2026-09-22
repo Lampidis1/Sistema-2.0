@@ -146,3 +146,6 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;letter-spacing:.01em}
 .lav-toast.err{background:var(--lav-red)}
 
 .lav-hint{font-size:.78rem;color:var(--lav-muted);margin-top:8px}
+
+.lav-chip-g{display:inline-block;background:var(--lav-primary-lt);color:var(--lav-primary-dk);border-radius:20px;padding:2px 8px;font-size:.68rem;font-weight:700;margin-left:6px}
+.lav-det summary{cursor:pointer;font-size:.85rem;font-weight:700;color:var(--lav-primary)}

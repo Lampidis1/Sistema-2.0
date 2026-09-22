@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Lavanderías Sierra Gorda</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
+<script src="../../config/supabase.config.js"></script>
+<link rel="stylesheet" href="lavanderias.css?v=20260922d">
+<link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
+</head>
+<body>
+
+<!-- ░░ GATE ░░ -->
+<div id="gate" class="lav-gate">
+  <div class="lavg-card">
+    <img src="../../shared/assets/logo-amsa-873.png" alt="AM">
+    <div class="lavg-t">Lavanderías · Administración</div>
+    <div class="lavg-s">Acceso solo para administradores</div>
+    <div id="gateErr" class="lavg-err"></div>
+    <div id="loginStep">
+      <label>Correo</label>
+      <input id="lgEmail" type="email" inputmode="email" autocomplete="username">
+      <label>Contraseña</label>
+      <input id="lgPass" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')adEntrar()">
+      <button class="lavg-btn" onclick="adEntrar()">Ingresar</button>
+    </div>
+    <div id="noAdmin" style="display:none">
+      <div class="lavg-ico">🔒</div>
+      <div class="lavg-pend-t">No tienes acceso de administrador</div>
+      <div class="lavg-pend-s">Este panel es solo para el administrador del sistema.</div>
+      <button class="lavg-btn ghost" onclick="adSalir()">Cerrar sesión</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ APP ░░ -->
+<div id="app" class="hidden">
+  <header class="lav-h">
+    <img src="../../shared/assets/logo-amsa-873.png" alt="AM" class="lav-h-logo">
+    <div class="lav-h-sep"></div>
+    <div>
+      <div class="lav-h-t">Lavanderías · Administración</div>
+      <div class="lav-h-s">Métricas y catálogo de prendas</div>
+    </div>
+    <div class="lav-h-sp">
+      <a class="lav-h-home" href="../../index.html">⌂ Inicio</a>
+      <button onclick="adSalir()">Salir</button>
+    </div>
+  </header>
+
+  <main class="lav-main">
+    <div class="lav-tabs" style="max-width:460px">
+      <button class="lav-tab on" id="tabMet" onclick="adTab('met')">📊 Métricas</button>
+      <button class="lav-tab" id="tabCat" onclick="adTab('cat')">🧾 Catálogo de prendas</button>
+    </div>
+    <section id="vMet"></section>
+    <section id="vCat" class="hidden"></section>
+  </main>
+</div>
+
+<div class="lav-toast" id="toast"></div>
+<script src="lavanderias-admin.js?v=20260922d"></script>
+</body>
+</html>
