@@ -20,10 +20,10 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;letter-spacing:.01em}
 
 /* ── PÁGINA PÚBLICA DE BÚSQUEDA ─────────────────────────────────────────── */
 .lav-publico{min-height:100vh;display:flex;flex-direction:column}
-.lavp-head{display:flex;align-items:center;gap:14px;background:var(--lav-primary);color:#fff;padding:16px 22px}
+.lavp-head{display:flex;align-items:center;gap:14px;background:#fff;color:var(--lav-ink);padding:16px 22px;border-bottom:1px solid var(--lav-border)}
 .lavp-head img{height:34px}
-.lavp-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.3rem;text-transform:uppercase;line-height:1}
-.lavp-s{font-size:.82rem;opacity:.9}
+.lavp-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.3rem;text-transform:uppercase;line-height:1;color:var(--lav-primary)}
+.lavp-s{font-size:.82rem;color:var(--lav-muted)}
 .lavp-main{flex:1;max-width:760px;width:100%;margin:0 auto;padding:26px 18px 50px}
 .lavp-card{background:var(--lav-card);border:1px solid var(--lav-border);border-radius:16px;padding:26px 24px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
 .lavp-card h1{font-size:1.5rem;color:var(--lav-primary);margin:0 0 6px;text-transform:uppercase}
@@ -88,15 +88,15 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;letter-spacing:.01em}
 .lavg-pub{text-align:center;font-size:.8rem;color:var(--lav-muted);margin-top:18px;border-top:1px solid var(--lav-border);padding-top:14px}
 .lavg-pub a{color:var(--lav-primary);font-weight:700;text-decoration:none}
 
-/* Header */
-.lav-h{display:flex;align-items:center;gap:14px;background:var(--lav-primary);color:#fff;padding:12px 20px}
+/* Header (barra blanca: el logo con fondo blanco se integra) */
+.lav-h{display:flex;align-items:center;gap:14px;background:#fff;color:var(--lav-ink);padding:12px 20px;border-bottom:1px solid var(--lav-border)}
 .lav-h-logo{height:30px}
-.lav-h-sep{width:1px;height:30px;background:rgba(255,255,255,.3)}
-.lav-h-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.15rem;text-transform:uppercase;line-height:1}
-.lav-h-s{font-size:.8rem;opacity:.92}
+.lav-h-sep{width:1px;height:30px;background:var(--lav-border)}
+.lav-h-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.15rem;text-transform:uppercase;line-height:1;color:var(--lav-primary)}
+.lav-h-s{font-size:.8rem;color:var(--lav-muted)}
 .lav-h-sp{margin-left:auto;display:flex;align-items:center;gap:10px}
-.lav-h-sp a,.lav-h-sp button{color:#fff;font-size:.84rem;text-decoration:none;background:rgba(255,255,255,.14);border:none;border-radius:8px;padding:7px 11px;cursor:pointer}
-.lav-h-sp button:hover,.lav-h-sp a:hover{background:rgba(255,255,255,.24)}
+.lav-h-sp a,.lav-h-sp button{color:var(--lav-primary);font-size:.84rem;text-decoration:none;background:var(--lav-primary-lt);border:1px solid transparent;border-radius:8px;padding:7px 11px;cursor:pointer}
+.lav-h-sp button:hover,.lav-h-sp a:hover{border-color:var(--lav-primary)}
 .lav-main{max-width:920px;margin:0 auto;padding:22px 18px 60px}
 
 /* Tarjetas y listas de la app */
