@@ -187,6 +187,7 @@ Hay un **usuario maestro** (`rol: 'admin'`) que decide quién entra a qué.
 | `rca` | RCA (cumplimiento) | tener `principal` también la habilita |
 | `feria` | Feria Digital (admin AMSA) | el postulante entra sin slug, por código |
 | `feria_empresa` | Feria Digital (empresa/reclutador) | `feria` también lo habilita |
+| `lavanderias` | Lavanderías SG (app de la lavandería) | la consulta por código (`buscar.html`) es pública, sin slug |
 | `lector` | — | **no es un módulo**: flag de solo-lectura |
 
 Un `admin` pasa todos los chequeos de `tiene_acceso()` sin tener los slugs.

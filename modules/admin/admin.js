@@ -60,8 +60,8 @@ async function renderUsuarios(){
         </div>
         <div id="uaccesos_${s.id}" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;padding:10px;background:#f4f7f7;border-radius:9px">
           <span style="font-size:.78rem;font-weight:700;color:var(--text-muted);align-self:center">Acceso a:</span>
-          ${['principal','mgi','empleabilidad','movil','centinela','antucoya','zaldivar'].map(pl=>{
-            const label={principal:'🏠 Plataforma',mgi:'🏨 MGI',empleabilidad:'👥 Empleabilidad',movil:'📱 Móvil',centinela:'⛏ Centinela',antucoya:'⛏ Antucoya',zaldivar:'⛏ Zaldívar'}[pl];
+          ${['principal','mgi','empleabilidad','movil','centinela','antucoya','zaldivar','lavanderias'].map(pl=>{
+            const label={principal:'🏠 Plataforma',mgi:'🏨 MGI',empleabilidad:'👥 Empleabilidad',movil:'📱 Móvil',centinela:'⛏ Centinela',antucoya:'⛏ Antucoya',zaldivar:'⛏ Zaldívar',lavanderias:'🧺 Lavanderías'}[pl];
             const accesosActuales = (s.faena_solicitada||'').toLowerCase().split(',').map(x=>x.trim());
             const yaAprobado = s.estado==='aprobado';
             const pre = yaAprobado ? accesosActuales.includes(pl)
@@ -92,9 +92,9 @@ async function aprobarUsuario(uid){
   let accesos=[];
   let rol = rolSel==='admin' ? 'admin' : 'usuario';   // en la base solo hay admin/usuario
   if(rolSel==='admin'){
-    accesos=['principal','mgi','empleabilidad','movil','centinela','antucoya','zaldivar'];
+    accesos=['principal','mgi','empleabilidad','movil','centinela','antucoya','zaldivar','lavanderias'];
   } else {
-    ['principal','mgi','empleabilidad','movil','centinela','antucoya','zaldivar'].forEach(pl=>{
+    ['principal','mgi','empleabilidad','movil','centinela','antucoya','zaldivar','lavanderias'].forEach(pl=>{
       if(document.getElementById('uacc_'+uid+'_'+pl)?.checked) accesos.push(pl);
     });
     if(!accesos.length){ showToast('Marca al menos una plataforma de acceso','err'); return; }

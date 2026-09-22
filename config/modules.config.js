@@ -121,6 +121,20 @@ window.AM_MODULES = [
     doc: 'docs/modulos/hoteles-sg.md',
   },
   {
+    id: 'lavanderias',
+    nombre: 'Lavanderías SG',
+    descripcion: 'Trazabilidad de bolsas de las lavanderías de Sierra Gorda. La lavandería entra con su clave; la consulta por código es pública.',
+    icono: '🧺',
+    ruta: 'modules/lavanderias/',
+    acceso: 'lavanderias',
+    estado: 'activo',
+    visibleEnHome: true,
+    homeTier: 'medio',
+    doc: 'docs/modulos/lavanderias.md',
+    // La app de la lavandería es index.html (slug 'lavanderias', lo aprueba el
+    // admin). La consulta pública por código es buscar.html (sin sesión).
+  },
+  {
     id: 'centinela',
     nombre: 'CEN',
     descripcion: 'Proveedores listos para Trabajar',

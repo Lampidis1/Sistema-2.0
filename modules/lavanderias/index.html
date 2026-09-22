@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lavanderías Sierra Gorda · Sistema AM</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
+<script src="../../config/supabase.config.js"></script>
+<link rel="stylesheet" href="lavanderias.css?v=20260922b">
+<link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
+</head>
+<body>
+
+<!-- ░░ GATE ░░ -->
+<div id="gate" class="lav-gate">
+  <div class="lavg-card">
+    <img src="../../shared/assets/logo-amsa-873.png" alt="AM">
+    <div class="lavg-t">Lavanderías Sierra Gorda</div>
+    <div class="lavg-s">Trazabilidad de bolsas</div>
+    <div id="gateErr" class="lavg-err"></div>
+
+    <div id="loginStep">
+      <label>Correo</label>
+      <input id="lgEmail" type="email" inputmode="email" placeholder="usuario@lavanderia.cl" autocomplete="username">
+      <label>Contraseña</label>
+      <input id="lgPass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')lavEntrar()">
+      <button class="lavg-btn" onclick="lavEntrar()">Ingresar</button>
+      <div class="lavg-link-row">¿Nueva lavandería? <span class="lavg-link" onclick="lavVer('reg')">Registrar mi empresa</span></div>
+    </div>
+
+    <div id="regStep" style="display:none">
+      <div class="lavg-sec">Datos de la empresa</div>
+      <label>Nombre de la empresa</label><input id="rgNombre" placeholder="Lavandería …">
+      <label>Razón social</label><input id="rgRazon">
+      <div class="lavg-2"><div><label>RUT</label><input id="rgRut" placeholder="76.xxx.xxx-x"></div>
+        <div><label>Teléfono contacto</label><input id="rgFono" inputmode="tel"></div></div>
+      <label>Dirección</label><input id="rgDir">
+      <label>Nombre del contacto</label><input id="rgContacto">
+      <div class="lavg-sec">Datos de acceso</div>
+      <label>Correo</label><input id="rgCorreo" type="email" inputmode="email" autocomplete="username">
+      <div id="rgPassWrap"><label>Contraseña (mín. 6)</label>
+        <input id="rgPass" type="password" autocomplete="new-password"></div>
+      <button class="lavg-btn" onclick="lavRegistrar()">Solicitar acceso</button>
+      <div class="lavg-link-row"><span class="lavg-link" onclick="lavVer('login')">← Volver al ingreso</span></div>
+    </div>
+
+    <div id="pendStep" style="display:none">
+      <div class="lavg-ico">⏳</div>
+      <div class="lavg-pend-t">Cuenta pendiente de aprobación</div>
+      <div class="lavg-pend-s">El administrador debe habilitar el acceso de tu lavandería. Vuelve a ingresar más tarde.</div>
+      <button class="lavg-btn ghost" onclick="lavSalir()">Cerrar sesión</button>
+    </div>
+
+    <div class="lavg-pub">¿Solo quieres consultar una bolsa? <a href="buscar.html">Buscar por código →</a></div>
+  </div>
+</div>
+
+<!-- ░░ APP ░░ -->
+<div id="app" class="hidden">
+  <header class="lav-h">
+    <img src="../../shared/assets/logo-amsa-873.png" alt="AM" class="lav-h-logo">
+    <div class="lav-h-sep"></div>
+    <div>
+      <div class="lav-h-t">Lavanderías Sierra Gorda</div>
+      <div class="lav-h-s" id="hEmpresa"></div>
+    </div>
+    <div class="lav-h-sp">
+      <a class="lav-h-pub" href="buscar.html" target="_blank">🔍 Buscar bolsa</a>
+      <a class="lav-h-home" href="../../index.html">⌂ Inicio</a>
+      <button onclick="lavSalir()">Salir</button>
+    </div>
+  </header>
+
+  <main class="lav-main">
+    <!-- Contratos -->
+    <section id="vContratos"></section>
+    <!-- Bolsas de un contrato -->
+    <section id="vBolsas" class="hidden"></section>
+    <!-- Crear bolsa -->
+    <section id="vCrear" class="hidden"></section>
+  </main>
+</div>
+
+<div class="lav-toast" id="toast"></div>
+<script src="lavanderias.js?v=20260922b"></script>
+</body>
+</html>

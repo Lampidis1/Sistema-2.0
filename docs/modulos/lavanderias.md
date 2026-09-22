@@ -46,12 +46,16 @@ los **3 meses** la bolsa vence (`expira_at`) y el código se puede **reutilizar*
 
 - **`buscar.html`** — pública, sin login: barra para poner el código → muestra la
   lavandería, fecha/hora, listado de prendas por categoría, kilos, y **exporta PDF**.
-- **`index.html`** — la app de la lavandería (login → contratos → crear bolsa con
-  sumadores de ropa de cama/trabajo → código). *(en construcción, Fase 1)*
+- **`index.html`** — la app de la lavandería: login/registro (con datos de la
+  empresa) → contratos → crear bolsa con sumadores (verde suma, rojo resta) de
+  ropa de cama/trabajo, buscador de prendas, "agregar otra prenda", kilos y
+  Finalizar → genera el código. La aprobación la hace el admin en su panel de
+  siempre (marca el acceso 🧺 Lavanderías). Ya registrado en el Home
+  (`config/modules.config.js`) y el slug en CLAUDE.md §5.
 
 ## Pendiente (Fase 2)
 
-- **API para sistemas externos** de las lavanderías (llaves por empresa).
-- **Panel de administración**: prendas lavadas y kilos por lavandería; catálogo de
-  prendas por empresa. Registrar el módulo en `config/modules.config.js` y el slug
-  `lavanderias` en CLAUDE.md §5 cuando la app quede lista.
+- **API para sistemas externos** de las lavanderías (llaves por empresa) para que
+  se vinculen a sus propios sistemas.
+- **Panel de administración**: cantidad de prendas lavadas y kilos por lavandería;
+  administrar el catálogo de prendas (cama/trabajo) por empresa.
