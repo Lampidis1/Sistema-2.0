@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="lavanderias.css?v=20260922h">
+<link rel="stylesheet" href="lavanderias.css?v=20260922i">
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
 </head>
 <body>
@@ -84,6 +84,7 @@
       <div class="lav-h-s" id="hEmpresa"></div>
     </div>
     <div class="lav-h-sp">
+      <button onclick="verDatos()">🏢 Datos</button>
       <a class="lav-h-pub" href="buscar.html" target="_blank">🔍 Buscar bolsa</a>
       <a class="lav-h-home" href="../../index.html">⌂ Inicio</a>
       <button onclick="lavSalir()">Salir</button>
@@ -91,6 +92,8 @@
   </header>
 
   <main class="lav-main">
+    <!-- Datos de la lavandería (crear/editar empresa) -->
+    <section id="vDatos" class="hidden"></section>
     <!-- Contratos -->
     <section id="vContratos"></section>
     <!-- Bolsas de un contrato -->
@@ -101,6 +104,6 @@
 </div>
 
 <div class="lav-toast" id="toast"></div>
-<script src="lavanderias.js?v=20260922h"></script>
+<script src="lavanderias.js?v=20260922i"></script>
 </body>
 </html>

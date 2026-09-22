@@ -152,3 +152,8 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;letter-spacing:.01em}
 
 .lav-code{background:#0f1720;color:#d7e3e1;border-radius:10px;padding:12px 14px;font-size:.78rem;overflow-x:auto;white-space:pre;margin-top:8px}
 .lav-key-new{background:#fff8e6;border:1px solid var(--lav-primary);border-radius:11px;padding:12px;margin-bottom:12px}
+
+.lav-fld{margin-bottom:10px}
+.lav-fld label{display:block;font-size:.72rem;font-weight:700;color:var(--lav-muted);text-transform:uppercase;margin-bottom:4px}
+.lav-btn.danger{background:var(--lav-red)}
+.lav-btn.danger:hover{background:#b91c1c}

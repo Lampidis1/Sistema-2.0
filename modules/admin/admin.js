@@ -72,6 +72,7 @@ async function renderUsuarios(){
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px;align-items:center">
           <button class="kb-add" style="background:linear-gradient(135deg,#16834a,#0f7a3d)" onclick="aprobarUsuario('${s.id}')">✓ Aprobar</button>
           <button class="mini-btn" style="width:auto;padding:6px 12px;color:#c0311b;border-color:#f1b0a5" onclick="rechazarUsuario('${s.id}')">✕ Rechazar</button>
+          <button class="mini-btn" style="width:auto;padding:6px 12px;color:#fff;background:#c0311b;border-color:#c0311b" onclick="eliminarUsuario('${s.id}','${esc((s.email||s.nombre||'').replace(/'/g,''))}')">🗑 Eliminar</button>
         </div>
       </div>`;
     }).join('');
@@ -116,6 +117,22 @@ async function rechazarUsuario(uid){
     if(error) throw error;
     showToast('Usuario rechazado','success');
     await registrarLog('usuario',uid,'rechazar','Acceso revocado');
+    renderUsuarios();
+  }catch(e){ showToast('Error: '+e.message,'err'); }
+}
+
+// Elimina el usuario de Supabase (auth) con sus datos asociados (perfil en
+// cascada + vínculo de lavandería). No borra registros de negocio compartidos.
+async function eliminarUsuario(uid, quien){
+  if(!confirm('¿ELIMINAR al usuario '+(quien||'')+' de Supabase?\n\nSe borra su cuenta, su perfil y sus vínculos. No se puede deshacer.')) return;
+  try{
+    const {data,error}=await SB.rpc('eliminar_usuario',{p_uid:uid});
+    if(error) throw error;
+    if(String(data)!=='OK'){
+      showToast(data==='NO_TE_PUEDES_BORRAR'?'No puedes eliminar tu propia cuenta':'No autorizado','err'); return;
+    }
+    showToast('🗑 Usuario eliminado','success');
+    try{ await registrarLog('usuario',uid,'eliminar','Cuenta eliminada de Supabase'); }catch(e){}
     renderUsuarios();
   }catch(e){ showToast('Error: '+e.message,'err'); }
 }

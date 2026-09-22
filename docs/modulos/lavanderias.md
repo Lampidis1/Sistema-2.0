@@ -53,6 +53,12 @@ los **3 meses** la bolsa vence (`expira_at`) y el código se puede **reutilizar*
   siempre (marca el acceso 🧺 Lavanderías). Ya registrado en el Home
   (`config/modules.config.js`) y el slug en CLAUDE.md §5.
 
+- **Datos de la lavandería** — dentro de la app (`🏢 Datos`), la lavandería
+  **crea o edita** sus datos de empresa (nombre, razón social, RUT, dirección,
+  contacto). Si un usuario tiene el acceso pero aún no tiene empresa, la app lo
+  lleva primero a este formulario (antes daba `sin_empresa` al crear contratos).
+  RPC `lav_empresa_guardar`.
+
 - **`admin.html`** — panel del administrador del sistema (solo `es_admin`):
   **métricas** (bolsas, prendas y kilos por lavandería, con detalle por prenda) y
   **catálogo de prendas** (agregar/quitar prendas de cama/trabajo, globales o por

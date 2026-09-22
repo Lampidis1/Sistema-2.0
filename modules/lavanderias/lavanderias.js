@@ -54,7 +54,11 @@ async function rutear(){
     if(error) throw error;
     const est = data.estado;
     if(data.rol==='admin'){ lavVer('admin'); return; }   // admin → panel de administración
-    if(est==='aprobado'){ EMP=data.empresa; mostrarApp(); await cargarContratos(); }
+    if(est==='aprobado'){
+      EMP=data.empresa; mostrarApp();
+      if(!EMP){ verVista('vDatos'); renderDatos(true); toast('Completa los datos de tu lavandería para empezar','err'); }
+      else await cargarContratos();
+    }
     else if(est==='pendiente'){ lavVer('pend'); }
     else if(est==='no_registrado'){ YA_LOGUEADO=true; lavVer('reg'); }
     else lavVer('login');
@@ -85,8 +89,40 @@ function mostrarApp(){
   verVista('vContratos');
 }
 function verVista(id){
-  ['vContratos','vBolsas','vCrear'].forEach(v=>{ const el=document.getElementById(v); if(el) el.classList.toggle('hidden', v!==id); });
+  ['vDatos','vContratos','vBolsas','vCrear'].forEach(v=>{ const el=document.getElementById(v); if(el) el.classList.toggle('hidden', v!==id); });
   window.scrollTo(0,0);
+}
+
+// ── Datos de la lavandería (crear/editar empresa) ────────────────────────────
+function verDatos(){ verVista('vDatos'); renderDatos(false); }
+function renderDatos(obligatorio){
+  const e = EMP||{};
+  const campo=(id,lbl,v,flex)=>`<div class="lav-fld"${flex?' style="flex:1;min-width:150px"':''}>
+    <label>${lbl}</label><input class="lav-in" id="${id}" style="width:100%" value="${esc(v||'')}"></div>`;
+  document.getElementById('vDatos').innerHTML = `
+    ${obligatorio?'<div class="lav-card" style="border-left:4px solid var(--lav-primary)"><b>Completa los datos de tu lavandería</b> para empezar a crear contratos y bolsas.</div>'
+      :'<button class="lav-back" onclick="verVista(\'vContratos\')">← Contratos</button>'}
+    <div class="lav-card">
+      <div class="lav-sec-t">🏢 Datos de la lavandería</div>
+      ${campo('dNombre','Nombre de la empresa *', e.nombre)}
+      ${campo('dRazon','Razón social', e.razon_social)}
+      <div class="lav-row" style="align-items:flex-end">${campo('dRut','RUT', e.rut, true)}${campo('dFono','Teléfono contacto', e.contacto_fono, true)}</div>
+      ${campo('dDir','Dirección', e.direccion)}
+      ${campo('dContacto','Nombre del contacto', e.contacto_nombre)}
+      ${campo('dCorreo','Correo de contacto', e.contacto_correo)}
+      <div class="lav-row" style="margin-top:6px"><button class="lav-btn" onclick="guardarDatos()">💾 Guardar datos</button></div>
+    </div>`;
+}
+async function guardarDatos(){
+  const emp={ nombre:val('dNombre'), razon_social:val('dRazon'), rut:val('dRut'), direccion:val('dDir'),
+    contacto_nombre:val('dContacto'), contacto_fono:val('dFono'), contacto_correo:val('dCorreo') };
+  if(!emp.nombre){ toast('Escribe el nombre de la empresa','err'); return; }
+  const { data, error } = await SB.rpc('lav_empresa_guardar', { p_empresa:emp });
+  if(error || (data&&data.error)){ toast('No se pudo guardar: '+((data&&data.error)||error.message),'err'); return; }
+  toast('✅ Datos guardados','ok');
+  try{ const { data:acc } = await SB.rpc('lav_mi_acceso'); EMP = acc.empresa || emp; }catch(e){ EMP = emp; }
+  document.getElementById('hEmpresa').textContent = EMP.nombre || '';
+  await cargarContratos(); verVista('vContratos');
 }
 
 // ── Login / registro / salir ─────────────────────────────────────────────────

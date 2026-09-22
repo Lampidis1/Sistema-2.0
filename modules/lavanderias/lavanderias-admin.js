@@ -79,11 +79,47 @@ async function mostrarApp(){
   await Promise.all([cargarMetricas(), cargarEmpresas()]);
 }
 function adTab(t){
-  ['met','cat','api'].forEach(x=>{
+  ['met','lav','cat','api'].forEach(x=>{
     document.getElementById('tab'+x[0].toUpperCase()+x.slice(1)).classList.toggle('on', t===x);
     document.getElementById('v'+x[0].toUpperCase()+x.slice(1)).classList.toggle('hidden', t!==x);
   });
   if(t==='api') renderApi();
+  if(t==='lav') cargarLavanderias();
+}
+
+// ── Lavanderías (listar + eliminar) ──────────────────────────────────────────
+async function cargarLavanderias(){
+  const { data, error } = await SB.rpc('lav_admin_lavanderias');
+  const arr = (!error && data && data.lavanderias) ? data.lavanderias : [];
+  const cont = document.getElementById('vLav');
+  cont.innerHTML = `
+    <div class="lav-card">
+      <div class="lav-sec-t">🏭 Lavanderías registradas</div>
+      <div class="lav-hint">Eliminar una lavandería borra <b>todos sus datos</b> (contratos, bolsas, catálogo y llaves) y <b>las cuentas de sus usuarios</b> en Supabase. No se puede deshacer.</div>
+    </div>
+    ${!arr.length ? '<div class="lav-empty">Aún no hay lavanderías registradas.</div>'
+      : arr.map(e=>{
+        const correos = (e.usuarios||[]).map(u=>esc(u.correo||'')).filter(Boolean).join(', ');
+        return `<div class="lav-card">
+          <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start">
+            <div>
+              <div class="nm" style="font-weight:700;font-size:1.05rem">${esc(e.nombre)}${e.rut?` <span class="mt" style="color:var(--lav-muted);font-size:.85rem">${esc(e.rut)}</span>`:''}</div>
+              <div class="mt" style="color:var(--lav-muted);font-size:.84rem;margin-top:3px">
+                ${e.contacto_nombre?('👤 '+esc(e.contacto_nombre)+' · '):''}${e.contacto_fono?('📞 '+esc(e.contacto_fono)+' · '):''}${e.n_contratos||0} contrato(s) · ${e.n_bolsas||0} bolsa(s)</div>
+              ${correos?`<div class="mt" style="font-size:.82rem;margin-top:3px">✉ ${correos}</div>`:'<div class="mt" style="font-size:.82rem;margin-top:3px;color:var(--lav-muted)">sin usuario asociado</div>'}
+            </div>
+            <button class="lav-btn danger" style="padding:8px 14px" onclick="adBorrarLavanderia('${e.empresa_id}','${esc((e.nombre||'').replace(/'/g,''))}')">🗑 Eliminar</button>
+          </div>
+        </div>`;
+      }).join('')}`;
+}
+async function adBorrarLavanderia(empresa_id, nombre){
+  if(!confirm('¿ELIMINAR la lavandería «'+nombre+'»?\n\nSe borrarán sus contratos, bolsas, catálogo, llaves y las cuentas de sus usuarios en Supabase.\n\nEsta acción NO se puede deshacer.')) return;
+  if(!confirm('Confirma otra vez: se elimina «'+nombre+'» y TODO lo asociado.')) return;
+  const { data, error } = await SB.rpc('lav_admin_lavanderia_borrar', { p_empresa_id: empresa_id });
+  if(error || (data&&data.error)){ toast('No se pudo eliminar','err'); return; }
+  toast('🗑 Lavandería eliminada','ok');
+  await Promise.all([cargarLavanderias(), cargarMetricas(), cargarEmpresas()]);
 }
 
 // ── Métricas ─────────────────────────────────────────────────────────────────

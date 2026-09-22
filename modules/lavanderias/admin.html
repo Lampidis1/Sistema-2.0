@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="lavanderias.css?v=20260922h">
+<link rel="stylesheet" href="lavanderias.css?v=20260922i">
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
 </head>
 <body>
@@ -60,18 +60,20 @@
   </header>
 
   <main class="lav-main">
-    <div class="lav-tabs" style="max-width:640px">
+    <div class="lav-tabs" style="max-width:760px">
       <button class="lav-tab on" id="tabMet" onclick="adTab('met')">📊 Métricas</button>
+      <button class="lav-tab" id="tabLav" onclick="adTab('lav')">🏭 Lavanderías</button>
       <button class="lav-tab" id="tabCat" onclick="adTab('cat')">🧾 Catálogo</button>
       <button class="lav-tab" id="tabApi" onclick="adTab('api')">🔌 API</button>
     </div>
     <section id="vMet"></section>
+    <section id="vLav" class="hidden"></section>
     <section id="vCat" class="hidden"></section>
     <section id="vApi" class="hidden"></section>
   </main>
 </div>
 
 <div class="lav-toast" id="toast"></div>
-<script src="lavanderias-admin.js?v=20260922h"></script>
+<script src="lavanderias-admin.js?v=20260922i"></script>
 </body>
 </html>
