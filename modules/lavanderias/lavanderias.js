@@ -201,9 +201,12 @@ async function crearBolsaUI(){
       <input class="lav-in" id="bBuscar" placeholder="🔍 Buscar prenda…" style="width:100%;margin-bottom:12px" oninput="renderPrendas()">
       <div id="bLista"></div>
       <div class="lav-row" style="margin-top:10px">
-        <input class="lav-in" id="bNueva" placeholder="Agregar otra prenda…" style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')agregarPrenda()">
+        <input class="lav-in" id="bNueva" list="bDatalist" placeholder="Agregar prenda del listado…" style="flex:1;min-width:160px"
+               onkeydown="if(event.key==='Enter')agregarPrenda()">
+        <datalist id="bDatalist"></datalist>
         <button class="lav-btn gray" onclick="agregarPrenda()">＋ Agregar prenda</button>
       </div>
+      <div class="lav-hint">Solo prendas del listado del administrador. ¿Falta una? Pídele al administrador que la agregue.</div>
     </div>
     <div class="lav-crear-foot">
       <div class="lav-kilos-row">
@@ -227,9 +230,15 @@ function bolsaTab(cat){
   const b=document.getElementById('bBuscar'); if(b) b.value='';
   renderPrendas();
 }
+function llenarDatalist(){
+  const dl=document.getElementById('bDatalist'); if(!dl) return;
+  // solo prendas del catálogo del administrador de la categoría activa
+  dl.innerHTML=CAT[TAB].map(n=>`<option value="${esc(n)}"></option>`).join('');
+}
 function renderPrendas(){
   const q=(document.getElementById('bBuscar').value||'').toLowerCase().trim();
   const lista=CAT[TAB].filter(n=>!q || n.toLowerCase().includes(q));
+  llenarDatalist();
   const cont=document.getElementById('bLista');
   if(!lista.length){ cont.innerHTML='<div class="lav-empty">Sin prendas. Usa «Agregar prenda» para añadir una.</div>'; return; }
   cont.innerHTML = lista.map(n=>{
@@ -256,8 +265,14 @@ function bolsaSum(nombreEnc, delta){
 function agregarPrenda(){
   const inp=document.getElementById('bNueva'); const nombre=(inp.value||'').trim();
   if(!nombre) return;
-  if(!CAT[TAB].some(n=>n.toLowerCase()===nombre.toLowerCase())){ CAT[TAB].push(nombre); }
-  CNT[TAB][nombre]=(CNT[TAB][nombre]||0)+1;   // agrega la línea sumando 1
+  // Validar contra el listado del administrador: solo se puede sumar una prenda
+  // que exista en el catálogo de esta categoría. No se inventan prendas nuevas.
+  const oficial=CAT[TAB].find(n=>n.toLowerCase()===nombre.toLowerCase());
+  if(!oficial){
+    toast('«'+nombre+'» no está en el listado del administrador','err');
+    return;
+  }
+  CNT[TAB][oficial]=(CNT[TAB][oficial]||0)+1;   // suma 1 a la prenda oficial
   inp.value=''; document.getElementById('bBuscar').value='';
   renderPrendas(); actualizarTotal();
 }
