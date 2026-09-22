@@ -89,3 +89,20 @@ on conflict (prenda_id) do nothing;
 -- código único: 3 letras A-Z + 4 dígitos 1-9 mezclados, único entre bolsas
 -- vigentes (no vencidas); tras 3 meses el código se reutiliza. lav_buscar tiene
 -- GRANT EXECUTE a anon (página pública); el resto solo a authenticated.
+
+-- ── Fase 2 (migraciones lavanderias_admin_rpc y lavanderias_api_keys) ────────
+-- Tabla de llaves de API por lavandería (para sistemas externos).
+create table if not exists lavanderias.api_keys(
+  key_id text primary key,
+  empresa_id text references lavanderias.empresas(empresa_id) on delete cascade,
+  nombre text, api_key text not null unique, activo boolean not null default true,
+  created_by text, created_at timestamptz default now(), last_used_at timestamptz);
+alter table lavanderias.api_keys enable row level security;
+create index if not exists lav_apikeys_key_idx on lavanderias.api_keys(api_key);
+
+-- Funciones aplicadas en Supabase:
+--  Admin (es_admin): public.lav_admin_metricas / lav_admin_empresas /
+--    lav_admin_catalogo / lav_admin_prenda_crear / lav_admin_prenda_borrar /
+--    lav_admin_key_crear / lav_admin_keys / lav_admin_key_borrar
+--  API externa (anon + api_key): public.lav_api_contratos / lav_api_bolsa_crear /
+--    lav_api_buscar. Validan la llave con lavanderias.empresa_por_key(p_key).

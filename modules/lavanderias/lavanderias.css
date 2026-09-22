@@ -149,3 +149,6 @@ h1,h2,h3{font-family:'Barlow Condensed',sans-serif;letter-spacing:.01em}
 
 .lav-chip-g{display:inline-block;background:var(--lav-primary-lt);color:var(--lav-primary-dk);border-radius:20px;padding:2px 8px;font-size:.68rem;font-weight:700;margin-left:6px}
 .lav-det summary{cursor:pointer;font-size:.85rem;font-weight:700;color:var(--lav-primary)}
+
+.lav-code{background:#0f1720;color:#d7e3e1;border-radius:10px;padding:12px 14px;font-size:.78rem;overflow-x:auto;white-space:pre;margin-top:8px}
+.lav-key-new{background:#fff8e6;border:1px solid var(--lav-primary);border-radius:11px;padding:12px;margin-bottom:12px}

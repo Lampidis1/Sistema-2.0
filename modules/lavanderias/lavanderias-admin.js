@@ -7,7 +7,7 @@
 // que valida "agregar prenda" en la app de la lavandería. Todo por RPCs
 // public.lav_admin_*. <script src> clásico, nunca type="module" — CLAUDE.md §6.
 // ═══════════════════════════════════════════════════════════════════════════
-let SB=null, MET=[], EMPRESAS=[], CAT_EMP='';   // CAT_EMP: empresa activa del catálogo ('' = global)
+let SB=null, MET=[], EMPRESAS=[], CAT_EMP='', API_EMP='';   // *_EMP: empresa activa
 
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const val = id => { const e=document.getElementById(id); return e?e.value.trim():''; };
@@ -51,10 +51,11 @@ async function mostrarApp(){
   await Promise.all([cargarMetricas(), cargarEmpresas()]);
 }
 function adTab(t){
-  document.getElementById('tabMet').classList.toggle('on', t==='met');
-  document.getElementById('tabCat').classList.toggle('on', t==='cat');
-  document.getElementById('vMet').classList.toggle('hidden', t!=='met');
-  document.getElementById('vCat').classList.toggle('hidden', t!=='cat');
+  ['met','cat','api'].forEach(x=>{
+    document.getElementById('tab'+x[0].toUpperCase()+x.slice(1)).classList.toggle('on', t===x);
+    document.getElementById('v'+x[0].toUpperCase()+x.slice(1)).classList.toggle('hidden', t!==x);
+  });
+  if(t==='api') renderApi();
 }
 
 // ── Métricas ─────────────────────────────────────────────────────────────────
@@ -156,5 +157,77 @@ async function adBorrarPrenda(id){
   toast('🗑 Prenda quitada','ok');
   await cargarCatalogo();
 }
+
+// ── API: llaves por lavandería ───────────────────────────────────────────────
+function renderApi(){
+  const base = window.SUPA_CFG.url + '/rest/v1/rpc/lav_api_bolsa_crear';
+  document.getElementById('vApi').innerHTML = `
+    <div class="lav-card">
+      <div class="lav-sec-t">🔌 Llaves de API por lavandería</div>
+      <div class="lav-hint" style="margin-bottom:10px">Cada lavandería puede conectar su propio sistema con una <b>llave</b>. La llave se envía en el cuerpo de la llamada (no en la URL) junto con el <i>anon key</i> del proyecto.</div>
+      <div class="lav-row">
+        <label style="font-weight:700;font-size:.85rem">Lavandería</label>
+        <select class="lav-in" onchange="adSetApiEmpresa(this.value)">
+          <option value="">— elegir —</option>
+          ${EMPRESAS.map(e=>`<option value="${esc(e.empresa_id)}" ${API_EMP===e.empresa_id?'selected':''}>${esc(e.nombre)}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div id="apiKeys"></div>
+    <div class="lav-card">
+      <div class="lav-sec-t" style="font-size:1rem">Cómo se usa (para el sistema externo)</div>
+      <div class="lav-hint">Endpoints REST (POST). Encabezados: <code>apikey: &lt;anon key&gt;</code> y <code>Content-Type: application/json</code>.</div>
+      <pre class="lav-code">POST ${esc(base)}
+{ "p_key": "&lt;LLAVE&gt;", "p_contrato_id": "ctr_…",
+  "p_items": [{"categoria":"cama","nombre":"Sábana","cantidad":3}],
+  "p_kilos": 12.5 }
+
+# Otros: lav_api_contratos { "p_key" }
+#        lav_api_buscar   { "p_key", "p_codigo" }</pre>
+    </div>`;
+  cargarApiKeys();
+}
+function adSetApiEmpresa(v){ API_EMP=v; cargarApiKeys(); }
+async function cargarApiKeys(){
+  const cont=document.getElementById('apiKeys'); if(!cont) return;
+  if(!API_EMP){ cont.innerHTML='<div class="lav-empty">Elige una lavandería para ver o generar sus llaves.</div>'; return; }
+  const { data } = await SB.rpc('lav_admin_keys', { p_empresa_id:API_EMP });
+  const keys = (data&&data.keys) || [];
+  cont.innerHTML = `
+    <div class="lav-card">
+      <div class="lav-row" style="margin-bottom:10px">
+        <input class="lav-in" id="keyNombre" placeholder="Nombre de la llave (opcional)" style="flex:1;min-width:160px">
+        <button class="lav-btn" onclick="adGenerarKey()">＋ Generar llave</button>
+      </div>
+      <div id="keyNueva"></div>
+      ${!keys.length ? '<div class="lav-hint">Esta lavandería aún no tiene llaves.</div>'
+        : keys.map(k=>`<div class="lav-item" style="padding:10px 12px">
+            <div>
+              <div class="nm" style="font-family:monospace">${esc(k.mascara)} ${k.activo?'':'<span class="mt">(revocada)</span>'}</div>
+              <div class="mt">${esc(k.nombre||'sin nombre')} · creada ${new Date(k.created_at).toLocaleDateString('es-CL')}${k.last_used_at?(' · usada '+new Date(k.last_used_at).toLocaleDateString('es-CL')):' · sin uso'}</div>
+            </div>
+            ${k.activo?`<button class="lav-btn gray" style="padding:6px 12px" onclick="adBorrarKey('${k.key_id}')">Revocar</button>`:''}
+          </div>`).join('')}
+    </div>`;
+}
+async function adGenerarKey(){
+  const { data, error } = await SB.rpc('lav_admin_key_crear', { p_empresa_id:API_EMP, p_nombre: val('keyNombre') });
+  if(error || (data&&data.error)){ toast('No se pudo generar','err'); return; }
+  await cargarApiKeys();   // primero refresca la lista (recrea #keyNueva vacío)
+  const box=document.getElementById('keyNueva');
+  if(box) box.innerHTML = `<div class="lav-key-new">
+    <div style="font-weight:700;margin-bottom:4px">🔑 Llave generada — cópiala ahora, no se vuelve a mostrar completa:</div>
+    <div class="lav-row"><input class="lav-in" style="flex:1;font-family:monospace" readonly value="${esc(data.api_key)}" onclick="this.select()">
+      <button class="lav-btn" onclick="adCopiar('${esc(data.api_key)}')">📋 Copiar</button></div>
+  </div>`;
+  toast('✅ Llave generada','ok');
+}
+async function adBorrarKey(id){
+  if(!confirm('¿Revocar esta llave? El sistema externo que la use dejará de tener acceso.')) return;
+  const { data, error } = await SB.rpc('lav_admin_key_borrar', { p_key_id:id });
+  if(error || (data&&data.error)){ toast('No se pudo revocar','err'); return; }
+  toast('🗑 Llave revocada','ok'); cargarApiKeys();
+}
+function adCopiar(txt){ try{ navigator.clipboard.writeText(txt); }catch(e){} toast('🔗 Copiado','ok'); }
 
 window.addEventListener('DOMContentLoaded', adBoot);

@@ -61,7 +61,29 @@ los **3 meses** la bolsa vence (`expira_at`) y el código se puede **reutilizar*
   lav_admin_prenda_crear / lav_admin_prenda_borrar`. Al abrir `index.html`, un
   admin es enviado a este panel.
 
-## Pendiente (Fase 2)
+## API para sistemas externos
 
-- **API para sistemas externos** de las lavanderías (llaves por empresa) para que
-  se vinculen a sus propios sistemas.
+Cada lavandería puede conectar su propio sistema con una **llave** (`api_key`),
+que el admin genera en el panel (pestaña **🔌 API**). Las llaves viven en
+`lavanderias.api_keys` (RLS activa; solo las tocan las funciones). La llave va en
+el **cuerpo** de la llamada (nunca en la URL), junto con el `anon key` del
+proyecto en el encabezado `apikey`.
+
+Endpoints (POST a `…/rest/v1/rpc/<fn>`, `Content-Type: application/json`):
+
+| Función | Cuerpo | Devuelve |
+|---|---|---|
+| `lav_api_contratos` | `{p_key}` | contratos de la lavandería |
+| `lav_api_bolsa_crear` | `{p_key, p_contrato_id, p_items:[{categoria,nombre,cantidad}], p_kilos}` | `{codigo, bolsa_id, total}` |
+| `lav_api_buscar` | `{p_key, p_codigo}` | contenido de esa bolsa |
+
+Llave inválida o revocada → `{"error":"llave_invalida"}`. El admin revoca una
+llave en el panel (`lav_admin_key_borrar`, baja lógica). La búsqueda pública
+general (`buscar.html` / `lav_buscar`) sigue disponible sin llave.
+
+## Migrado a futuro
+
+Todo (tablas, funciones `lav_*`/`lav_api_*`, catálogo, llaves) vive en el esquema
+`lavanderias` + funciones en `public`. Para independizar: `pg_dump -n lavanderias`
+para los datos, y recrear las funciones `public.lav_*` (o exponer el esquema) en
+la base nueva.
