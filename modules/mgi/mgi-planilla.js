@@ -606,15 +606,15 @@ function planRender(){
 
   // resumen de arriba: lo que MGI reporta
   const vivos=filas.filter(p=>!planV(p,'baja'));
-  const tHab=vivos.reduce((s,p)=>s+planTotalHab(p.proveedor_id),0);
   const tCap=vivos.reduce((s,p)=>s+planCapMax(p.proveedor_id),0);
+  const tCamasDisp=vivos.reduce((s,p)=>s+(parseInt(planV(p,'camas_disponibles'))||0),0);
   const arr=vivos.filter(p=>planV(p,'arrendado_completo')).length;
   const porLlamar=vivos.filter(p=>planPorLlamar(p.proveedor_id)).length;
 
   let h=`<div class="pl-kpis">
       <div class="pl-kpi"><div class="pl-kn">${vivos.length}</div><div class="pl-kl">Hospedajes en el programa</div></div>
-      <div class="pl-kpi"><div class="pl-kn">${tHab}</div><div class="pl-kl">Habitaciones</div></div>
       <div class="pl-kpi"><div class="pl-kn">${tCap}</div><div class="pl-kl">Capacidad máxima (camas)</div></div>
+      <div class="pl-kpi"><div class="pl-kn">${tCamasDisp}</div><div class="pl-kl">Camas disponibles</div></div>
       <div class="pl-kpi"><div class="pl-kn">${arr}</div><div class="pl-kl">Arrendados completos</div></div>
       <div class="pl-kpi clickable ${porLlamar?'alerta':''} ${PLAN_FILTRO==='llamar'?'sel':''}" id="plKpiLlamar"
            onclick="planSetFiltro('llamar')" title="Ver solo los por llamar">
