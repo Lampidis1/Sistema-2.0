@@ -106,6 +106,7 @@ window.RCAReporte = (function(){
           <div><span>Monto reportado vs contado</span><b>${clp(c.montoReportado)} / <span style="color:#1e7e34">${clp(c.montoContado)}</span></b></div>
         </div>
         <div class="rp-drills">
+          ${drill('Contabilizadas · proveedores regionales (suman al '+(+pct||10)+'%)','🟢',c.fOk,{})}
           ${drill('Datos incompletos (N° de factura o fecha)','🟠',c.fIncomp,{motivo:true})}
           ${drill('Pertenecen a otra comuna (fuera de región)','🔴',c.fNoReg,{})}
           ${drill('Por revisar (proveedor no reconocido)','🟡',c.fPend,{})}

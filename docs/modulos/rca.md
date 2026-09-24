@@ -46,10 +46,11 @@ dependencias; se abre en el navegador y se descarga como respaldo):
 
 Cada hoja muestra el **avance de lo comprometido** (reportado que suma vs meta) y
 la **gestión de facturas**: cuántas se reportaron (total del Excel) vs cuántas
-realmente se contaron, y los montos que **no sumaron**, en tres listas
-desplegables (clic para ver el detalle de cada factura mal): **datos incompletos**
-(sin N° de factura o sin fecha, con el motivo), **otra comuna** (fuera de región) y
-**por revisar** (proveedor no reconocido).
+realmente se contaron. Hay **cuatro listas desplegables** (clic para ver el detalle
+factura por factura): **contabilizadas** (proveedores regionales que suman al 10% —
+así se ve el listado de las que sí cuentan, aunque no haya ninguna con problema),
+**datos incompletos** (sin N° de factura o sin fecha, con el motivo), **otra comuna**
+(fuera de región) y **por revisar** (proveedor no reconocido).
 
 Además de descargar el HTML, cada botón abre un **link compartible** (página
 pública `reporte.html?t=<token>`, sin login):

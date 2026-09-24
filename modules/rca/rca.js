@@ -441,12 +441,19 @@ async function guardarCarta(id,file){
   }catch(e){ toast('Error al subir: '+e.message,'err'); }
 }
 // Abre la carta formal con una URL firmada de duración corta (bucket privado).
+// La pestaña se abre SINCRÓNICA (dentro del clic) y recién después se le asigna la
+// URL firmada: si se abriera tras el await, el navegador bloquearía el popup.
 async function verCarta(path){
+  const win=window.open('','_blank'); // abre ya, dentro del gesto del usuario
   try{
     const {data,error}=await SB.storage.from('documentos').createSignedUrl(path,300);
     if(error) throw error;
-    window.open(data.signedUrl,'_blank','noopener');
-  }catch(e){ toast('No se pudo abrir la carta: '+e.message,'err'); }
+    if(win && !win.closed){ win.location.href=data.signedUrl; }
+    else { window.location.href=data.signedUrl; } // popup bloqueado: navega en la misma pestaña
+  }catch(e){
+    if(win && !win.closed) win.close();
+    toast('No se pudo abrir la carta: '+e.message,'err');
+  }
 }
 
 // ══ IMPORTAR EXCEL DE FACTURAS + CRUCE POR RUT ═══════════════════════════════
