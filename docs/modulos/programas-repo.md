@@ -77,8 +77,10 @@ Formato (`contrato: "proveedor-seguro/informe@1"`):
    curso, sin conexión, avance promedio), gráficos (estado, por localidad) y la
    tabla de participantes con sus sucursales.
 4. **➕ Crear faltantes en directorio** (opcional): crea en el directorio de
-   proveedores los participantes que aún no existen (dedupe por RUT), marcados con
-   `origen = programa:<título>`. En el directorio se aíslan con el filtro
+   proveedores las empresas que aún no existen, marcadas con
+   `origen = programa:<título>`. La participación es de la **empresa**, así que se
+   crea **una entrada por cada sucursal** (mismo RUT, campo `sucursal`,
+   `multi_verificado=true`). En el directorio se aíslan con el filtro
    **🧩 Creados por subsistema**.
 
 > ⚠️ El RUT del informe *Proveedor Seguro* es el de la persona representante, no el

@@ -207,27 +207,37 @@ async function crearProveedoresDePrograma(id){
   const nuevos=PROG_DET_PARTS.filter(x=>x.rut && !x.proveedor_id && !existentes.has(canon(x.rut)));
   const yaExisten=PROG_DET_PARTS.filter(x=>x.rut && !x.proveedor_id && existentes.has(canon(x.rut))).length;
   if(!nuevos.length){ showToast('No hay participantes nuevos por crear'+(yaExisten?` (${yaExisten} ya existen en el directorio por su RUT)`:'')+'.','success'); return; }
-  if(!confirm(`Se crearán ${nuevos.length} proveedor(es) en el directorio, marcados como creados por el programa «${p.titulo}».\n\nⓘ El RUT del informe es el de la persona representante. Podrás aislarlos con el filtro «🧩 Creados por subsistema».${yaExisten?`\n\n(${yaExisten} participantes ya existen en el directorio y no se duplicarán.)`:''}\n\n¿Continuar?`)) return;
+  // La participación es de la EMPRESA: se crea una entrada por cada sucursal.
   const now=new Date().toISOString();
-  const rows=nuevos.map(x=>({
-    proveedor_id:'re_prog_'+id+'_'+canon(x.rut),
-    rut_empresa:x.rut||'', razon_social:x.empresa_principal||x.representante||'',
-    nombre_fantasia:x.empresa_principal||'', localidad:x.localidad||'',
-    descripcion_general:'Representante: '+(x.representante||'—')+' · Programa: '+(p.titulo||'')+(x.sucursales>1?' · '+x.sucursales+' sucursales: '+(Array.isArray(x.empresas)?x.empresas.join(', '):''):''),
-    multi_verificado:false, origen:'programa:'+(p.titulo||''), origen_ref:id,
-    estado_registro:'Activo', created_by:miNombre(), updated_by:miNombre(), created_at:now, updated_at:now
-  }));
+  const rows=[]; const linkPp={};
+  nuevos.forEach(x=>{
+    const rutC=canon(x.rut);
+    const emps=(Array.isArray(x.empresas)&&x.empresas.length)?x.empresas:[x.empresa_principal||x.representante||''];
+    const base='re_prog_'+id+'_'+rutC;
+    emps.forEach((emp,i)=>{
+      const pid = i>0 ? base+'_s'+(i+1) : base;
+      rows.push({
+        proveedor_id:pid, rut_empresa:x.rut||'', razon_social:emp||x.representante||'',
+        nombre_fantasia:emp||'', localidad:x.localidad||'', sucursal:emps.length>1?emp:'',
+        descripcion_general:'Representante: '+(x.representante||'—')+' · Programa: '+(p.titulo||'')+(emps.length>1?' · Sucursal '+(i+1)+' de '+emps.length:''),
+        multi_verificado:emps.length>1, origen:'programa:'+(p.titulo||''), origen_ref:id,
+        estado_registro:'Activo', created_by:miNombre(), updated_by:miNombre(), created_at:now, updated_at:now
+      });
+    });
+    linkPp[x.pp_id]=base;
+  });
+  const nSuc=rows.length;
+  if(!confirm(`Se crearán ${nSuc} entrada(s) de proveedor en el directorio para ${nuevos.length} empresa(s) del programa «${p.titulo}» (una por sucursal), marcadas como creadas por subsistema.\n\nⓘ El RUT del informe es el de la persona representante. Podrás aislarlas con el filtro «🧩 Creados por subsistema».${yaExisten?`\n\n(${yaExisten} ya existen en el directorio y no se duplicarán.)`:''}\n\n¿Continuar?`)) return;
   try{
     const {error}=await SUPA.client.from('proveedores').upsert(rows,{onConflict:'proveedor_id'});
     if(error) throw error;
     for(const x of nuevos){
-      const pid='re_prog_'+id+'_'+canon(x.rut);
-      x.proveedor_id=pid;
-      await SUPA.client.from('programa_participantes').update({proveedor_id:pid,updated_at:now}).eq('pp_id',x.pp_id);
+      x.proveedor_id=linkPp[x.pp_id];
+      await SUPA.client.from('programa_participantes').update({proveedor_id:x.proveedor_id,updated_at:now}).eq('pp_id',x.pp_id);
     }
-    await registrarLog('programa_catalogo',id,'crear_proveedores','Creó '+rows.length+' proveedor(es) en el directorio desde el programa "'+p.titulo+'"');
+    await registrarLog('programa_catalogo',id,'crear_proveedores','Creó '+nSuc+' entrada(s) de proveedor (sucursales) desde el programa "'+p.titulo+'"');
     renderProgramaDetalle();
-    showToast('✅ '+rows.length+' proveedor(es) creados. Recarga el directorio y usa el filtro «🧩 Creados por subsistema».','success');
+    showToast('✅ '+nSuc+' entrada(s) creadas. Recarga el directorio y usa el filtro «🧩 Creados por subsistema».','success');
   }catch(e){ showToast('Error al crear proveedores: '+e.message,'err'); }
 }
 
