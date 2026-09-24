@@ -212,6 +212,10 @@
         <div class="sb-title">Edición</div>
         <div class="filter-chip" id="chipEdited" onclick="toggleEditedFilter()">✏ Solo editados <span class="chip-count" id="editedCount">0</span></div>
       </div>
+      <div class="sb-section">
+        <div class="sb-title">🧩 Origen del registro</div>
+        <div class="filter-chip" id="chipSubsistema" onclick="toggleSubsistemaFilter()" title="Proveedores creados automáticamente por un subsistema (Programas, etc.)">🧩 Creados por subsistema <span class="chip-count" id="subsistemaCount">0</span></div>
+      </div>
       <button class="btn-clear" onclick="clearFilters()">✕ Limpiar filtros</button>
     </aside>
 
@@ -534,7 +538,7 @@
 
 <script src="proveedores.js?v=20260819c"></script>
 <script src="proveedores-catalogos.js?v=20260814a"></script>
-<script src="proveedores-programas.js?v=20260808"></script>
+<script src="proveedores-programas.js?v=20260924"></script>
 <script src="proveedores-compromisos.js?v=20260808"></script>
 <script src="proveedores-agenda.js?v=20260808"></script>
 <script src="proveedores-pdf.js?v=20260809d"></script>
@@ -909,12 +913,25 @@
         <div class="kb-fld"><label>Fecha inicio *</label><input id="progCatIni" type="date"></div>
         <div class="kb-fld"><label>Fecha término *</label><input id="progCatFin" type="date"></div>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="kb-fld"><label>Empresa / consultora que ejecuta</label><input id="progCatEjecutor" placeholder="Ej: Dos Barbas"></div>
+        <div class="kb-fld"><label>Contacto del ejecutor</label><input id="progCatEjecCont" placeholder="Nombre o correo (opcional)"></div>
+      </div>
+      <div class="kb-fld"><label>Repositorio / informe del ejecutor</label><input id="progCatRepo" placeholder="https://github.com/usuario/informe (enlace público al informe)"></div>
+      <div class="kb-fld"><label>Datos del dashboard (JSON del informe)</label><input id="progCatDatos" placeholder="URL raw del JSON estándar — ver docs/modulos/programas-repo.md"><div style="font-size:.72rem;color:var(--text-muted);margin-top:4px">El ejecutor publica un JSON con el formato estándar; el sistema lo sincroniza a la base. Si se deja vacío, solo se usa el repositorio como enlace.</div></div>
     </div>
     <div style="display:flex;gap:10px;margin-top:18px">
       <button id="progCatDelBtn" onclick="eliminarProgramaCat()" style="display:none;padding:10px 14px;background:#fdecea;color:#c0311b;border:none;border-radius:9px;font-weight:700;cursor:pointer">🗑 Eliminar</button>
       <button onclick="cerrarProgCat()" style="flex:1;padding:10px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
       <button onclick="guardarProgramaCat()" style="flex:2;padding:10px;background:linear-gradient(135deg,#5b4fcf,#4338ca);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;cursor:pointer">Guardar programa</button>
     </div>
+  </div>
+</div>
+
+<!-- Detalle + dashboard de un programa (se abre al hacer clic en la tarjeta) -->
+<div id="progDetalleOverlay" style="display:none;position:fixed;inset:0;background:rgba(20,20,35,.5);z-index:9997;padding:24px;overflow-y:auto">
+  <div style="background:var(--bg,#f4f7f8);border-radius:16px;max-width:1080px;margin:0 auto;min-height:60vh;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div id="progDetalleBody" style="padding:0"></div>
   </div>
 </div>
 

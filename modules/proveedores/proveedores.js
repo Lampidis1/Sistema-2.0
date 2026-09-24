@@ -120,6 +120,7 @@ let activeLocalidades = new Set(), activeFacturacion = new Set(), activeRubros =
 let activeAgrup = new Set(), activeAM = new Set(), activeRango = new Set();
 let activeMGI = new Set();   // 'si' | 'no' — participación en el programa MGI
 let filterEditedOnly = false;
+let filterSubsistemaOnly = false; // proveedores creados por un subsistema (Programa, etc.)
 let currentView = 'cards';
 let chartsInit = false, chartInst = {};
 let currentModalId = null;
@@ -440,7 +441,7 @@ function initApp() {
   updateHeroStats();
   activeLocalidades.clear(); activeFacturacion.clear(); activeRubros.clear();
   activeAgrup.clear(); activeAM.clear();
-  filterEditedOnly=false;
+  filterEditedOnly=false; filterSubsistemaOnly=false;
   document.getElementById('searchInput').value='';
   buildFilters(); buildAgrupFilters(); buildAMFilters(); buildRangoFilters(); applyFilters(); chartsInit=false;
 }
@@ -454,6 +455,8 @@ function updateHeroStats() {
   document.getElementById('statEdited').textContent = edited;
   document.getElementById('editedCount').textContent = edited;
   document.getElementById('editedBadge').className = edited ? 'edited-badge show' : 'edited-badge';
+  const _subs = PROVEEDORES.filter(p=>p.origen&&p.origen!=='directo').length;
+  const _sc=document.getElementById('subsistemaCount'); if(_sc) _sc.textContent=_subs;
 }
 
 // ── FILTERS BUILD ─────────────────────────────────────────────────────────────
@@ -562,6 +565,7 @@ function buildRangoFilters(){
 }
 
 function toggleEditedFilter(){ filterEditedOnly=!filterEditedOnly; document.getElementById('chipEdited').classList.toggle('active',filterEditedOnly); applyFilters(); }
+function toggleSubsistemaFilter(){ filterSubsistemaOnly=!filterSubsistemaOnly; const c=document.getElementById('chipSubsistema'); if(c) c.classList.toggle('active',filterSubsistemaOnly); applyFilters(); }
 
 function applyFilters() {
   const q=document.getElementById('searchInput').value.toLowerCase().trim();
@@ -589,6 +593,7 @@ function applyFilters() {
     if(activeAM.size&&!activeAM.has(p.servicio_am||'Sin información')) return false;
     if(activeRango.size&&!activeRango.has(p.rango_trabajos||'Sin definir')) return false;
     if(filterEditedOnly&&!p._edited) return false;
+    if(filterSubsistemaOnly&&!(p.origen&&p.origen!=='directo')) return false;
     if(q){const cs=(DB.contactos[p._id]||[]).map(c=>c.nombre+' '+c.correo+' '+c.cargo).join(' ');const hay=[p.nombre_contacto,p.razon_social,p.nombre_fantasia,p.localidad,p.direccion,...(p.giros||[]),p.descripcion,p.actividad_principal||'',p.plataformas||'',cs].join(' ').toLowerCase();if(!hay.includes(q))return false;}
     return true;
   });
@@ -608,7 +613,7 @@ function applyFilters() {
   document.getElementById('viewTable').style.display=(!empty&&currentView==='table')?'block':'none';
   const va=document.getElementById('viewAgenda'); if(va) va.style.display=(!empty&&currentView==='agenda')?'block':'none';
 }
-function clearFilters(){activeLocalidades.clear(); activeFaenaMinera.clear();activeMGI.clear();activeFacturacion.clear();activeRubros.clear();activeAgrup.clear();activeAM.clear();filterEditedOnly=false;document.getElementById('searchInput').value='';var _smb=document.getElementById('searchInputMobile');if(_smb)_smb.value='';document.querySelectorAll('.loc-chip,.fact-row,.filter-chip').forEach(el=>el.classList.remove('active'));document.getElementById('chipEdited').classList.remove('active');applyFilters();}
+function clearFilters(){activeLocalidades.clear(); activeFaenaMinera.clear();activeMGI.clear();activeFacturacion.clear();activeRubros.clear();activeAgrup.clear();activeAM.clear();filterEditedOnly=false;filterSubsistemaOnly=false;document.getElementById('searchInput').value='';var _smb=document.getElementById('searchInputMobile');if(_smb)_smb.value='';document.querySelectorAll('.loc-chip,.fact-row,.filter-chip').forEach(el=>el.classList.remove('active'));document.getElementById('chipEdited').classList.remove('active');var _cs=document.getElementById('chipSubsistema');if(_cs)_cs.classList.remove('active');applyFilters();}
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function amBadge(v){
@@ -3536,6 +3541,7 @@ function mapProvFromSupa(p){
     flota:(()=>{try{return JSON.parse(p.flota_json||'[]')||[];}catch(e){return [];}})(),
     fotos:(()=>{try{return JSON.parse(p.fotos_json||'[]')||[];}catch(e){return [];}})(),
     notas_ficha:p.notas_ficha||'',
+    origen:p.origen||'directo', origen_ref:p.origen_ref||'',
     _editedBy:p.updated_by||'', _createdBy:p.created_by||'', _edited:false
   };
 }
