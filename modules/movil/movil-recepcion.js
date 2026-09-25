@@ -166,10 +166,21 @@ async function rcGenerarLinkCV(){
     if(error) throw error;
     RC.did.apresto=true;
     const url=location.origin+'/modules/empleabilidad/armar-cv.html?t='+data.token;
-    document.getElementById('rcLinkOut').innerHTML=`<div class="rc-nota" style="margin-top:10px">Link generado:</div>
-      <div style="display:flex;gap:8px"><input id="rcLinkUrl" readonly value="${esc(url)}" style="flex:1">
-      <button class="btn sec" onclick="rcCopiar('rcLinkUrl')">Copiar</button></div>
-      <div class="rc-nota"><a href="${esc(url)}" target="_blank" rel="noopener">Abrir el creador de CV ↗</a></div>`;
+    document.getElementById('rcLinkOut').innerHTML=`
+      <div class="rc-qr-box">
+        <div class="rc-qr" id="rcQR"></div>
+        <div class="rc-qr-side">
+          <div class="rc-nota" style="margin:0 0 6px"><b>La persona escanea el QR</b> con su cámara y arma su CV en el teléfono.</div>
+          <div class="rc-linkrow"><input id="rcLinkUrl" readonly value="${esc(url)}" onclick="this.select()">
+            <button class="btn sec" onclick="rcCopiar('rcLinkUrl')">Copiar</button></div>
+          <div class="btn-row" style="margin-top:8px">
+            <button class="btn gray" onclick="window.open('${esc(url)}','_blank','noopener')">🖥 Abrir en otra pestaña</button>
+          </div>
+        </div>
+      </div>`;
+    // Genera el QR (qrcodejs, sin servicios externos: dibuja en canvas local)
+    const qc=document.getElementById('rcQR');
+    if(qc && typeof QRCode!=='undefined'){ qc.innerHTML=''; new QRCode(qc,{text:url,width:150,height:150,correctLevel:QRCode.CorrectLevel.M}); }
     toast('✅ Link de apresto creado','ok');
   }catch(e){ toast('Error: '+e.message,'err'); }
 }

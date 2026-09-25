@@ -43,7 +43,9 @@ function _pj(s){ try{ const x=JSON.parse(s||'[]'); return Array.isArray(x)?x:[];
 function acDesdeFila(row){
   CV.rut=row.rut||''; CV.nombres=row.nombres||''; CV.apellidos=row.apellidos||''; CV.direccion=row.direccion||'';
   CV.comuna=row.comuna||''; CV.telefono=row.telefono||''; CV.email=row.email||''; CV.resumen=row.resumen||''; CV.observaciones=row.observaciones||'';
-  CV.experiencia=_pj(row.experiencia_json).map(e=>({empresa:e.empresa||'',ciudad:e.ciudad||'',periodo:e.periodo||'',cargo:e.cargo||'',funcion_general:'',funciones_txt:(e.funciones||[]).join('\n'),logro:e.logro||''}));
+  CV._nivel=(row.educacion||'').split(' — ')[0]||'';   // nivel captado en Móvil (para precargar académicos)
+  CV.experiencia=_pj(row.experiencia_json).map(e=>{ const fx=(e.funciones||[]).filter(Boolean);
+    return {empresa:e.empresa||'',ciudad:e.ciudad||'',periodo:e.periodo||'',cargo:e.cargo||'',funciones:[fx[0]||'',fx[1]||'',fx[2]||''],logro:e.logro||''}; });
   CV.academico=_pj(row.academico_json).map(a=>({nivel:'',titulo:a.titulo||'',institucion:a.institucion||'',ciudad:'',periodo:a.periodo||''}));
   CV.cursos=_pj(row.cursos_json).map(c=>({evento:c.evento||c.tema||'',institucion:c.institucion||'',ciudad:'',anio:c.anio||''}));
   CV.idiomas=_pj(row.idiomas_json).map(i=>({idioma:i.idioma||'',nivel:i.nivel||''}));
@@ -55,6 +57,10 @@ function acLlenar(){
   set('fNombres',CV.nombres); set('fApellidos',CV.apellidos); set('fRut',CV.rut);
   set('fTelefono',CV.telefono); set('fEmail',CV.email); set('fComuna',CV.comuna);
   set('fDireccion',CV.direccion); set('fResumen',CV.resumen); set('fOtros',CV.observaciones);
+  // Precarga: académicos y cursos parten con una fila lista (con el nivel captado
+  // en Móvil si viene), para que la persona solo complete y no vea secciones vacías.
+  if(!CV.academico.length) CV.academico.push({nivel:CV._nivel||'',titulo:'',institucion:'',ciudad:'',periodo:''});
+  if(!CV.cursos.length) CV.cursos.push({evento:'',institucion:'',ciudad:'',anio:''});
   acRenderExp(); acRenderAca(); acRenderCur(); acRenderIdi(); acRenderSof();
 }
 function acRenderExp(){
@@ -64,9 +70,10 @@ function acRenderExp(){
       <label class="ac-f"><span>Ciudad</span><input id="exp${i}_ciudad" value="${esc(e.ciudad)}"></label></div>
     <div class="ac-g2"><label class="ac-f"><span>Cargo</span><input id="exp${i}_cargo" value="${esc(e.cargo)}"></label>
       <label class="ac-f"><span>Periodo (Mes año – Mes año)</span><input id="exp${i}_periodo" value="${esc(e.periodo)}"></label></div>
-    <label class="ac-f"><span>Función general (máx. 3 líneas)</span><textarea id="exp${i}_fgen" rows="2">${esc(e.funcion_general)}</textarea></label>
-    <label class="ac-f"><span>Funciones específicas (una por línea)</span><textarea id="exp${i}_fesp" rows="3">${esc(e.funciones_txt)}</textarea></label>
-    <label class="ac-f"><span>Logro (cualitativo o cuantitativo, con una habilidad blanda)</span><textarea id="exp${i}_logro" rows="2">${esc(e.logro)}</textarea></label>
+    <label class="ac-f"><span>Función 1</span><input id="exp${i}_f0" value="${esc((e.funciones||[])[0]||'')}" placeholder="Qué hacías (principal)"></label>
+    <label class="ac-f"><span>Función 2</span><input id="exp${i}_f1" value="${esc((e.funciones||[])[1]||'')}"></label>
+    <label class="ac-f"><span>Función 3</span><input id="exp${i}_f2" value="${esc((e.funciones||[])[2]||'')}"></label>
+    <label class="ac-f"><span>Logro <span style="color:#8a949a;font-weight:400">(opcional)</span></span><textarea id="exp${i}_logro" rows="2">${esc(e.logro)}</textarea></label>
   </div>`).join('')||'<div class="ac-empty">Sin experiencia aún. Usa «＋ agregar».</div>';
 }
 function acRenderAca(){
@@ -103,14 +110,14 @@ function acSync(){
   CV.nombres=v('fNombres').trim(); CV.apellidos=v('fApellidos').trim(); CV.rut=v('fRut').trim();
   CV.telefono=v('fTelefono').trim(); CV.email=v('fEmail').trim(); CV.comuna=v('fComuna').trim();
   CV.direccion=v('fDireccion').trim(); CV.resumen=v('fResumen').trim(); CV.observaciones=v('fOtros').trim();
-  CV.experiencia.forEach((e,i)=>{ e.empresa=v('exp'+i+'_empresa'); e.ciudad=v('exp'+i+'_ciudad'); e.cargo=v('exp'+i+'_cargo'); e.periodo=v('exp'+i+'_periodo'); e.funcion_general=v('exp'+i+'_fgen'); e.funciones_txt=v('exp'+i+'_fesp'); e.logro=v('exp'+i+'_logro'); });
+  CV.experiencia.forEach((e,i)=>{ e.empresa=v('exp'+i+'_empresa'); e.ciudad=v('exp'+i+'_ciudad'); e.cargo=v('exp'+i+'_cargo'); e.periodo=v('exp'+i+'_periodo'); e.funciones=[v('exp'+i+'_f0'),v('exp'+i+'_f1'),v('exp'+i+'_f2')]; e.logro=v('exp'+i+'_logro'); });
   CV.academico.forEach((a,i)=>{ a.nivel=v('aca'+i+'_nivel'); a.titulo=v('aca'+i+'_titulo'); a.institucion=v('aca'+i+'_inst'); a.ciudad=v('aca'+i+'_ciudad'); a.periodo=''; });
   CV.cursos.forEach((c,i)=>{ c.evento=v('cur'+i+'_evento'); c.institucion=v('cur'+i+'_inst'); c.anio=v('cur'+i+'_anio'); });
   CV.idiomas.forEach((x,i)=>{ x.idioma=v('idi'+i+'_idioma'); x.nivel=v('idi'+i+'_nivel'); });
   CV.software.forEach((x,i)=>{ x.nombre=v('sof'+i+'_nombre'); x.nivel=v('sof'+i+'_nivel'); });
 }
 function acAdd(t){ acSync();
-  if(t==='exp'){ CV.experiencia.push({empresa:'',ciudad:'',periodo:'',cargo:'',funcion_general:'',funciones_txt:'',logro:''}); acRenderExp(); }
+  if(t==='exp'){ CV.experiencia.push({empresa:'',ciudad:'',periodo:'',cargo:'',funciones:['','',''],logro:''}); acRenderExp(); }
   if(t==='aca'){ CV.academico.push({nivel:'',titulo:'',institucion:'',ciudad:'',periodo:''}); acRenderAca(); }
   if(t==='cur'){ CV.cursos.push({evento:'',institucion:'',ciudad:'',anio:''}); acRenderCur(); }
   if(t==='idi'){ CV.idiomas.push({idioma:'',nivel:''}); acRenderIdi(); }
@@ -125,7 +132,7 @@ function acDel(t,i){ acSync();
 const AC_INFO={
   datos:'Escribe tu nombre completo, RUT, un teléfono y correo donde te puedan contactar, y tu comuna. Ej: "Juan Pérez · +56 9 1234 5678 · juan.perez@gmail.com · Antofagasta".',
   resumen:'Un párrafo que te presente. Pon tu oficio o profesión, de qué institución, cuántos años de experiencia, en qué rubros, y 3 fortalezas ligadas al cargo al que postulas.\n\nEjemplo:\n"Técnico en mantención del INACAP, con más de 5 años de experiencia en faenas mineras. Se ha desempeñado en mantención mecánica de equipos pesados. Responsable, con foco en la seguridad y buen trabajo en equipo."',
-  exp:'Por cada empleo (del más reciente al más antiguo): empresa, ciudad, cargo y el periodo (Mes año – Mes año).\n\n• Función general: qué hacías en general (máx. 3 líneas).\n• Funciones específicas: tareas concretas, una por línea.\n• Logro: un resultado medible que integre una habilidad blanda.\n\nEjemplo:\nEmpresa: Minera Centinela · Ciudad: Antofagasta\nCargo: Operador de camión de extracción · Periodo: Ene 2018 – Ago 2020\nFunción general: "Operación de camión tolva en botadero cumpliendo procedimientos de seguridad."\nFunción específica: "Chequeo básico del equipo y reporte de anomalías."\nLogro: "Reduje en 15% los tiempos de detención coordinando con mantención."',
+  exp:'Por cada empleo (del más reciente al más antiguo): empresa, ciudad, cargo y el periodo (Mes año – Mes año).\n\n• Función 1, 2 y 3: escribe hasta tres tareas concretas que hacías, una en cada línea.\n• Logro (opcional): un resultado medible que integre una habilidad blanda.\n\nEjemplo:\nEmpresa: Minera Centinela · Ciudad: Antofagasta\nCargo: Operador de camión de extracción · Periodo: Ene 2018 – Ago 2020\nFunción 1: "Operación de camión tolva en botadero cumpliendo procedimientos de seguridad."\nFunción 2: "Chequeo básico del equipo y reporte de anomalías."\nFunción 3: "Coordinación con mantención."\nLogro: "Reduje en 15% los tiempos de detención."',
   aca:'Tus estudios, del más alto al más básico. Por cada uno: nivel (Enseñanza Media / Técnico / Título / Magíster), el título o carrera, la institución y la ciudad con los años.\n\nEjemplo:\nNivel: Técnico Nivel Superior · Título: Mantención Industrial\nInstitución: INACAP · Ciudad y años: Antofagasta · 2015 – 2018',
   cur:'Cursos, diplomados, charlas, talleres o seminarios a los que asististe. Pon el nombre, la institución y el año.\n\nEjemplo: "Trabajo en altura" · Mutual de Seguridad · 2022.',
   info:'Idiomas y software con su nivel, y en "Otros" actividades que reflejen habilidades blandas.\n\nEjemplos:\nIdioma: Inglés · nivel intermedio\nSoftware: MS Office · nivel intermedio\nOtros: "Voluntariado en cuerpo de bomberos."'
@@ -142,7 +149,7 @@ function acInfoCerrar(){ const h=document.getElementById('acInfoHost'); if(h) h.
 
 // ── Mapear CV → objeto para el exportador Harvard / payload ──────────────────
 function _expH(){ return CV.experiencia.map(e=>({cargo:e.cargo,empresa:e.empresa,ciudad:e.ciudad,periodo:e.periodo,desde:e.periodo,
-  funciones:[e.funcion_general].concat((e.funciones_txt||'').split('\n')).map(s=>s.trim()).filter(Boolean),logro:e.logro})); }
+  funciones:(e.funciones||[]).map(s=>(s||'').trim()).filter(Boolean),logro:e.logro})); }
 // Títulos exactos del Modelo CV de AMSA para el PDF (el exportador Harvard los acepta por opción).
 const AC_TITULOS={perfil:'Resumen Profesional',educacion:'Antecedentes Académicos',experiencia:'Antecedentes Laborales',cursos:'Seminarios y Cursos',habilidades:'Información Adicional'};
 function _acaH(){ return CV.academico.map(a=>({titulo:(a.nivel?a.nivel+' · ':'')+(a.titulo||''),institucion:(a.institucion||'')+(a.ciudad?', '+a.ciudad:''),periodo:a.periodo})); }

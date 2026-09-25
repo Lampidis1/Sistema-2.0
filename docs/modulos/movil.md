@@ -96,6 +96,14 @@ sexo, nacionalidad, residencia, nivel de estudios, cesantía y qué servicios.
 > El cuestionario dejó de repetir lo que ya está en los antecedentes (residencia,
 > estudios, situación/cesantía, servicio, ejecutivo).
 
+**Apresto (Fase 2):** al generar el link de armado de CV se muestra un **QR**
+(qrcodejs, dibujado local, sin servicios externos) para que la persona lo escanee
+con su cámara, más un botón **«Abrir en otra pestaña»** y copiar. El armador
+(`modules/empleabilidad/armar-cv.html`) cambió: **Localidad** en vez de Dirección,
+**Función 1/2/3** en vez de «Función general + específicas», **Logro opcional**, y
+las secciones de académicos y cursos parten **precargadas** con una fila lista
+(con el nivel de estudios captado en Móvil, si viene).
+
 La antigua pestaña "Cuestionario" pasó a ser un **📊 Dashboard**
 (`movil-dashboard.js`, Chart.js): totales, cuestionarios completos, % por
 servicio, combinaciones, por comuna y por sexo, y un gráfico barra/línea con
