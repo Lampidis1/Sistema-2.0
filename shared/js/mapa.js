@@ -186,7 +186,14 @@ Mapa.prototype._render = function(){
       ctx.beginPath(); ctx.arc(q[0],q[1],e.puntoR||2.6,0,Math.PI*2);
       ctx.fillStyle=e.puntoColor||'#5f6973'; ctx.fill();
       const lbl=(f.properties&&f.properties[lblKey])||'';
-      if(lbl){
+      // Para no saturar: al alejar (ppd < puntoLabelMinPpd) solo se rotulan las
+      // entidades "siempre" (p. ej. Ciudad/Pueblo); al acercar, todas.
+      let mostrar=!!lbl;
+      if(mostrar && e.puntoLabelMinPpd && this.view.ppd < e.puntoLabelMinPpd){
+        const ent=f.properties&&f.properties.entidad;
+        mostrar = Array.isArray(e.puntoLabelSiempre) && e.puntoLabelSiempre.indexOf(ent)>=0;
+      }
+      if(mostrar){
         ctx.font=e.puntoFont||'11px system-ui,sans-serif';
         ctx.textAlign='left'; ctx.textBaseline='middle';
         ctx.lineWidth=3; ctx.strokeStyle=e.puntoHalo||'rgba(255,255,255,.85)';

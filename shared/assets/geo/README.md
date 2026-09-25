@@ -13,7 +13,7 @@ Datos vectoriales **públicos** (geometría de límites y calles) para dibujar m
 |---|---|---|
 | `comunas-antofagasta.geojson` | Las 9 comunas de la Región de Antofagasta (polígonos). | IGN/BCN (shapefile oficial), reproyectado y simplificado. |
 | `provincias-antofagasta.geojson` | Las 3 provincias (Antofagasta, El Loa, Tocopilla). | ídem |
-| `localidades-antofagasta.geojson` | 19 localidades (Ciudad/Pueblo/Aldea) como puntos, con nombre y comuna. | Áreas Pobladas (centroide). |
+| `localidades-antofagasta.geojson` | 34 localidades habitadas (Ciudad/Pueblo/Caleta/Aldea) como puntos, con nombre, comuna, entidad y población 2017. | INE 2017 / OpenStreetMap. |
 | `sierra-gorda-calles.geojson` | Calles de Sierra Gorda. | OpenStreetMap. |
 | `sierra-gorda-edificios.geojson` | Edificios. | OpenStreetMap. |
 | `sierra-gorda-servicios.geojson` | Puntos de servicio. | OpenStreetMap. |

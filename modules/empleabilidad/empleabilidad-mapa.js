@@ -43,8 +43,8 @@ async function mapCargar(){
     const [op,at,base]=await Promise.all([
       SB.from('operativos').select('*').neq('estado','Eliminado').order('created_at',{ascending:false}),
       SB.from('atenciones').select('operativo_id,comuna,sexo,apresto,intermediacion,formacion,nivel_estudios,created_at').neq('estado_registro','Eliminado'),
-      MapaAM.cargar({comunas:'../../shared/assets/geo/comunas-antofagasta.geojson',
-                     localidades:'../../shared/assets/geo/localidades-antofagasta.geojson'})
+      MapaAM.cargar({comunas:'../../shared/assets/geo/comunas-antofagasta.geojson?v=20260925b',
+                     localidades:'../../shared/assets/geo/localidades-antofagasta.geojson?v=20260925b'})
     ]);
     EM.operativos=(op.data||[]).filter(o=>o.lat!=null&&o.lng!=null);
     EM.atenciones=(at.data||[]).filter(a=>a.operativo_id);
@@ -113,9 +113,12 @@ async function mapInit(){
   EM.mapa.setBase({ poligonos:[EM.base&&EM.base.comunas].filter(Boolean), lineas:[],
     puntos:[EM.base&&EM.base.localidades].filter(Boolean),
     estilos:{fondo:'#eef3f2', poligonoFill:'rgba(0,163,153,.08)', poligonoStroke:'rgba(0,105,115,.35)', poligonoW:1,
-             puntoColor:'#7a8790', puntoR:2.6, puntoLabelColor:'#3a4550', puntoFont:'11px system-ui,sans-serif', puntoHalo:'rgba(238,243,242,.9)'} });
+             puntoColor:'#7a8790', puntoR:2.6, puntoLabelColor:'#3a4550', puntoFont:'11px system-ui,sans-serif', puntoHalo:'rgba(238,243,242,.9)',
+             puntoLabelSiempre:['Ciudad','Pueblo']} });
   EM.mapa.fit(30);
   const b=EM.mapa.bounds(); if(b){ EM.mapa.setLimites(b,{minMult:0.9, maxPpd:400000}); EM.thresh=EM.mapa.minppd*3.2; }
+  // Al alejar solo se rotulan ciudades/pueblos; al acercar, todas las localidades.
+  if(EM.mapa.base&&EM.mapa.base.estilos) EM.mapa.base.estilos.puntoLabelMinPpd=EM.thresh;
   EM.modo=''; mapPintar();
 }
 function mapOnView(m){
