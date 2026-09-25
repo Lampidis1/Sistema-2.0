@@ -47,11 +47,31 @@ async function mapCargar(){
                      localidades:'../../shared/assets/geo/localidades-antofagasta.geojson?v=20260925b'})
     ]);
     EM.operativos=(op.data||[]).filter(o=>o.lat!=null&&o.lng!=null);
-    EM.atenciones=(at.data||[]).filter(a=>a.operativo_id);
+    // Se cuentan TODAS las atenciones. La ubicación es el PUNTO DE ATENCIÓN
+    // (operativo). Las que no tienen operativo caen al centro de su comuna.
+    EM.atenciones=(at.data||[]);
     EM.base=base;
+    EM.centro=emCentroides(base&&base.localidades);
     EM.cargado=true;
   }catch(e){ toast('Error al cargar el mapa: '+(e.message||e),'err'); }
 }
+// Centro de cada comuna = su cabecera (Ciudad/Pueblo) o el punto más poblado.
+// Sirve para ubicar atenciones sin operativo (sin coordenada propia).
+function emNorm(s){ return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+function emCentroides(loc){
+  const c={}; const feats=(loc&&loc.features)||[];
+  feats.forEach(f=>{ const p=f.properties||{}, g=f.geometry||{}; if(g.type!=='Point') return;
+    const com=emNorm(p.comuna); if(!com) return;
+    const cab=/ciudad|cabecera/i.test(p.entidad||''); const pob=+p.poblacion||0;
+    const cur=c[com];
+    // prioridad: cabecera > mayor población
+    if(!cur || (cab && !cur.cab) || (cab===cur.cab && pob>cur.pob)){
+      c[com]={lng:g.coordinates[0], lat:g.coordinates[1], cab, pob};
+    }
+  });
+  return c;
+}
+function emCentroComuna(nombre){ const k=emNorm(nombre); const p=EM.centro&&EM.centro[k]; return p?[p.lng,p.lat]:null; }
 
 // ── filtro de tiempo (con fecha de referencia + navegación) ──────────────────
 function mapEnRango(iso){
@@ -100,10 +120,18 @@ function mapNav(dir){
   EM.ref=r; mapFiltrosRender(); mapPintar();
 }
 
-// atenciones vigentes según filtro, con su operativo resuelto
+// atenciones vigentes según filtro, con su operativo resuelto (puede no tener).
 function mapAtenciones(){
   const opById={}; EM.operativos.forEach(o=>opById[o.operativo_id]=o);
-  return EM.atenciones.filter(a=>opById[a.operativo_id] && mapEnRango(a.created_at)).map(a=>({...a, _op:opById[a.operativo_id]}));
+  return EM.atenciones.filter(a=>a.estado_registro!=='Eliminado' && mapEnRango(a.created_at))
+    .map(a=>({...a, _op:opById[a.operativo_id]||null}));
+}
+// Comuna donde se ATENDIÓ (la del operativo; si no hay, la que trae la atención).
+function mapComunaAtencion(a){ return (a._op&&a._op.comuna) || a.comuna || 'Sin comuna'; }
+// Coordenada del punto de atención: el operativo, o el centro de su comuna.
+function mapCoord(a){
+  if(a._op && a._op.lat!=null && a._op.lng!=null) return [a._op.lng, a._op.lat];
+  const c=emCentroComuna(mapComunaAtencion(a)); return c||null;
 }
 
 // Ciudades con calles vectorizadas (GeoJSON del repo). Se cargan por DEMANDA al
@@ -169,16 +197,22 @@ function mapPintar(refit){
   EM.modo = EM.modo || (EM.mapa.view.ppd < EM.thresh ? 'comuna':'operativo');
   let pines=[], grupos=[];
   if(EM.modo==='comuna'){
+    // Agrupa por la comuna DONDE SE ATENDIÓ (no la de origen de la persona).
     const g={};
-    ats.forEach(a=>{ const c=a.comuna||a._op.comuna||'Sin comuna';
-      (g[c]=g[c]||{comuna:c, n:0, lat:0, lng:0, ats:[]}); g[c].n++; g[c].lat+=a._op.lat; g[c].lng+=a._op.lng; g[c].ats.push(a); });
-    grupos=Object.values(g).map(x=>({...x, lat:x.lat/x.n, lng:x.lng/x.n}));
-    pines=grupos.map((x,i)=>({id:'c'+i, lat:x.lat, lng:x.lng, label:x.n, r:mapR(x.n), color:'#00A399', data:{tipo:'comuna',g:x}}));
+    ats.forEach(a=>{ const c=mapComunaAtencion(a); const xy=mapCoord(a);
+      (g[c]=g[c]||{comuna:c, n:0, sx:0, sy:0, nc:0, ats:[]});
+      g[c].n++; g[c].ats.push(a); if(xy){ g[c].sx+=xy[0]; g[c].sy+=xy[1]; g[c].nc++; } });
+    grupos=Object.values(g).map(x=>({...x, lng:x.nc?x.sx/x.nc:null, lat:x.nc?x.sy/x.nc:null}));
+    pines=grupos.filter(x=>x.lat!=null).map((x,i)=>({id:'c'+i, lat:x.lat, lng:x.lng, label:x.n, r:mapR(x.n), color:'#00A399', data:{tipo:'comuna',g:x}}));
   }else{
+    // Agrupa por operativo; las atenciones sin operativo, por comuna atendida.
     const g={};
-    ats.forEach(a=>{ const id=a.operativo_id; (g[id]=g[id]||{op:a._op, n:0, ats:[]}); g[id].n++; g[id].ats.push(a); });
+    ats.forEach(a=>{ const key=a._op?('op:'+a.operativo_id):('sc:'+mapComunaAtencion(a)); const xy=mapCoord(a);
+      (g[key]=g[key]||{op:a._op, comuna:mapComunaAtencion(a), n:0, ats:[], xy});
+      g[key].n++; g[key].ats.push(a); if(!g[key].xy&&xy) g[key].xy=xy; });
     grupos=Object.values(g);
-    pines=grupos.map((x,i)=>({id:'o'+i, lat:x.op.lat, lng:x.op.lng, label:x.n, r:mapR(x.n), color:'#5b4fcf', data:{tipo:'operativo',g:x}}));
+    pines=grupos.filter(x=>x.xy).map((x,i)=>({id:'o'+i, lat:x.xy[1], lng:x.xy[0], label:x.n, r:mapR(x.n),
+      color:x.op?'#5b4fcf':'#8a949a', data:{tipo:'operativo',g:x}}));
   }
   EM.mapa.setPines(pines);
   if(refit!==false && grupos.length){ /* no re-encuadrar en cada modo para no marear */ }
@@ -204,7 +238,8 @@ function mapLista(grupos){
   el.innerHTML=`<div class="em-lista-t">${EM.modo==='comuna'?'Por ciudad / comuna':'Por punto de atención'} · ${EM_FLABEL[EM.filtro]}</div>`+
     (!ord.length?'<div class="em-nota">Sin atenciones en este rango. Cambia el filtro de tiempo.</div>'
     : ord.map(x=>{
-        const nom=EM.modo==='comuna'?x.comuna:((x.op.lugar?x.op.lugar+' · ':'')+(x.op.comuna||''));
+        const nom=EM.modo==='comuna'?x.comuna
+          :(x.op?((x.op.lugar?x.op.lugar+' · ':'')+(x.op.comuna||'')):(x.comuna+' · sin operativo'));
         return `<div class="em-row"><div>${esc(nom||'—')}</div><b>${x.n}</b></div>`;
       }).join(''));
   // enlazar cada fila a su grupo para abrir la ficha (sin serializar en el HTML)
@@ -215,11 +250,11 @@ function mapLista(grupos){
 function mapFicha(pin){ if(pin&&pin.data&&pin.data.g) mapFichaGrupo(pin.data.g); }
 function mapFichaGrupo(g){
   const ats=g.ats||[];
-  const nom = g.comuna || ((g.op&&g.op.lugar?g.op.lugar+' · ':'')+((g.op&&g.op.comuna)||'')) || 'Punto';
+  const nom = g.op ? ((g.op.lugar?g.op.lugar+' · ':'')+(g.op.comuna||'')) : (g.comuna||'Punto');
   const h=ats.filter(a=>/^m/i.test(a.sexo||'')).length, m=ats.filter(a=>/^f/i.test(a.sexo||'')).length, sx=ats.length-h-m;
   const ap=ats.filter(a=>a.apresto).length, it=ats.filter(a=>a.intermediacion).length, fo=ats.filter(a=>a.formacion).length;
   const pct=n=>ats.length?Math.round(n/ats.length*100):0;
-  const porComuna={}; ats.forEach(a=>{const c=a.comuna||(a._op&&a._op.comuna)||'—';porComuna[c]=(porComuna[c]||0)+1;});
+  const porComuna={}; ats.forEach(a=>{const c=a.comuna||'—';porComuna[c]=(porComuna[c]||0)+1;});
   const el=document.getElementById('emFicha');
   el.innerHTML=`<div class="em-ov" onmousedown="if(event.target===this)mapCerrarFicha()"><div class="em-fbox">
     <div class="em-fh"><div>📍 ${esc(nom)}</div><button onclick="mapCerrarFicha()">✕</button></div>
@@ -235,7 +270,7 @@ function mapFichaGrupo(g){
       ${mapBar('Intermediación',it,pct(it),'#5b4fcf')}
       ${mapBar('Formación',fo,pct(fo),'#F2A900')}
     </div>
-    ${Object.keys(porComuna).length>1?`<div class="em-fsec">Por comuna de la persona</div>
+    ${Object.keys(porComuna).length>=1?`<div class="em-fsec">Comuna de origen de la persona</div>
       <div class="em-fcom">${Object.entries(porComuna).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<span>${esc(c)}: <b>${n}</b></span>`).join('')}</div>`:''}
   </div></div>`;
 }

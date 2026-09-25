@@ -195,7 +195,15 @@ function rcAprestoHTML(){
 async function rcGenerarLinkCV(){
   const per=rcPersona(); if(!per.rut){ toast('Escribe el RUT','err'); return; }
   try{
-    const {data,error}=await SB.from('cv_links').insert({rut:per.rut, nombre:per.nombre||null, created_by:miNombre()}).select('token').single();
+    // Persiste lo ya escrito en la ficha (RUT, nombre, correo, teléfono, comuna,
+    // etc.) ANTES de generar el link, para que la persona lo abra con esos datos
+    // precargados. Regla 5: nada viaja en la URL; el token los trae desde Supabase.
+    let cvId=null;
+    if((rcVal('fNombres')||rcVal('fApellidos')) && typeof guardarRegistro==='function'){
+      try{ await guardarRegistro(); }catch(e){}
+      cvId=(typeof ACTUAL!=='undefined'&&ACTUAL&&ACTUAL.cv_id)||null;
+    }
+    const {data,error}=await SB.from('cv_links').insert({rut:per.rut, nombre:per.nombre||null, cv_id:cvId, created_by:miNombre()}).select('token').single();
     if(error) throw error;
     RC.did.apresto=true;
     const url=location.origin+'/modules/empleabilidad/armar-cv.html?t='+data.token;
