@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de Vacante · Candidatos derivados · Antofagasta Minerals</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="../../config/supabase.config.js"></script>
+<style>
+  :root{--teal:#00A399;--teal-dk:#006973;--teal-lt:#E4F6F5;--gold:#F2A900;--ink:#1C2632;--mut:#5F6973;--bd:#D7DEE4;--bg:#F4F7F8;
+    --ok:#1e7e34;--ok-lt:#e7f4ec;--warn:#b8860b;--warn-lt:#fbf3dd;--bad:#c0311b;--bad-lt:#fbe9e6}
+  *{box-sizing:border-box}body{margin:0;font-family:'Inter',system-ui,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  h1,h2,h3{font-family:'Barlow Condensed',sans-serif;margin:0}
+  header{background:var(--teal-dk);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:14px}
+  header img{height:30px}
+  .h-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.25rem;text-transform:uppercase}
+  .h-s{font-size:.8rem;opacity:.9}
+  main{max-width:1000px;margin:0 auto;padding:20px 16px 60px}
+  .estado{max-width:520px;margin:60px auto;text-align:center;color:var(--mut)}
+  .estado .ico{font-size:2.4rem}
+  .card{background:#fff;border:1px solid var(--bd);border-radius:14px;padding:18px 20px;margin-bottom:16px}
+  .vac-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.5rem;color:var(--teal-dk)}
+  .vac-sub{color:var(--mut);font-size:.9rem;margin-top:2px}
+  .vac-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .chip{background:var(--teal-lt);color:var(--teal-dk);border-radius:20px;padding:3px 12px;font-size:.78rem;font-weight:600}
+  .vac-desc{font-size:.9rem;color:var(--ink);margin-top:12px;line-height:1.55}
+  .comps{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+  .comp{font-size:.76rem;border:1px solid var(--bd);border-radius:7px;padding:3px 9px}
+  .comp.exc{background:var(--bad-lt);border-color:#e7b6ad;color:var(--bad);font-weight:600}
+  .sec-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.2rem;color:var(--teal-dk);text-transform:uppercase;margin-bottom:4px}
+  .kpis{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 6px}
+  .kpi{background:#fff;border:1px solid var(--bd);border-radius:10px;padding:8px 14px;text-align:center;min-width:96px}
+  .kpi b{display:block;font-size:1.3rem;color:var(--teal-dk)} .kpi span{font-size:.68rem;color:var(--mut);text-transform:uppercase}
+  .tblwrap{overflow-x:auto;border:1px solid var(--bd);border-radius:12px;background:#fff}
+  table{border-collapse:collapse;width:100%;min-width:760px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #eef2f3;font-size:.86rem;vertical-align:top}
+  thead th{background:#f2f6f6;color:var(--teal-dk);font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;font-size:.76rem}
+  tbody tr:last-child td{border-bottom:none}
+  select,input,textarea{font-family:inherit;border:1.5px solid var(--bd);border-radius:8px;padding:6px 9px;font-size:.84rem;color:var(--ink)}
+  select:focus,input:focus,textarea:focus{outline:none;border-color:var(--teal)}
+  .est{font-weight:600}
+  .est.reg{color:var(--mut)} .est.eval{color:var(--warn)} .est.ok{color:var(--ok)} .est.no{color:var(--bad)}
+  .btn{background:var(--teal-dk);color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap}
+  .btn.g{background:#eef2f3;color:var(--ink)}
+  .btn:hover{filter:brightness(1.05)}
+  .save-row{display:flex;gap:6px;align-items:center;margin-top:5px}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:#1f2a2c;color:#fff;padding:11px 17px;border-radius:10px;font-weight:600;opacity:0;pointer-events:none;transition:.2s;z-index:99}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}.toast.ok{background:var(--ok)}.toast.err{background:var(--bad)}
+  .nota{font-size:.82rem;color:var(--mut);margin:6px 0 12px}
+  @media(max-width:600px){ main{padding:14px 12px 50px} }
+</style>
+</head>
+<body>
+<header>
+  <img src="../../shared/assets/logo-amsa-873.png" alt="Antofagasta Minerals">
+  <div><div class="h-t">Gestión de Vacante</div><div class="h-s">Candidatos derivados · Antofagasta Minerals</div></div>
+</header>
+
+<div id="estado" class="estado"><div class="ico">⏳</div><h2>Cargando…</h2></div>
+<main id="app" style="display:none"></main>
+<div class="toast" id="toast"></div>
+
+<script src="empleabilidad-harvard.js?v=20260913a"></script>
+<script src="gestion-vacante.js?v=20260925a"></script>
+</body>
+</html>

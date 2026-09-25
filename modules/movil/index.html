@@ -13,7 +13,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="movil.css?v=20260925b">
+<link rel="stylesheet" href="movil.css?v=20260925c">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -70,6 +70,7 @@
        inferior, que se alcanza con el pulgar. -->
   <nav class="navtabs">
     <button class="active" data-p="recepcion" onclick="movTab('recepcion',this)">🎯 Recepción</button>
+    <button data-p="intermediacion" onclick="movTab('intermediacion',this)">🔗 Vacantes</button>
     <button data-p="cuestionario" onclick="movTab('cuestionario',this)">📊 Dashboard</button>
     <button data-p="listado" onclick="movTab('listado',this)">📇 Levantados</button>
   </nav>
@@ -164,6 +165,8 @@
     </div>
 
     <!-- PÁGINA: DASHBOARD (reemplaza el cuestionario) -->
+    <div class="page" id="page-intermediacion"></div>
+
     <div class="page" id="page-cuestionario"></div>
 
     <!-- PÁGINA: LISTADO -->
@@ -181,6 +184,7 @@
 
   <div class="tabbar">
     <button class="active" data-p="recepcion" onclick="movTab('recepcion',this)"><span class="ic">🎯</span>Recepción</button>
+    <button data-p="intermediacion" onclick="movTab('intermediacion',this)"><span class="ic">🔗</span>Vacantes</button>
     <button data-p="cuestionario" onclick="movTab('cuestionario',this)"><span class="ic">📊</span>Dashboard</button>
     <button data-p="listado" onclick="movTab('listado',this)"><span class="ic">📇</span>Listado</button>
   </div>
@@ -197,7 +201,8 @@
   onAcceso: function(user){ return _movilOnAcceso(user); }
 };</script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="movil.js?v=20260925a"></script>
+<script src="movil.js?v=20260925c"></script>
 <script src="movil-recepcion.js?v=20260925b"></script>
+<script src="movil-intermediacion.js?v=20260925a"></script>
 <script src="movil-dashboard.js?v=20260914b"></script></body>
 </html>

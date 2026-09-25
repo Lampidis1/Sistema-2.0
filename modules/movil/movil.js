@@ -25,6 +25,7 @@ function movTab(p,btn){
     b.classList.toggle('active', b.dataset.p===p);
   });
   if(p==='recepcion' && typeof rcRender==='function')rcRender();
+  if(p==='intermediacion' && typeof imRender==='function')imRender();
   if(p==='listado')renderListado();
   if(p==='cuestionario' && typeof dbRender==='function')dbRender();
   window.scrollTo(0,0);

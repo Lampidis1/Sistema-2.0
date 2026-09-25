@@ -96,6 +96,7 @@ function ilVacCard(v){
       <span class="il-card-nd">➡ ${nd} derivación(es)${exc?` · ⛔ ${exc} excluyente(s)`:''}</span>
       <div style="display:flex;gap:6px">
         <button class="il-mini" onclick="ilDerivarModal('${v.vacante_id}')">Derivar</button>
+        <button class="il-mini" onclick="ilLinkEmpresa('${v.vacante_id}')" title="Link del portal para la empresa">🔗</button>
         <button class="il-mini" onclick="ilVacanteModal('${v.vacante_id}')">✏</button>
         <button class="il-mini d" onclick="ilBorrarVacante('${v.vacante_id}')">🗑</button>
       </div>
@@ -181,6 +182,21 @@ async function ilGuardarVacante(id){
     ilCerrar(); await ilCargar(); ilRender(); toast('✅ Vacante guardada','ok');
   }catch(e){ toast('Error: '+e.message,'err'); }
 }
+// Genera el link del portal de la empresa (token) para gestionar los derivados.
+async function ilLinkEmpresa(vid){
+  const v=IL.vacantes.find(x=>x.vacante_id===vid);
+  try{
+    const {data,error}=await SB.from('vacante_links').insert({vacante_id:vid, empresa:(v&&v.empresa)||null, created_by:miNombre()}).select('token').single();
+    if(error) throw error;
+    const url=location.origin+'/modules/empleabilidad/gestion-vacante.html?t='+data.token;
+    ilModal(`<h3>🔗 Link para la empresa</h3>
+      <div class="il-nota">Envíaselo a <b>${esc((v&&v.empresa)||'la empresa')}</b>: verá los candidatos derivados a «${esc((v&&v.cargo)||'')}», descargará sus CV y marcará el seguimiento de contratación/no contratación.</div>
+      <div style="display:flex;gap:8px"><input id="ilVacUrl" readonly value="${esc(url)}" style="flex:1" onclick="this.select()">
+      <button class="il-btn" onclick="ilCopiarLink('ilVacUrl')">Copiar</button></div>
+      <div class="il-modal-acc"><span></span><button class="il-btn g" onclick="ilCerrar()">Cerrar</button></div>`);
+  }catch(e){ toast('Error: '+e.message,'err'); }
+}
+function ilCopiarLink(id){ const i=document.getElementById(id); if(!i) return; i.select(); try{ navigator.clipboard.writeText(i.value); }catch(e){} toast('🔗 Copiado','ok'); }
 async function ilBorrarVacante(id){
   if(!confirm('¿Eliminar esta vacante?')) return;
   try{ const {error}=await SB.from('vacantes').update({estado_registro:'Eliminado',updated_at:ilNow()}).eq('vacante_id',id); if(error) throw error;
