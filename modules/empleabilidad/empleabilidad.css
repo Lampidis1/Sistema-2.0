@@ -212,3 +212,37 @@
 .il-est.eval{color:#b8860b;border-color:#e6c96b}
 .il-est.ok{color:#1e7e34;border-color:#a5d6b3}
 .il-est.no{color:#c0311b;border-color:#f0b8ad}
+
+/* ══ Dashboard con mapa de operativos (Fase 5, em-*) ══════════════════════════ */
+.em-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.em-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.3rem;color:#006973;text-transform:uppercase}
+.em-filtros{display:flex;gap:6px;flex-wrap:wrap}
+.em-fbtn{border:1.5px solid #D7DEE4;background:#fff;border-radius:8px;padding:6px 12px;font-size:.82rem;font-weight:600;cursor:pointer;color:#5F6973}
+.em-fbtn.on{background:#E4F6F5;border-color:#00A399;color:#006973}
+.em-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.em-kpi{background:#fff;border:1px solid #D7DEE4;border-radius:11px;padding:9px 15px;text-align:center;min-width:96px}
+.em-kpi b{display:block;font-size:1.35rem;color:#006973}.em-kpi span{font-size:.66rem;color:#5F6973;text-transform:uppercase}
+.em-wrap{display:grid;grid-template-columns:1fr 300px;gap:14px}
+@media(max-width:820px){ .em-wrap{grid-template-columns:1fr} }
+.em-mapa{position:relative;overflow:hidden;height:560px;border:1.5px solid #D7DEE4;border-radius:13px;background:#eef3f2}
+@media(max-width:820px){ .em-mapa{height:420px} }
+.em-lista{border:1px solid #D7DEE4;border-radius:13px;background:#fff;padding:12px;max-height:560px;overflow-y:auto}
+.em-lista-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.92rem;color:#006973;text-transform:uppercase;margin-bottom:8px}
+.em-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:.86rem}
+.em-row:hover{background:#f2f6f6}.em-row b{color:#006973;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem}
+.em-nota{font-size:.83rem;color:#5F6973;padding:8px 4px}
+.em-mapa .mapa-zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:5px;z-index:10}
+.em-mapa .mapa-zoom button{width:34px;height:34px;font-size:20px;line-height:1;border:1.5px solid #D7DEE4;background:#fff;color:#006973;border-radius:8px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15);font-weight:700;display:flex;align-items:center;justify-content:center}
+/* ficha del pin */
+.em-ov{position:fixed;inset:0;background:rgba(20,25,35,.5);z-index:9990;display:flex;align-items:safe center;justify-content:center;padding:16px;overflow-y:auto}
+.em-fbox{background:#fff;border-radius:15px;max-width:460px;width:100%;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.em-fh{display:flex;justify-content:space-between;align-items:center;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.2rem;color:#006973;margin-bottom:12px}
+.em-fh button{background:none;border:none;font-size:1.3rem;color:#aaa;cursor:pointer}
+.em-fkpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.em-fkpis>div{flex:1;min-width:80px;background:#f6f9f9;border:1px solid #e3ebec;border-radius:10px;padding:9px;text-align:center}
+.em-fkpis b{display:block;font-size:1.3rem;color:#1C2632}.em-fkpis span{font-size:.66rem;color:#5F6973;text-transform:uppercase}
+.em-fsec{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.8rem;color:#006973;text-transform:uppercase;margin:10px 0 6px}
+.em-bar{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.82rem}
+.em-bar-l{width:110px;flex:none}.em-bar-t{flex:1;background:#eef2f3;border-radius:5px;height:9px;overflow:hidden}
+.em-bar-in{height:9px;border-radius:5px}.em-bar-v{width:70px;text-align:right;color:#5F6973;font-variant-numeric:tabular-nums}
+.em-fcom{display:flex;flex-wrap:wrap;gap:6px;font-size:.8rem}.em-fcom span{background:#f2f6f6;border-radius:6px;padding:3px 9px}

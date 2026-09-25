@@ -173,6 +173,7 @@ function showPage(p,btn){
   if(p==='intermediacion') renderIntermediacion();
   if(p==='formacion') renderFormacion();
   if(p==='becados') renderBecados();
+  if(p==='mapa' && typeof mapRender==='function') mapRender();
 }
 // ═══════════════════════ KANBAN (compartido con Proveedores · tabla kanban_cards) ═══════════════════════
 // Tableros propios de empleabilidad + los compartidos con Proveedores (misma base de datos).

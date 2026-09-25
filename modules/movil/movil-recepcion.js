@@ -332,6 +332,7 @@ async function rcGuardarAtencion(){
       // Antecedentes de la recepción (para el dashboard y los filtros)
       nacionalidad:val('fNacion'), residencia:val('fResid'),
       nivel_estudios:val('fEstudios'), cesantia:val('fCesantia'),
+      operativo_id:(typeof opActivoId==='function'?opActivoId():null),
       cuestionario_completo:completo, cuestionario_json:JSON.stringify(cuest),
       ejecutivo:(typeof miNombre==='function'?miNombre():null) });
     if(error) throw error;

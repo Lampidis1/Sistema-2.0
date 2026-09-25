@@ -96,6 +96,17 @@ sexo, nacionalidad, residencia, nivel de estudios, cesantía y qué servicios.
 > El cuestionario dejó de repetir lo que ya está en los antecedentes (residencia,
 > estudios, situación/cesantía, servicio, ejecutivo).
 
+**Operativo + dashboard con mapa (Fase 5):** al iniciar la jornada el ejecutivo
+pulsa **📍 Iniciar operativo** (barra arriba de la Recepción): marca la posición
+del móvil con el **GPS** del teléfono (si no, por el centro de la comuna). Mientras
+el operativo esté activo, cada atención guarda `operativo_id`. En **Empleabilidad →
+🗺 Mapa** hay un dashboard con el mapa de la Región de Antofagasta (motor propio
+`shared/js/mapa.js`): un pin por punto con el número de personas atendidas; al
+**alejar** se agrupan por **ciudad/comuna** (valor combinado) y al **acercar** se
+separan por operativo; filtro de tiempo (día/semana/mes/año) y, al hacer clic en un
+pin, ficha con hombres/mujeres y servicios realizados. Tablas: `operativos` +
+`atenciones.operativo_id`. La coordenada vive solo en Supabase (Reglas 5 y 6).
+
 **Apresto (Fase 2):** al generar el link de armado de CV se muestra un **QR**
 (qrcodejs, dibujado local, sin servicios externos) para que la persona lo escanee
 con su cámara, más un botón **«Abrir en otra pestaña»** y copiar. El armador

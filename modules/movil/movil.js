@@ -11,6 +11,7 @@ async function _movilOnAcceso(user){
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('hUser').textContent=(user.email||'').split('@')[0];
   await cargarLevantados();
+  if(typeof opBootstrap==='function') opBootstrap();   // carga el operativo activo (Fase 5)
   if(typeof rcRender==='function') rcRender();   // pinta la Recepción (pestaña de entrada)
 }
 

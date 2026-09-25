@@ -11,7 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="empleabilidad.css?v=20260914a">
+<link rel="stylesheet" href="empleabilidad.css?v=20260925a">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -79,6 +79,7 @@
     <button class="tab" data-page="formacion" onclick="showPage('formacion',this)">🎓 Formación</button>
     <button class="tab" data-page="becados" onclick="showPage('becados',this)">🎓 Becados</button>
     <button class="tab" data-page="kanban" onclick="showPage('kanban',this)">📋 Kanban</button>
+    <button class="tab" data-page="mapa" onclick="showPage('mapa',this)">🗺 Mapa</button>
   </nav>
 
   <!-- ══ PÁGINA DIRECTORIO ══ -->
@@ -153,6 +154,8 @@
     </div>
     <div id="becContent"></div>
   </div>
+
+  <div class="page" id="page-mapa"></div>
 </div>
 
 <!-- ░░ MODAL BECADO ░░ -->
@@ -257,12 +260,14 @@
   onAcceso: function(user){ return _empOnAcceso(user); }
 };</script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="empleabilidad.js?v=20260913a"></script>
+<script src="empleabilidad.js?v=20260925a"></script>
 <script src="empleabilidad-lectura.js?v=20260816a"></script>
 <script src="empleabilidad-match.js?v=20260816a"></script>
 <script src="empleabilidad-harvard.js?v=20260913a"></script>
 <script src="empleabilidad-intermediacion.js?v=20260925a"></script>
 <script src="empleabilidad-formacion.js?v=20260913a"></script>
+<script src="../../shared/js/mapa.js?v=20260925b"></script>
+<script src="empleabilidad-mapa.js?v=20260925a"></script>
 
 </body>
 </html>
