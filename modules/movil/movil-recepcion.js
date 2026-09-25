@@ -15,7 +15,8 @@
 // <script src> clásico, nunca type="module" (CLAUDE.md §6). Prefijo rc/RC.
 // ═══════════════════════════════════════════════════════════════════════════
 
-let RC = { servicio:null, vacantes:[], vacLoaded:false, cursos:[], curLoaded:false,
+let RC = { servicios:{apresto:false,intermediacion:false,formacion:false},
+           vacantes:[], vacLoaded:false, cursos:[], curLoaded:false,
            did:{apresto:false,intermediacion:false,formacion:false}, cuestAbierto:false };
 
 function rcVal(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
@@ -33,29 +34,21 @@ function rcRender(){
   const cont=document.getElementById('rcBody'); if(!cont) return;
   cont.innerHTML=`
     <div class="card">
-      <div class="sec-t">📋 Encuesta breve</div>
-      <div class="g2">
-        <div class="fld"><label>Situación laboral</label>
-          <select id="rcSituacion"><option value="">—</option><option>Empleado dependiente</option><option>Independiente</option><option>Informal</option><option>Cesante</option></select></div>
-        <div class="fld"><label>¿Le gustaría capacitarse?</label>
-          <select id="rcCapacitar"><option value="">—</option><option>Sí</option><option>No</option></select></div>
-      </div>
-      <div class="fld"><label>¿Qué servicio necesita? — deriva la atención</label></div>
+      <div class="sec-t">¿Qué servicio necesita? — deriva la atención</div>
+      <div class="rc-nota">Marca uno o más. Se registran los servicios que se le harán a la persona.</div>
+      <div id="rcElegMsg" class="rc-eleg"></div>
       <div class="rc-serv">
-        <button class="rc-serv-btn ${RC.servicio==='apresto'?'on':''}" onclick="rcSetServicio('apresto')">
-          <div class="rc-serv-ic">📝</div><b>Apresto laboral</b><span>Crear su CV y preparar entrevista</span></button>
-        <button class="rc-serv-btn ${RC.servicio==='intermediacion'?'on':''}" onclick="rcSetServicio('intermediacion')">
-          <div class="rc-serv-ic">🔗</div><b>Intermediación</b><span>Derivar a un puesto disponible</span></button>
-        <button class="rc-serv-btn ${RC.servicio==='formacion'?'on':''}" onclick="rcSetServicio('formacion')">
-          <div class="rc-serv-ic">🎓</div><b>Formación</b><span>Inscribir en un curso</span></button>
+        ${rcServChk('apresto','📝','Apresto laboral','Crear su CV y preparar entrevista')}
+        ${rcServChk('intermediacion','🔗','Intermediación','Derivar a un puesto disponible')}
+        ${rcServChk('formacion','🎓','Formación','Inscribir en curso / capacitación')}
       </div>
     </div>
 
-    <div id="rcPanel"></div>
+    <div id="rcPaneles"></div>
 
     <div class="card">
       <div class="rc-cuest-head" onclick="rcToggleCuest()">
-        <div class="sec-t" style="margin:0">📝 Cuestionario completo</div>
+        <div class="sec-t" style="margin:0">📝 Cuestionario complementario</div>
         <span class="rc-caret" id="rcCaret">${RC.cuestAbierto?'▲':'▼'}</span>
       </div>
       <div id="rcCuestBody" style="${RC.cuestAbierto?'':'display:none'}">
@@ -67,7 +60,69 @@ function rcRender(){
     <div class="btn-row btn-row-final">
       <button class="btn" onclick="rcGuardarTodo()">💾 Guardar atención</button>
     </div>`;
-  rcRenderPanel();
+  rcEjecutivoMostrar();
+  rcEligibilidad();
+}
+
+// Casilla de un servicio (marcable), con candado si está bloqueado.
+function rcServChk(s,ico,tit,sub){
+  return `<label class="rc-serv-btn ${RC.servicios[s]?'on':''}" id="rcSrv_${s}">
+    <input type="checkbox" ${RC.servicios[s]?'checked':''} onchange="rcToggleServicio('${s}',this.checked)">
+    <div class="rc-serv-ic">${ico}</div><b>${esc(tit)}</b><span>${esc(sub)}</span>
+    <span class="rc-serv-lock" id="rcLock_${s}"></span></label>`;
+}
+function rcEjecutivoMostrar(){
+  const e=document.getElementById('rcEjecutivo');
+  if(e) e.innerHTML='👤 Atiende: <b>'+esc((typeof miNombre==='function'&&miNombre())||'')+'</b>';
+}
+
+// ── Elegibilidad: nacionalidad / residencia / nivel de estudios ──────────────
+// · Extranjero/a sin residencia definitiva → solo Apresto.
+// · Nivel «Básica completa» → bloquea Intermediación.
+function rcEligibilidad(){
+  const val=id=>{ const e=document.getElementById(id); return e?e.value:''; };
+  const nac=val('fNacion'), resid=val('fResid'), est=val('fEstudios');
+  const extranjero=!!nac && !/chilen/i.test(nac);
+  const rowR=document.getElementById('rowResid'); if(rowR) rowR.style.display=extranjero?'':'none';
+  const residOK = !extranjero || resid==='Sí';
+  const basica = est==='Básica completa';
+  const reglas={
+    apresto:       { ok:true, motivo:'' },
+    intermediacion:{ ok: residOK && !basica, motivo: !residOK?'Requiere residencia definitiva':(basica?'Requiere sobre básica completa':'') },
+    formacion:     { ok: residOK, motivo: !residOK?'Requiere residencia definitiva':'' }
+  };
+  ['apresto','intermediacion','formacion'].forEach(s=>{
+    const lab=document.getElementById('rcSrv_'+s), lock=document.getElementById('rcLock_'+s);
+    if(!lab) return;
+    const inp=lab.querySelector('input');
+    if(!reglas[s].ok){
+      lab.classList.add('bloq');
+      if(inp){ inp.disabled=true; if(inp.checked){ inp.checked=false; RC.servicios[s]=false; lab.classList.remove('on'); } }
+      if(lock) lock.textContent='🔒 '+reglas[s].motivo;
+    }else{
+      lab.classList.remove('bloq'); if(inp) inp.disabled=false; if(lock) lock.textContent='';
+    }
+  });
+  const msg=document.getElementById('rcElegMsg');
+  if(msg) msg.innerHTML = (extranjero && !residOK)
+    ? '⚠ Persona extranjera sin residencia definitiva: solo <b>Apresto laboral</b>.'
+    : (basica ? 'ⓘ Nivel «Básica completa»: <b>Intermediación</b> bloqueada.' : '');
+  rcRenderPaneles();
+}
+function rcToggleServicio(s,val){
+  RC.servicios[s]=!!val;
+  const l=document.getElementById('rcSrv_'+s); if(l) l.classList.toggle('on',!!val);
+  rcRenderPaneles();
+}
+function rcRenderPaneles(){
+  const p=document.getElementById('rcPaneles'); if(!p) return;
+  let h='';
+  if(RC.servicios.apresto)        h+=rcAprestoHTML();
+  if(RC.servicios.intermediacion) h+=rcInterHTML();
+  if(RC.servicios.formacion)      h+=rcFormacionHTML();
+  p.innerHTML=h;
+  if(RC.servicios.intermediacion){ if(RC.vacLoaded) rcRenderVacantes(); else rcCargarVacantes(); }
+  if(RC.servicios.formacion){ if(RC.curLoaded) rcRenderCursos(); else rcCargarCursos(); }
 }
 
 // Guarda el CV completo (cv_personas) y la atención en un solo paso, para que no
@@ -96,14 +151,6 @@ function rcLeerCuest(){
   return out;
 }
 
-function rcSetServicio(s){ RC.servicio=s; document.querySelectorAll('.rc-serv-btn').forEach(b=>b.classList.toggle('on', b.getAttribute('onclick').includes("'"+s+"'"))); rcRenderPanel(); }
-function rcRenderPanel(){
-  const p=document.getElementById('rcPanel'); if(!p) return;
-  if(RC.servicio==='apresto') p.innerHTML=rcAprestoHTML();
-  else if(RC.servicio==='intermediacion'){ p.innerHTML=rcInterHTML(); if(RC.vacLoaded) rcRenderVacantes(); else rcCargarVacantes(); }
-  else if(RC.servicio==='formacion'){ p.innerHTML=rcFormacionHTML(); if(RC.curLoaded) rcRenderCursos(); else rcCargarCursos(); }
-  else p.innerHTML='';
-}
 
 // ── 1 · APRESTO → link para crear el CV ──────────────────────────────────────
 function rcAprestoHTML(){
@@ -209,24 +256,33 @@ async function rcInscribirCurso(cursoId){
 async function rcGuardarAtencion(){
   const per=rcPersona();
   if(!per.rut && !per.nombre){ toast('Identifica a la persona (RUT o nombre)','err'); return; }
+  // Al menos un servicio marcado (los que se le harán a la persona).
+  const svc=RC.servicios||{};
+  if(!svc.apresto && !svc.intermediacion && !svc.formacion){ toast('Marca al menos un servicio','err'); return; }
   const cuest=rcLeerCuest();
   const totalQ=(typeof CUEST!=='undefined'?CUEST:[]).length||1;
   const completo = Object.keys(cuest).length >= Math.ceil(totalQ*0.7);
-  const partes=(per.nombre||'').split(' ');
+  const val=id=>{ const e=document.getElementById(id); return e&&e.value?e.value:null; };
   try{
     const {error}=await SB.from('atenciones').insert({
       atencion_id:'at_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6),
       cv_id:(ACTUAL&&ACTUAL.cv_id)||null, rut:per.rut||null, nombre:per.nombre||null,
       comuna:per.comuna||null, sexo:per.sexo||null,
-      apresto:RC.did.apresto, intermediacion:RC.did.intermediacion, formacion:RC.did.formacion,
-      cuestionario_completo:completo, cuestionario_json:JSON.stringify(cuest), ejecutivo:miNombre() });
+      // Servicios que se le harán a la persona (casillas marcadas)
+      apresto:!!svc.apresto, intermediacion:!!svc.intermediacion, formacion:!!svc.formacion,
+      // Antecedentes de la recepción (para el dashboard y los filtros)
+      nacionalidad:val('fNacion'), residencia:val('fResid'),
+      nivel_estudios:val('fEstudios'), cesantia:val('fCesantia'),
+      cuestionario_completo:completo, cuestionario_json:JSON.stringify(cuest),
+      ejecutivo:(typeof miNombre==='function'?miNombre():null) });
     if(error) throw error;
     // Si hay una persona cargada, también deja el cuestionario en su ficha.
     if(ACTUAL && ACTUAL.cv_id && Object.keys(cuest).length){
       try{ await SB.from('cv_personas').update({cuestionario_json:JSON.stringify(cuest),updated_at:new Date().toISOString()}).eq('cv_id',ACTUAL.cv_id); }catch(e){}
     }
     toast('✅ Atención guardada','ok');
-    RC.did={apresto:false,intermediacion:false,formacion:false}; RC.servicio=null; rcRender();
+    RC.did={apresto:false,intermediacion:false,formacion:false};
+    RC.servicios={apresto:false,intermediacion:false,formacion:false}; rcRender();
   }catch(e){ toast('Error al guardar: '+e.message,'err'); }
 }
 

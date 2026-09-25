@@ -77,12 +77,24 @@ importe todavía más acá.
 
 ## Recepción y Dashboard (2026-09)
 
-La pestaña de entrada es **🎯 Recepción** (`movil-recepcion.js`): se recibe con
-una encuesta breve + el **cuestionario completo desplegable**, y se deriva a
-**Apresto** (genera el link del armador de CV), **Intermediación** (lista las
-`vacantes` y crea una `derivación`) o **Formación** (lista los `cursos` e
-inscribe en `formaciones`). Al "Guardar atención" se registra una fila en
-`atenciones` con día/hora automáticos, comuna, sexo y qué servicios se hicieron.
+La pestaña de entrada es **🎯 Recepción** (`movil-recepcion.js`): una **planilla
+de antecedentes** (RUT, género, nombre, apellidos, nacionalidad, localidad =
+comunas de la 2ª región, nivel de estudios, especialización, cesantía, teléfono,
+correo) que **decide qué servicios se pueden marcar**:
+
+- **Extranjero/a sin residencia definitiva** → solo **Apresto** (el campo
+  Residencia aparece solo si la nacionalidad no es chilena).
+- Nivel **«Básica completa»** → **Intermediación bloqueada**.
+
+Los 3 servicios se marcan con **casillas** (1, 2 o 3 a la vez); cada uno marcado
+despliega su panel: **Apresto** (link del armador de CV), **Intermediación**
+(lista `vacantes` y crea `derivación`) y **Formación** (lista `cursos` e inscribe
+en `formaciones`). El **ejecutivo se toma automáticamente** del usuario logueado.
+Al "Guardar atención" se registra una fila en `atenciones` con día/hora, comuna,
+sexo, nacionalidad, residencia, nivel de estudios, cesantía y qué servicios.
+
+> El cuestionario dejó de repetir lo que ya está en los antecedentes (residencia,
+> estudios, situación/cesantía, servicio, ejecutivo).
 
 La antigua pestaña "Cuestionario" pasó a ser un **📊 Dashboard**
 (`movil-dashboard.js`, Chart.js): totales, cuestionarios completos, % por

@@ -36,11 +36,13 @@ let LEVANTADOS=[];    // cache de personas
 let ES_EDICION=false; // si se está complementando un registro existente
 
 function limpiarForm(){
-  ['fNombres','fApellidos','fNac','fNacion','fComuna','fRegion','fDir','fTel','fEmail','fTipoLic','fDisp','fAnios','fOficios','fEducacion','fCursos','fCertif','fObs'].forEach(id=>document.getElementById(id).value='');
-  ['fSexo','fResid','fLic','fMineria','fEstudios'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('fNacion').value='Chilena';
-  document.getElementById('rutWarn').style.display='none';
-  document.getElementById('editInfo').textContent='';
+  const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.value=v||''; };
+  ['fNombres','fApellidos','fNac','fComuna','fRegion','fTel','fEmail','fTipoLic','fDisp','fAnios','fOficios','fEducacion','fCursos','fCertif','fObs',
+   'fSexo','fResid','fLic','fMineria','fEstudios','fCesantia'].forEach(id=>set(id,''));
+  set('fNacion','Chilena'); set('fRegion','Antofagasta');
+  const rw=document.getElementById('rutWarn'); if(rw) rw.style.display='none';
+  const ei=document.getElementById('editInfo'); if(ei) ei.textContent='';
+  if(typeof rcEligibilidad==='function') rcEligibilidad();
 }
 function nuevoRegistro(){
   ACTUAL={ cv_id:'cv_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), cuestionario:{}, _nuevo:true };
@@ -50,7 +52,7 @@ function nuevoRegistro(){
   toast('Nuevo registro en blanco','ok');
 }
 function formToObj(){
-  const g=id=>document.getElementById(id).value.trim();
+  const g=id=>{ const e=document.getElementById(id); return e?e.value.trim():''; };
   const cursos=g('fCursos').split('\n').filter(x=>x.trim()).map(x=>({evento:x.trim(),tema:'',institucion:'',anio:''}));
   return {
     cv_id:(ACTUAL&&ACTUAL.cv_id)||('cv_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
@@ -65,7 +67,7 @@ function formToObj(){
   };
 }
 function objToForm(c){
-  const s=(id,v)=>document.getElementById(id).value=v||'';
+  const s=(id,v)=>{ const e=document.getElementById(id); if(e) e.value=v||''; };
   s('cRut',c.rut); s('fNombres',c.nombres); s('fApellidos',c.apellidos); s('fNac',c.fecha_nacimiento);
   s('fSexo',c.sexo); s('fNacion',c.nacionalidad); s('fComuna',c.comuna); s('fRegion',c.region);
   s('fDir',c.direccion); s('fTel',c.telefono); s('fEmail',c.email);
@@ -168,21 +170,17 @@ async function registrarCambios(previo, nuevo){
 }
 
 // ═══════════ CUESTIONARIO ═══════════
+// Las preguntas de residencia, nivel de estudios, especialización, situación/
+// cesantía y "qué servicio" ya se responden en los ANTECEDENTES de la recepción
+// (no se repiten aquí). El ejecutivo se toma automáticamente del usuario logueado.
 const CUEST=[
-  {k:'q_residencia',t:'¿Posee residencia definitiva?',op:['Sí','No']},
   {k:'q_discapacidad',t:'¿Cuenta con algún tipo de discapacidad?',op:['No','Sí']},
   {k:'q_discapacidad_cual',t:'En caso afirmativo, ¿cuál?',op:null},
-  {k:'q_estudios',t:'Máximo nivel de estudios',op:['Media completa','Técnico nivel medio completo','Técnico nivel superior completo','Profesional completa','Profesional con especialización']},
-  {k:'q_especializacion',t:'Si cuenta con especialización, registrar',op:null},
-  {k:'q_situacion',t:'Situación laboral actual',op:['Empleado dependiente','Independiente','Informal','Cesante']},
-  {k:'q_cesante_tiempo',t:'Si está cesante, ¿cuánto tiempo?',op:['1 a 3 meses','3 a 6 meses','Más de 6 meses','Un año o más']},
   {k:'q_capacitarse',t:'¿Le gustaría capacitarse?',op:['Sí','No']},
-  {k:'q_servicio',t:'¿Qué servicio le entrega el ejecutivo/a?',op:['Orientación laboral (apresto)','Postulación a vacantes disponibles','Registro de capacitación']},
   {k:'q_postulacion',t:'Si postuló a vacantes, ¿interna o externa?',op:['Interna (Antofagasta Minerals)','Externa (Empresa colaboradora)']},
   {k:'q_apresto',t:'Si hubo orientación (apresto), ¿qué temática?',op:['Mejora de curriculum vitae','Postulación digital efectiva','Preparación para entrevista laboral']},
   {k:'q_tipo_cap',t:'Si registró capacitación, ¿a qué tipo postula?',op:['Ruta formativa Antofagasta Minerals','Capacitación de empresa colaboradora']},
-  {k:'q_vacante_antucoya',t:'¿Postula a vacante interna Antucoya (Operador/a de Producción y Equipos de Apoyo)?',op:['Sí','No']},
-  {k:'q_ejecutivo',t:'¿Qué ejecutivo/a realizó la atención?',op:null}
+  {k:'q_vacante_antucoya',t:'¿Postula a vacante interna Antucoya (Operador/a de Producción y Equipos de Apoyo)?',op:['Sí','No']}
 ];
 function construirCuestionario(){
   const cont=document.getElementById('qForm'); let h='';

@@ -181,12 +181,21 @@ main{padding:22px 28px 40px;max-width:1240px;margin:0 auto}
 .rc-nota{font-size:.8rem;color:var(--text-muted,#6b7780);margin:6px 0;line-height:1.5}
 .rc-link{color:var(--teal,#006973);font-weight:700;cursor:pointer;text-decoration:underline}
 .rc-serv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
-.rc-serv-btn{background:#fff;border:1.5px solid var(--border,#D7DEE4);border-radius:13px;padding:16px 12px;text-align:center;cursor:pointer;font-family:inherit;transition:border-color .15s,box-shadow .15s}
+.rc-serv-btn{position:relative;display:block;background:#fff;border:1.5px solid var(--border,#D7DEE4);border-radius:13px;padding:16px 12px 14px;text-align:center;cursor:pointer;font-family:inherit;transition:border-color .15s,box-shadow .15s}
 .rc-serv-btn:hover{border-color:var(--teal,#006973)}
 .rc-serv-btn.on{border-color:var(--teal,#006973);box-shadow:0 0 0 3px rgba(0,105,115,.14);background:var(--teal-lt,#E4F6F5)}
+.rc-serv-btn input[type=checkbox]{position:absolute;top:9px;right:9px;width:18px;height:18px;accent-color:var(--teal,#006973);cursor:pointer}
+.rc-serv-btn.bloq{opacity:.55;cursor:not-allowed;background:#f5f7f8;border-style:dashed}
+.rc-serv-btn.bloq:hover{border-color:var(--border,#D7DEE4)}
 .rc-serv-ic{font-size:1.9rem;margin-bottom:4px}
 .rc-serv-btn b{display:block;color:var(--dark,#1C2632);margin-bottom:3px}
 .rc-serv-btn span{font-size:.74rem;color:var(--text-muted,#6b7780);display:block;line-height:1.35}
+.rc-serv-lock{display:block;font-size:.68rem;color:#c0311b;margin-top:6px;min-height:0}
+.rc-serv-lock:empty{display:none}
+.rc-eleg{font-size:.82rem;color:#7a5a00;background:#fff8e6;border:1px solid #f0d98a;border-radius:9px;padding:8px 11px;margin:6px 0}
+.rc-eleg:empty{display:none}
+.rc-ejec{font-size:.8rem;color:var(--teal-dk,#006973);background:var(--teal-lt,#E4F6F5);border-radius:8px;padding:6px 11px;margin-bottom:10px;display:inline-block}
+.rc-ejec:empty{display:none}
 .rc-vac{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--border,#D7DEE4);border-radius:11px;padding:11px 13px;margin-bottom:8px}
 .rc-vac-cargo{font-weight:700;font-size:.95rem}
 .rc-vac-emp{font-size:.78rem;color:var(--text-muted,#6b7780)}

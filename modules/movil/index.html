@@ -12,7 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="movil.css?v=20260914b">
+<link rel="stylesheet" href="movil.css?v=20260925a">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -78,19 +78,51 @@
     <div class="page active" id="page-recepcion">
       <div class="card card-ancho">
         <div class="sec-t">🎯 Recepción · ¿a quién atiendes?</div>
+        <div class="rc-ejec" id="rcEjecutivo"></div>
         <div class="rut-warn" id="rutWarn"></div>
         <div class="g2">
           <div class="fld"><label>RUT (se busca si ya existe)</label><input id="cRut" placeholder="12.345.678-9" oninput="buscarPorRut()" onblur="rutBlur(this)"></div>
-          <div class="fld"><label>Sexo</label><select id="fSexo"><option value="">—</option><option>Femenino</option><option>Masculino</option><option>Otro</option></select></div>
+          <div class="fld"><label>Género</label><select id="fSexo" onchange="rcEligibilidad&&rcEligibilidad()"><option value="">—</option><option>Femenino</option><option>Masculino</option><option>Otro</option></select></div>
         </div>
         <div class="g2">
           <div class="fld"><label>Nombre(s)</label><input id="fNombres"></div>
           <div class="fld"><label>Apellido(s)</label><input id="fApellidos"></div>
         </div>
         <div class="g2">
-          <div class="fld"><label>Teléfono</label><input id="fTel" inputmode="tel" placeholder="+56912345678" onblur="normFono(this)"></div>
-          <div class="fld"><label>Comuna</label><input id="fComuna"></div>
+          <div class="fld"><label>Nacionalidad</label>
+            <select id="fNacion" onchange="rcEligibilidad&&rcEligibilidad()">
+              <option>Chilena</option><option>Boliviana</option><option>Peruana</option>
+              <option>Colombiana</option><option>Venezolana</option><option>Argentina</option>
+              <option>Ecuatoriana</option><option>Haitiana</option><option>Otra</option></select></div>
+          <div class="fld"><label>Localidad (comuna)</label>
+            <select id="fComuna">
+              <option value="">—</option>
+              <option>Antofagasta</option><option>Mejillones</option><option>Sierra Gorda</option>
+              <option>Taltal</option><option>Calama</option><option>Ollagüe</option>
+              <option>San Pedro de Atacama</option><option>Tocopilla</option><option>María Elena</option>
+              <option>Otra</option></select></div>
         </div>
+        <div class="g2" id="rowResid" style="display:none">
+          <div class="fld"><label>¿Residencia definitiva? <span style="color:var(--gold)">(extranjero/a)</span></label>
+            <select id="fResid" onchange="rcEligibilidad&&rcEligibilidad()"><option value="">—</option><option>Sí</option><option>En trámite</option><option>No</option></select></div>
+          <div class="fld"></div>
+        </div>
+        <div class="g2">
+          <div class="fld"><label>Máximo nivel de estudios</label>
+            <select id="fEstudios" onchange="rcEligibilidad&&rcEligibilidad()"><option value="">—</option>
+              <option>Básica completa</option><option>Media completa</option>
+              <option>Técnico nivel medio completo</option><option>Técnico nivel superior completo</option>
+              <option>Profesional completa</option><option>Profesional con especialización</option></select></div>
+          <div class="fld"><label>Especialización académica (si aplica)</label><input id="fEducacion" placeholder="Área o título"></div>
+        </div>
+        <div class="g2">
+          <div class="fld"><label>Tiempo de cesantía</label>
+            <select id="fCesantia"><option value="">—</option>
+              <option>1 a 3 meses</option><option>3 a 6 meses</option><option>Más de 6 meses</option>
+              <option>Un año o más</option><option>Trabajando</option></select></div>
+          <div class="fld"><label>Teléfono</label><input id="fTel" inputmode="tel" placeholder="+56912345678" onblur="normFono(this)"></div>
+        </div>
+        <div class="fld"><label>Correo</label><input id="fEmail" inputmode="email"></div>
         <div class="btn-row">
           <button class="btn sec" onclick="nuevoRegistro()">＋ Nuevo</button>
           <button class="btn gray" onclick="document.getElementById('cvArch').click()">📄 Cargar CV (PDF/Word)</button>
@@ -107,14 +139,8 @@
         <div id="rcDatosBody" style="display:none">
           <div class="g2">
             <div class="fld"><label>Fecha nacimiento</label><input id="fNac" placeholder="dd-mm-aaaa"></div>
-            <div class="fld"><label>Nacionalidad</label><input id="fNacion" value="Chilena"></div>
+            <div class="fld"><label>Región</label><input id="fRegion" value="Antofagasta"></div>
           </div>
-          <div class="g2">
-            <div class="fld"><label>¿Residencia definitiva?</label><select id="fResid"><option value="">—</option><option>Sí</option><option>No</option></select></div>
-            <div class="fld"><label>Región</label><input id="fRegion"></div>
-          </div>
-          <div class="fld"><label>Dirección</label><input id="fDir"></div>
-          <div class="fld"><label>Correo</label><input id="fEmail" inputmode="email"></div>
           <div class="g2">
             <div class="fld"><label>Licencia de conducir</label><select id="fLic"><option value="">—</option><option>Sí</option><option>No</option></select></div>
             <div class="fld"><label>Tipo de licencia</label><input id="fTipoLic" placeholder="B, A2, D..."></div>
@@ -125,9 +151,6 @@
             <div class="fld"><label>Años de experiencia</label><input id="fAnios" inputmode="numeric"></div>
           </div>
           <div class="fld"><label>Oficios / cargos de experiencia</label><input id="fOficios"></div>
-          <div class="fld"><label>Máximo nivel de estudios</label>
-            <select id="fEstudios"><option value="">—</option><option>Media completa</option><option>Técnico nivel medio completo</option><option>Técnico nivel superior completo</option><option>Profesional completa</option><option>Profesional con especialización</option></select></div>
-          <div class="fld"><label>Educación / especialización (detalle)</label><input id="fEducacion"></div>
           <div class="fld"><label>Cursos realizados</label><textarea id="fCursos" placeholder="Uno por línea"></textarea></div>
           <div class="fld"><label>Certificaciones</label><textarea id="fCertif" placeholder="Uno por línea"></textarea></div>
           <div class="fld"><label>Observaciones</label><textarea id="fObs"></textarea></div>
@@ -173,7 +196,7 @@
   onAcceso: function(user){ return _movilOnAcceso(user); }
 };</script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="movil.js?v=20260914b"></script>
-<script src="movil-recepcion.js?v=20260914b"></script>
+<script src="movil.js?v=20260925a"></script>
+<script src="movil-recepcion.js?v=20260925a"></script>
 <script src="movil-dashboard.js?v=20260914b"></script></body>
 </html>
