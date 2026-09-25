@@ -205,8 +205,19 @@ async function initMapa() {
     estilos: { fondo: '#eef3f2', lineaStroke: '#b9c7c4', lineaW: 1.6,
                poligonoFill: 'rgba(120,140,150,.16)', poligonoStroke: 'rgba(90,110,120,.35)' },
   });
-  // Centrado en el pueblo (el GeoJSON de calles trae también la red vial regional).
-  MAPA.centrar(SIERRA_GORDA[1], SIERRA_GORDA[0], 46000);
+  // Límite de zoom/paneo al área del pueblo (los hospedajes con ubicación), para
+  // que el mapa no se pierda al alejar ni al arrastrar. Se calcula de todos los
+  // hospedajes con coordenadas, con un margen.
+  const con = DATOS.filter(h => h.lat && h.lng);
+  if (con.length) {
+    let mnLng=180,mnLat=90,mxLng=-180,mxLat=-90;
+    con.forEach(h => { if(h.lng<mnLng)mnLng=h.lng; if(h.lng>mxLng)mxLng=h.lng; if(h.lat<mnLat)mnLat=h.lat; if(h.lat>mxLat)mxLat=h.lat; });
+    const mL=Math.max(0.0025,(mxLng-mnLng)*0.25), mT=Math.max(0.0025,(mxLat-mnLat)*0.25);
+    MAPA.centrar((mnLng+mxLng)/2, (mnLat+mxLat)/2);
+    MAPA.setLimites([mnLng-mL, mnLat-mT, mxLng+mL, mxLat+mT], { minMult:0.9, maxPpd:220000 });
+  } else {
+    MAPA.centrar(SIERRA_GORDA[1], SIERRA_GORDA[0], 46000);
+  }
 }
 
 async function renderMapa() {

@@ -111,7 +111,36 @@ Mapa.prototype.fit = function(padPx){
 };
 Mapa.prototype.centrar = function(lng,lat,ppd){
   this.view.cx=lng; this.view.cy=lat; if(ppd) this.view.ppd=clamp(ppd,this.minppd,this.maxppd);
-  this._draw(); return this;
+  this._clamp(); this._draw(); return this;
+};
+
+// Limita el zoom y el paneo a un área (bounds = [minLng,minLat,maxLng,maxLat]),
+// para que el mapa "no se pierda". minMult<1 permite alejar un poco más allá del
+// encuadre; maxPpd fija el acercamiento máximo (nivel calle).
+Mapa.prototype.setLimites = function(bounds, o){
+  o=o||{}; const pad=o.pad==null?24:o.pad;
+  const cx=(bounds[0]+bounds[2])/2, cy=(bounds[1]+bounds[3])/2;
+  const latc=Math.cos(cy*Math.PI/180);
+  const dlng=Math.max(1e-5,(bounds[2]-bounds[0])*latc), dlat=Math.max(1e-5,(bounds[3]-bounds[1]));
+  const fit=Math.min((this.w-2*pad)/dlng,(this.h-2*pad)/dlat);
+  this.minppd = fit*(o.minMult||0.85);         // no alejar más que ~el encuadre
+  this.maxppd = o.maxPpd || fit*22;            // acercamiento máximo
+  this._lim = {b:bounds.slice(), cx:cx, cy:cy};
+  this.view.ppd = clamp(this.view.ppd, this.minppd, this.maxppd);
+  this._clamp(); this._draw(); return this;
+};
+// Mantiene el centro dentro del área permitida y el zoom en rango.
+Mapa.prototype._clamp = function(){
+  this.view.ppd = clamp(this.view.ppd, this.minppd, this.maxppd);
+  if(!this._lim) return;
+  const L=this._lim, latc=this._latc();
+  // Media pantalla en grados: si el área cabe entera, se fija el centro; si no,
+  // se limita para que siempre quede mapa a la vista.
+  const halfLng=(this.w/2)/(this.view.ppd*latc), halfLat=(this.h/2)/this.view.ppd;
+  const loLng=L.b[0]+halfLng, hiLng=L.b[2]-halfLng;
+  const loLat=L.b[1]+halfLat, hiLat=L.b[3]-halfLat;
+  this.view.cx = loLng<=hiLng ? clamp(this.view.cx,loLng,hiLng) : L.cx;
+  this.view.cy = loLat<=hiLat ? clamp(this.view.cy,loLat,hiLat) : L.cy;
 };
 
 // ── dibujo ─────────────────────────────────────────────────────────────────────
@@ -169,7 +198,7 @@ Mapa.prototype._zoomAt = function(px,py,factor){
   this.view.ppd = clamp(this.view.ppd*factor, this.minppd, this.maxppd);
   const g2=this.toGeo(px,py);
   this.view.cx += g[0]-g2[0]; this.view.cy += g[1]-g2[1];
-  this._draw();
+  this._clamp(); this._draw();
 };
 Mapa.prototype._bind = function(){
   const c=this.canvas; let drag=null, moved=0;
@@ -179,7 +208,7 @@ Mapa.prototype._bind = function(){
     if(!drag) return; ev.preventDefault();
     const p=pos(ev), dx=p[0]-drag[0], dy=p[1]-drag[1]; moved+=Math.abs(dx)+Math.abs(dy);
     this.view.cx -= dx/(this.view.ppd*this._latc()); this.view.cy += dy/this.view.ppd;
-    drag=p; this._draw();
+    drag=p; this._clamp(); this._draw();
   };
   const up=ev=>{
     c.style.cursor='grab';
