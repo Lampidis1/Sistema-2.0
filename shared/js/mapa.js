@@ -166,9 +166,10 @@ Mapa.prototype._render = function(){
       });
     });
   });
-  // líneas (calles)
+  // líneas (calles) — se pueden ocultar al alejar (e.lineaMinPpd)
   ctx.strokeStyle = e.lineaStroke||'#cdd8d6'; ctx.lineWidth = e.lineaW||1.4;
   ctx.lineJoin='round'; ctx.lineCap='round';
+  if(!(e.lineaMinPpd && this.view.ppd < e.lineaMinPpd))
   (this.base.lineas||[]).forEach(gj=>{
     (gj&&gj.features||[]).forEach(f=>eachRing(f.geometry, ring=>{
       ctx.beginPath();

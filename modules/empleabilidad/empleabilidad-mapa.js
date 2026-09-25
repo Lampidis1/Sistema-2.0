@@ -106,24 +106,59 @@ function mapAtenciones(){
   return EM.atenciones.filter(a=>opById[a.operativo_id] && mapEnRango(a.created_at)).map(a=>({...a, _op:opById[a.operativo_id]}));
 }
 
+// Ciudades con calles vectorizadas (GeoJSON del repo). Se cargan por DEMANDA al
+// hacer zoom en la ciudad (evita bajar ~1.5 MB al abrir el dashboard).
+const EM_CIUDADES=[
+  {slug:'antofagasta',  lng:-70.3980, lat:-23.6464, file:'calles-antofagasta.geojson'},
+  {slug:'calama',       lng:-68.9272, lat:-22.4624, file:'calles-calama.geojson'},
+  {slug:'tocopilla',    lng:-70.1979, lat:-22.0920, file:'calles-tocopilla.geojson'},
+  {slug:'mejillones',   lng:-70.4483, lat:-23.1002, file:'calles-mejillones.geojson'},
+  {slug:'peine',        lng:-68.0617, lat:-23.6836, file:'calles-peine.geojson'},
+  {slug:'sierra-gorda', lng:-69.3202, lat:-22.8915, file:'sierra-gorda-calles.geojson'}
+];
+EM.calles = EM.calles || {};
+
 async function mapInit(){
   const cont=document.getElementById('emMapa'); if(!cont) return;
   if(EM.mapa){ try{EM.mapa.destroy();}catch(e){} EM.mapa=null; }
   EM.mapa=MapaAM.crear(cont, { onPinClick:mapFicha, onView:mapOnView });
-  EM.mapa.setBase({ poligonos:[EM.base&&EM.base.comunas].filter(Boolean), lineas:[],
+  EM.baseObj={ poligonos:[EM.base&&EM.base.comunas].filter(Boolean), lineas:[],
     puntos:[EM.base&&EM.base.localidades].filter(Boolean),
     estilos:{fondo:'#eef3f2', poligonoFill:'rgba(0,163,153,.08)', poligonoStroke:'rgba(0,105,115,.35)', poligonoW:1,
+             lineaStroke:'#c2ccca', lineaW:1,
              puntoColor:'#7a8790', puntoR:2.6, puntoLabelColor:'#3a4550', puntoFont:'11px system-ui,sans-serif', puntoHalo:'rgba(238,243,242,.9)',
-             puntoLabelSiempre:['Ciudad','Pueblo']} });
+             puntoLabelSiempre:['Ciudad','Pueblo']} };
+  EM.mapa.setBase(EM.baseObj);
   EM.mapa.fit(30);
   const b=EM.mapa.bounds(); if(b){ EM.mapa.setLimites(b,{minMult:0.9, maxPpd:400000}); EM.thresh=EM.mapa.minppd*3.2; }
-  // Al alejar solo se rotulan ciudades/pueblos; al acercar, todas las localidades.
-  if(EM.mapa.base&&EM.mapa.base.estilos) EM.mapa.base.estilos.puntoLabelMinPpd=EM.thresh;
+  // Al alejar solo ciudades/pueblos rotulados y sin calles; al acercar, todo.
+  EM.baseObj.estilos.puntoLabelMinPpd=EM.thresh;
+  EM.baseObj.estilos.lineaMinPpd=EM.thresh*1.4;
   EM.modo=''; mapPintar();
 }
 function mapOnView(m){
   const nuevo = m.view.ppd < EM.thresh ? 'comuna' : 'operativo';
   if(nuevo!==EM.modo){ EM.modo=nuevo; mapPintar(false); }
+  // Carga diferida de calles de la ciudad cuando se hace zoom en ella.
+  if(m.view.ppd >= EM.thresh){
+    const c=mapCiudadCercana(m.view.cx, m.view.cy);
+    if(c && !EM.calles[c.slug]) mapCargarCalles(c);
+  }
+}
+function mapCiudadCercana(lng,lat){
+  let best=null, bd=0.4; // ~40 km de radio
+  EM_CIUDADES.forEach(c=>{ const d=Math.hypot((c.lng-lng)*Math.cos(lat*Math.PI/180), c.lat-lat); if(d<bd){ bd=d; best=c; } });
+  return best;
+}
+async function mapCargarCalles(c){
+  EM.calles[c.slug]='cargando';
+  try{
+    const r=await fetch('../../shared/assets/geo/'+c.file+'?v=20260925');
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const gj=await r.json();
+    EM.calles[c.slug]=gj;
+    if(EM.baseObj && EM.mapa){ EM.baseObj.lineas.push(gj); EM.mapa.setBase(EM.baseObj); }
+  }catch(e){ EM.calles[c.slug]='error'; }
 }
 
 // ── pintar pines + lista + KPIs ──────────────────────────────────────────────
