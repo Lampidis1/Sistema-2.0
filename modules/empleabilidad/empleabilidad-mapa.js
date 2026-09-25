@@ -114,6 +114,7 @@ const EM_CIUDADES=[
   {slug:'tocopilla',    lng:-70.1979, lat:-22.0920, file:'calles-tocopilla.geojson'},
   {slug:'mejillones',   lng:-70.4483, lat:-23.1002, file:'calles-mejillones.geojson'},
   {slug:'peine',        lng:-68.0617, lat:-23.6836, file:'calles-peine.geojson'},
+  {slug:'baquedano',    lng:-69.8435, lat:-23.3338, file:'calles-baquedano.geojson'},
   {slug:'sierra-gorda', lng:-69.3202, lat:-22.8915, file:'sierra-gorda-calles.geojson'}
 ];
 EM.calles = EM.calles || {};
