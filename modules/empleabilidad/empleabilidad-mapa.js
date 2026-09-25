@@ -13,16 +13,21 @@
 // <script src> clásico, nunca type="module" (CLAUDE.md §6). Prefijo map/EM.
 // ═══════════════════════════════════════════════════════════════════════════
 
-let EM = { operativos:[], atenciones:[], base:null, mapa:null, filtro:'mes', modo:'', thresh:2500, cargado:false };
-const EM_FLABEL={dia:'Hoy',semana:'Semana',mes:'Mes',anio:'Año',todo:'Todo'};
+let EM = { operativos:[], atenciones:[], base:null, mapa:null, filtro:'mes', ref:null, modo:'', thresh:2500, cargado:false };
+const EM_FLABEL={dia:'Día',semana:'Semana',mes:'Mes',anio:'Año',todo:'Todo'};
+function emHoy(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
+function emRef(){ if(!EM.ref) EM.ref=emHoy(); return EM.ref; }
+function emYmd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function emSemana(r){ const a=new Date(r); const dow=(a.getDay()+6)%7; a.setDate(a.getDate()-dow); a.setHours(0,0,0,0); const b=new Date(a); b.setDate(a.getDate()+7); return [a,b]; } // lunes→lunes
 
 async function mapRender(){
   const cont=document.getElementById('page-mapa'); if(!cont) return;
   cont.innerHTML=`
     <div class="em-head">
       <div class="em-title">🗺 Mapa de operativos del móvil</div>
-      <div class="em-filtros">${Object.keys(EM_FLABEL).map(f=>`<button class="em-fbtn ${EM.filtro===f?'on':''}" onclick="mapFiltro('${f}')">${EM_FLABEL[f]}</button>`).join('')}</div>
+      <div id="emFiltros" class="em-filtros"></div>
     </div>
+    <div class="em-rango" id="emRango"></div>
     <div class="em-kpis" id="emKpis"></div>
     <div class="em-wrap">
       <div id="emMapa" class="em-mapa"></div>
@@ -31,13 +36,15 @@ async function mapRender(){
     <div id="emFicha"></div>`;
   if(!EM.cargado){ document.getElementById('emLista').innerHTML='<div class="em-nota">Cargando…</div>'; await mapCargar(); }
   await mapInit();
+  mapFiltrosRender();
 }
 async function mapCargar(){
   try{
     const [op,at,base]=await Promise.all([
       SB.from('operativos').select('*').neq('estado','Eliminado').order('created_at',{ascending:false}),
       SB.from('atenciones').select('operativo_id,comuna,sexo,apresto,intermediacion,formacion,nivel_estudios,created_at').neq('estado_registro','Eliminado'),
-      MapaAM.cargar({comunas:'../../shared/assets/geo/comunas-antofagasta.geojson'})
+      MapaAM.cargar({comunas:'../../shared/assets/geo/comunas-antofagasta.geojson',
+                     localidades:'../../shared/assets/geo/localidades-antofagasta.geojson'})
     ]);
     EM.operativos=(op.data||[]).filter(o=>o.lat!=null&&o.lng!=null);
     EM.atenciones=(at.data||[]).filter(a=>a.operativo_id);
@@ -46,20 +53,52 @@ async function mapCargar(){
   }catch(e){ toast('Error al cargar el mapa: '+(e.message||e),'err'); }
 }
 
-// ── filtro de tiempo ─────────────────────────────────────────────────────────
+// ── filtro de tiempo (con fecha de referencia + navegación) ──────────────────
 function mapEnRango(iso){
   if(EM.filtro==='todo') return true;
   const d=new Date(iso); if(isNaN(d)) return false;
-  const now=new Date();
-  if(EM.filtro==='dia')   return d.toDateString()===now.toDateString();
-  if(EM.filtro==='semana'){ const diff=(now-d)/86400000; return diff>=0 && diff<7; }
-  if(EM.filtro==='mes')   return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
-  if(EM.filtro==='anio')  return d.getFullYear()===now.getFullYear();
+  const r=emRef();
+  if(EM.filtro==='dia')   return d.getFullYear()===r.getFullYear()&&d.getMonth()===r.getMonth()&&d.getDate()===r.getDate();
+  if(EM.filtro==='semana'){ const [a,b]=emSemana(r); return d>=a && d<b; }
+  if(EM.filtro==='mes')   return d.getFullYear()===r.getFullYear()&&d.getMonth()===r.getMonth();
+  if(EM.filtro==='anio')  return d.getFullYear()===r.getFullYear();
   return true;
 }
-function mapFiltro(f){ EM.filtro=f;
-  document.querySelectorAll('.em-fbtn').forEach(b=>b.classList.toggle('on', b.textContent===EM_FLABEL[f]));
-  mapPintar(); }
+function mapRangoTxt(){
+  const r=emRef();
+  if(EM.filtro==='todo')  return 'Todo el historial';
+  if(EM.filtro==='dia')   return r.toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  if(EM.filtro==='semana'){ const [a,b]=emSemana(r); const fin=new Date(b-86400000);
+    return 'Semana del '+a.getDate()+' al '+fin.toLocaleDateString('es-CL',{day:'numeric',month:'long',year:'numeric'}); }
+  if(EM.filtro==='mes')   return r.toLocaleDateString('es-CL',{month:'long',year:'numeric'});
+  if(EM.filtro==='anio')  return String(r.getFullYear());
+  return '';
+}
+function mapFiltrosRender(){
+  const el=document.getElementById('emFiltros'); if(!el) return;
+  const r=emRef();
+  el.innerHTML=`
+    ${Object.keys(EM_FLABEL).map(f=>`<button class="em-fbtn ${EM.filtro===f?'on':''}" onclick="mapFiltro('${f}')">${EM_FLABEL[f]}</button>`).join('')}
+    ${EM.filtro!=='todo'?`
+      <span class="em-nav">
+        <button class="em-arrow" onclick="mapNav(-1)" title="Anterior">‹</button>
+        <input type="date" class="em-date" value="${emYmd(r)}" onchange="mapFecha(this.value)">
+        <button class="em-arrow" onclick="mapNav(1)" title="Siguiente">›</button>
+      </span>
+      <button class="em-hoy" onclick="mapHoy()">Hoy</button>`:''}`;
+  const rg=document.getElementById('emRango'); if(rg) rg.innerHTML=`📅 <b>${esc(mapRangoTxt())}</b>`;
+}
+function mapFiltro(f){ EM.filtro=f; if(!EM.ref) EM.ref=emHoy(); mapFiltrosRender(); mapPintar(); }
+function mapFecha(v){ const d=new Date(v+'T00:00:00'); if(!isNaN(d)){ EM.ref=d; mapFiltrosRender(); mapPintar(); } }
+function mapHoy(){ EM.ref=emHoy(); mapFiltrosRender(); mapPintar(); }
+function mapNav(dir){
+  const r=new Date(emRef());
+  if(EM.filtro==='dia')    r.setDate(r.getDate()+dir);
+  else if(EM.filtro==='semana') r.setDate(r.getDate()+7*dir);
+  else if(EM.filtro==='mes')    r.setMonth(r.getMonth()+dir);
+  else if(EM.filtro==='anio')   r.setFullYear(r.getFullYear()+dir);
+  EM.ref=r; mapFiltrosRender(); mapPintar();
+}
 
 // atenciones vigentes según filtro, con su operativo resuelto
 function mapAtenciones(){
@@ -72,7 +111,9 @@ async function mapInit(){
   if(EM.mapa){ try{EM.mapa.destroy();}catch(e){} EM.mapa=null; }
   EM.mapa=MapaAM.crear(cont, { onPinClick:mapFicha, onView:mapOnView });
   EM.mapa.setBase({ poligonos:[EM.base&&EM.base.comunas].filter(Boolean), lineas:[],
-    estilos:{fondo:'#eef3f2', poligonoFill:'rgba(0,163,153,.08)', poligonoStroke:'rgba(0,105,115,.35)', poligonoW:1} });
+    puntos:[EM.base&&EM.base.localidades].filter(Boolean),
+    estilos:{fondo:'#eef3f2', poligonoFill:'rgba(0,163,153,.08)', poligonoStroke:'rgba(0,105,115,.35)', poligonoW:1,
+             puntoColor:'#7a8790', puntoR:2.6, puntoLabelColor:'#3a4550', puntoFont:'11px system-ui,sans-serif', puntoHalo:'rgba(238,243,242,.9)'} });
   EM.mapa.fit(30);
   const b=EM.mapa.bounds(); if(b){ EM.mapa.setLimites(b,{minMult:0.9, maxPpd:400000}); EM.thresh=EM.mapa.minppd*3.2; }
   EM.modo=''; mapPintar();

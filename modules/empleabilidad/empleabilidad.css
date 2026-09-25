@@ -246,3 +246,11 @@
 .em-bar-l{width:110px;flex:none}.em-bar-t{flex:1;background:#eef2f3;border-radius:5px;height:9px;overflow:hidden}
 .em-bar-in{height:9px;border-radius:5px}.em-bar-v{width:70px;text-align:right;color:#5F6973;font-variant-numeric:tabular-nums}
 .em-fcom{display:flex;flex-wrap:wrap;gap:6px;font-size:.8rem}.em-fcom span{background:#f2f6f6;border-radius:6px;padding:3px 9px}
+
+/* Filtro de tiempo del mapa (Fase 5.1) */
+.em-rango{font-size:.92rem;color:#1C2632;margin:2px 0 12px;text-transform:capitalize}
+.em-nav{display:inline-flex;align-items:center;gap:4px}
+.em-arrow{border:1.5px solid #D7DEE4;background:#fff;border-radius:8px;width:30px;height:32px;font-size:1.15rem;line-height:1;cursor:pointer;color:#006973}
+.em-arrow:hover{background:#E4F6F5}
+.em-date{border:1.5px solid #D7DEE4;border-radius:8px;padding:5px 8px;font-size:.82rem;color:#1C2632}
+.em-hoy{border:1.5px solid #00A399;background:#E4F6F5;color:#006973;border-radius:8px;padding:6px 12px;font-size:.82rem;font-weight:600;cursor:pointer}

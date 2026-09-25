@@ -176,6 +176,24 @@ Mapa.prototype._render = function(){
       ctx.stroke();
     }));
   });
+  // puntos de referencia (ciudades / localidades): punto pequeño + etiqueta
+  const lblKey = e.puntoLabelKey||'nombre';
+  (this.base.puntos||[]).forEach(gj=>{
+    (gj&&gj.features||[]).forEach(f=>{
+      if(!f.geometry||f.geometry.type!=='Point') return;
+      const c=f.geometry.coordinates, q=this.toPx(c[0],c[1]);
+      if(q[0]<-20||q[1]<-20||q[0]>this.w+20||q[1]>this.h+20) return;
+      ctx.beginPath(); ctx.arc(q[0],q[1],e.puntoR||2.6,0,Math.PI*2);
+      ctx.fillStyle=e.puntoColor||'#5f6973'; ctx.fill();
+      const lbl=(f.properties&&f.properties[lblKey])||'';
+      if(lbl){
+        ctx.font=e.puntoFont||'11px system-ui,sans-serif';
+        ctx.textAlign='left'; ctx.textBaseline='middle';
+        ctx.lineWidth=3; ctx.strokeStyle=e.puntoHalo||'rgba(255,255,255,.85)';
+        ctx.strokeText(lbl,q[0]+5,q[1]); ctx.fillStyle=e.puntoLabelColor||'#3a4550'; ctx.fillText(lbl,q[0]+5,q[1]);
+      }
+    });
+  });
   // pines
   this._pinBoxes = [];
   this.pines.forEach(pin=>{
