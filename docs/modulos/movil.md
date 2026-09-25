@@ -96,6 +96,21 @@ sexo, nacionalidad, residencia, nivel de estudios, cesantía y qué servicios.
 > El cuestionario dejó de repetir lo que ya está en los antecedentes (residencia,
 > estudios, situación/cesantía, servicio, ejecutivo).
 
+**Formación (Fase 4):** el panel de Formación se divide en dos apartados:
+**Inscripción a cursos** (lista de cursos con detalle desplegable e inscripción,
+igual que la derivación a vacantes; **crear/editar cursos desde el móvil solo si el
+usuario es admin**, en la misma tabla `cursos` que Empleabilidad) y **Levantamiento
+de capacitación** (formulario homologado: área de interés, modalidad, disponibilidad,
+comentario → tabla `formaciones` con `tipo='Levantamiento de capacitación'`).
+Preguntas **homologables** entre Intermediación y Formación —experiencia en minería,
+contraindicación médica y disponibilidad para exámenes preocupacionales— que se
+comparten: si se responden en un apartado se precargan en el otro y quedan en la
+ficha de la persona (`cv_personas`). El nivel de estudios ya está en los antecedentes.
+
+> El formulario de levantamiento recoge los campos base; si se necesita replicar
+> exactamente el Microsoft Form, hay que pasar sus preguntas (el link es de edición
+> y no se puede leer sin la cuenta).
+
 **Operativo + dashboard con mapa (Fase 5):** al iniciar la jornada el ejecutivo
 pulsa **📍 Iniciar operativo** (barra arriba de la Recepción): marca la posición
 del móvil con el **GPS** del teléfono (si no, por el centro de la comuna). Mientras

@@ -17,7 +17,39 @@
 
 let RC = { servicios:{apresto:false,intermediacion:false,formacion:false},
            vacantes:[], vacLoaded:false, cursos:[], curLoaded:false, cvPdf:null,
-           did:{apresto:false,intermediacion:false,formacion:false}, cuestAbierto:false };
+           did:{apresto:false,intermediacion:false,formacion:false}, cuestAbierto:false,
+           homolog:{mineria:'',contra:'',exam:''}, formTab:'inscripcion' };
+
+// Preguntas HOMOLOGABLES (van en Intermediación y Formación; si se responden en
+// una, se precargan en la otra). Se cargan de la ficha de la persona (cv_personas).
+function rcHomologCargar(){
+  const a=(typeof ACTUAL!=='undefined'&&ACTUAL)||{};
+  if(!RC.homolog.mineria && a.exp_mineria) RC.homolog.mineria=a.exp_mineria;
+  if(!RC.homolog.contra && a.contraindicacion_medica) RC.homolog.contra=a.contraindicacion_medica;
+  if(!RC.homolog.exam && a.examenes_preocupacionales) RC.homolog.exam=a.examenes_preocupacionales;
+}
+const RC_CONTRA=['No presenta','Hipertensión','Diabetes','Alergias','Problemas cardíacos','Asma u otra enfermedad respiratoria','Condición musculoesquelética','En tratamiento médico activo','Otras'];
+const RC_EXAM=['Sí, cuenta con disponibilidad total','Sí, con ciertas restricciones','No, no cuenta con disponibilidad'];
+function rcHomologHTML(pref){
+  const h=RC.homolog;
+  const opt=(arr,val)=>'<option value="">—</option>'+arr.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('');
+  return `<div class="rc-homolog">
+    <div class="rc-nota" style="margin:0 0 4px"><b>Datos comunes</b> (se comparten con el otro servicio)</div>
+    <div class="fld"><label>¿Experiencia en minería?</label>
+      <select id="${pref}_min" onchange="RC.homolog.mineria=this.value;rcHomologSync('${pref}')"><option value="">—</option><option ${h.mineria==='Sí'?'selected':''}>Sí</option><option ${h.mineria==='No'?'selected':''}>No</option></select></div>
+    <div class="fld"><label>¿Presenta alguna contraindicación médica actualmente?</label>
+      <select id="${pref}_contra" onchange="RC.homolog.contra=this.value;rcHomologSync('${pref}')">${opt(RC_CONTRA,h.contra)}</select></div>
+    <div class="fld"><label>¿Cuenta con disponibilidad para exámenes preocupacionales?</label>
+      <select id="${pref}_exam" onchange="RC.homolog.exam=this.value;rcHomologSync('${pref}')">${opt(RC_EXAM,h.exam)}</select></div>
+  </div>`;
+}
+// Refleja el cambio en el otro apartado si está visible.
+function rcHomologSync(from){
+  ['inter','form'].filter(p=>p!==from).forEach(p=>{
+    const m=document.getElementById(p+'_min'), c=document.getElementById(p+'_contra'), e=document.getElementById(p+'_exam');
+    if(m) m.value=RC.homolog.mineria||''; if(c) c.value=RC.homolog.contra||''; if(e) e.value=RC.homolog.exam||'';
+  });
+}
 
 function rcVal(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
 // La persona sale de los campos de identificación (ya estáticos en la página).
@@ -116,6 +148,7 @@ function rcToggleServicio(s,val){
 }
 function rcRenderPaneles(){
   const p=document.getElementById('rcPaneles'); if(!p) return;
+  rcHomologCargar();
   let h='';
   if(RC.servicios.apresto)        h+=rcAprestoHTML();
   if(RC.servicios.intermediacion) h+=rcInterHTML();
@@ -191,7 +224,8 @@ function rcInterHTML(){
     <div class="rc-nota">Deriva a la persona a un puesto. El CV va con la derivación: el de <b>apresto</b> o un <b>PDF</b> que cargues.</div>
     <div id="rcCvBlock"></div>
     <input class="search" id="rcVacBuscar" placeholder="🔍 Buscar cargo o empresa" oninput="rcRenderVacantes()">
-    <div id="rcVacLista"><div class="rc-nota">Cargando vacantes…</div></div></div>`;
+    <div id="rcVacLista"><div class="rc-nota">Cargando vacantes…</div></div>
+    ${rcHomologHTML('inter')}</div>`;
 }
 // Estado del CV que se adjuntará al derivar (apresto y/o PDF cargado).
 function rcCvRender(){
@@ -274,12 +308,41 @@ async function rcDerivar(vacanteId){
   }catch(e){ toast('Error: '+e.message,'err'); }
 }
 
-// ── 3 · FORMACIÓN → cursos + inscribir ───────────────────────────────────────
+// ── 3 · FORMACIÓN → 2 apartados: Inscripción a cursos / Levantamiento ─────────
 function rcFormacionHTML(){
   return `<div class="card"><div class="sec-t">🎓 Formación</div>
-    <div class="rc-nota">Inscribe a la persona en un curso disponible.</div>
+    <div class="rc-subtabs">
+      <button class="rc-subtab ${RC.formTab==='inscripcion'?'on':''}" onclick="rcFormTab('inscripcion')">📋 Inscripción a cursos</button>
+      <button class="rc-subtab ${RC.formTab==='levantamiento'?'on':''}" onclick="rcFormTab('levantamiento')">📝 Levantamiento de capacitación</button>
+    </div>
+    <div id="rcFormBody">${RC.formTab==='inscripcion'?rcInscripcionHTML():rcLevantamientoHTML()}</div>
+  </div>`;
+}
+function rcFormTab(t){
+  RC.formTab=t;
+  const b=document.getElementById('rcFormBody');
+  if(b){ b.innerHTML=t==='inscripcion'?rcInscripcionHTML():rcLevantamientoHTML();
+    if(t==='inscripcion'){ if(RC.curLoaded) rcRenderCursos(); else rcCargarCursos(); } }
+  document.querySelectorAll('.rc-subtab').forEach(x=>x.classList.toggle('on',
+    x.textContent.includes(t==='inscripcion'?'Inscripción':'Levantamiento')));
+}
+function rcInscripcionHTML(){
+  const puedeCrear=(typeof ES_ADMIN!=='undefined'&&ES_ADMIN);
+  return `<div class="rc-nota">La persona postula a un curso difundido en el móvil (igual que la derivación a vacantes).</div>
+    ${puedeCrear?'<div class="btn-row"><button class="btn" onclick="rcCursoNuevo()">➕ Crear curso</button></div>':''}
     <input class="search" id="rcCurBuscar" placeholder="🔍 Buscar curso" oninput="rcRenderCursos()">
-    <div id="rcCurLista"><div class="rc-nota">Cargando cursos…</div></div></div>`;
+    <div id="rcCurLista"><div class="rc-nota">Cargando cursos…</div></div>`;
+}
+function rcLevantamientoHTML(){
+  return `<div class="rc-nota">Levantamiento del interés de capacitación de la persona (homologación del formulario).</div>
+    <div class="fld"><label>Área de interés</label><input id="lvArea" placeholder="Operación, mantención, administración…"></div>
+    <div class="g2">
+      <div class="fld"><label>Modalidad preferida</label><select id="lvModal"><option value="">—</option><option>Presencial</option><option>Online</option><option>Mixta</option></select></div>
+      <div class="fld"><label>Disponibilidad</label><select id="lvDisp"><option value="">—</option><option>Inmediata</option><option>Por turnos</option><option>Fines de semana</option><option>Horario limitado</option></select></div>
+    </div>
+    ${rcHomologHTML('form')}
+    <div class="fld"><label>Comentario</label><textarea id="lvComent" rows="2"></textarea></div>
+    <div class="btn-row"><button class="btn" onclick="rcGuardarLevantamiento()">💾 Guardar levantamiento</button></div>`;
 }
 async function rcCargarCursos(){
   try{ const {data,error}=await SB.from('cursos').select('*').neq('estado_registro','Eliminado').neq('estado','cerrado').order('created_at',{ascending:false});
@@ -289,13 +352,60 @@ async function rcCargarCursos(){
 function rcRenderCursos(){
   const l=document.getElementById('rcCurLista'); if(!l) return;
   const q=(rcVal('rcCurBuscar')||'').toLowerCase();
+  const puedeEditar=(typeof ES_ADMIN!=='undefined'&&ES_ADMIN);
   const lista=RC.cursos.filter(c=>!q||[c.nombre,c.institucion,c.area].join(' ').toLowerCase().includes(q));
-  l.innerHTML=!lista.length?'<div class="rc-nota">Sin cursos abiertos. Créalos en Empleabilidad → Formación.</div>'
-    :lista.map(c=>`<div class="rc-vac">
-      <div><div class="rc-vac-cargo">${esc(c.nombre||'Curso')}</div>
-        <div class="rc-vac-emp">${esc(c.institucion||'')}${c.modalidad?' · '+esc(c.modalidad):''}${c.ruta==='amsa'?' · AMSA':' · EECC'}</div></div>
-      <button class="btn sec" onclick="rcInscribirCurso('${c.curso_id}')">Inscribir</button>
-    </div>`).join('');
+  l.innerHTML=!lista.length?'<div class="rc-nota">Sin cursos abiertos.</div>'
+    :lista.map(c=>{
+      const det=[c.area, c.duracion&&('Duración: '+c.duracion), c.cupos&&(c.cupos+' cupos'),
+        c.fecha_inicio&&('Inicio: '+String(c.fecha_inicio).slice(0,10)), c.ruta==='eecc'?'EECC':'AMSA'].filter(Boolean);
+      return `<div class="rc-vac-wrap">
+        <div class="rc-vac">
+          <div><div class="rc-vac-cargo">${esc(c.nombre||'Curso')}</div>
+            <div class="rc-vac-emp">${esc(c.institucion||'')}${c.modalidad?' · '+esc(c.modalidad):''}</div></div>
+          <div class="rc-vac-btns">
+            <button class="btn gray" onclick="rcCurDet('${c.curso_id}')">ⓘ Detalle</button>
+            <button class="btn sec" onclick="rcInscribirCurso('${c.curso_id}')">Inscribir</button></div>
+        </div>
+        <div class="rc-vac-det" id="rcCurDet_${c.curso_id}" style="display:none">
+          ${c.descripcion?`<div>${esc(c.descripcion)}</div>`:''}
+          ${det.length?`<div class="rc-vac-meta">${det.map(x=>`<span>${esc(x)}</span>`).join('')}</div>`:''}
+          ${c.requisitos?`<div><b>Requisitos:</b> ${esc(c.requisitos)}</div>`:''}
+          ${puedeEditar?`<div><button class="btn gray" onclick="rcCursoNuevo('${c.curso_id}')">✏ Editar curso</button></div>`:''}
+          ${!c.descripcion&&!det.length&&!c.requisitos?'<div class="rc-nota" style="margin:0">Sin más detalle.</div>':''}
+        </div>
+      </div>`;
+    }).join('');
+}
+function rcCurDet(id){ const d=document.getElementById('rcCurDet_'+id); if(d) d.style.display=d.style.display==='none'?'':'none'; }
+// Crear/editar curso desde el móvil (solo admin) — misma tabla que Empleabilidad.
+function rcCursoNuevo(id){
+  const c=id?RC.cursos.find(x=>x.curso_id===id):{}; if(id&&!c) return;
+  imModal(`<h3>${id?'Editar curso':'Nuevo curso'}</h3>
+    <div class="fld"><label>Nombre del curso *</label><input id="cuNombre" value="${esc(c.nombre||'')}"></div>
+    <div class="g2"><div class="fld"><label>Institución</label><input id="cuInst" value="${esc(c.institucion||'')}"></div>
+      <div class="fld"><label>Área</label><input id="cuArea" value="${esc(c.area||'')}"></div></div>
+    <div class="g2"><div class="fld"><label>Modalidad</label><select id="cuModal"><option value="">—</option>${['Presencial','Online','Mixta'].map(o=>`<option ${c.modalidad===o?'selected':''}>${o}</option>`).join('')}</select></div>
+      <div class="fld"><label>Ruta</label><select id="cuRuta"><option value="amsa" ${c.ruta!=='eecc'?'selected':''}>AMSA</option><option value="eecc" ${c.ruta==='eecc'?'selected':''}>EECC</option></select></div></div>
+    <div class="g2"><div class="fld"><label>Duración</label><input id="cuDur" value="${esc(c.duracion||'')}" placeholder="40 h, 3 días…"></div>
+      <div class="fld"><label>Cupos</label><input id="cuCupos" type="number" min="1" value="${c.cupos||''}"></div></div>
+    <div class="fld"><label>Fecha de inicio</label><input id="cuFecha" type="date" value="${(c.fecha_inicio||'').slice(0,10)}"></div>
+    <div class="fld"><label>Requisitos</label><input id="cuReq" value="${esc(c.requisitos||'')}"></div>
+    <div class="fld"><label>Descripción</label><textarea id="cuDesc" rows="2">${esc(c.descripcion||'')}</textarea></div>
+    <div class="btn-row" style="justify-content:flex-end"><button class="btn gray" onclick="imCerrar()">Cancelar</button>
+      <button class="btn" onclick="rcGuardarCurso('${id||''}')">Guardar</button></div>`);
+}
+async function rcGuardarCurso(id){
+  const g=i=>{const e=document.getElementById(i);return e?e.value.trim():'';};
+  const nombre=g('cuNombre'); if(!nombre){ toast('El nombre es obligatorio','err'); return; }
+  const fila={ nombre, institucion:g('cuInst')||null, area:g('cuArea')||null, modalidad:g('cuModal')||null,
+    ruta:document.getElementById('cuRuta').value, duracion:g('cuDur')||null, cupos:parseInt(g('cuCupos'))||null,
+    fecha_inicio:g('cuFecha')||null, requisitos:g('cuReq')||null, descripcion:g('cuDesc')||null,
+    estado:'abierto', updated_at:new Date().toISOString(), updated_by:miNombre() };
+  try{
+    if(id){ const {error}=await SB.from('cursos').update(fila).eq('curso_id',id); if(error) throw error; }
+    else{ fila.curso_id='curso_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6); fila.created_by=miNombre(); const {error}=await SB.from('cursos').insert(fila); if(error) throw error; }
+    imCerrar(); RC.curLoaded=false; await rcCargarCursos(); toast('✅ Curso guardado','ok');
+  }catch(e){ toast('Error: '+e.message,'err'); }
 }
 async function rcInscribirCurso(cursoId){
   const per=rcPersona(); if(!per.rut && !per.nombre){ toast('Identifica a la persona','err'); return; }
@@ -308,6 +418,21 @@ async function rcInscribirCurso(cursoId){
     if(error) throw error;
     RC.did.formacion=true;
     toast('✅ Inscrito en '+(c.nombre||'el curso'),'ok');
+  }catch(e){ toast('Error: '+e.message,'err'); }
+}
+async function rcGuardarLevantamiento(){
+  const per=rcPersona(); if(!per.rut && !per.nombre){ toast('Identifica a la persona','err'); return; }
+  const g=i=>{const e=document.getElementById(i);return e?e.value.trim():'';};
+  try{
+    const {error}=await SB.from('formaciones').insert({
+      formacion_id:'form_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6),
+      rut:per.rut||null, nombre:per.nombre||null, telefono:per.telefono||null, comuna:per.comuna||null,
+      ruta:'amsa', tipo:'Levantamiento de capacitación',
+      area_interes:g('lvArea')||null, modalidad:g('lvModal')||null, disponibilidad:g('lvDisp')||null,
+      comentario:g('lvComent')||null, registrado_por:miNombre() });
+    if(error) throw error;
+    RC.did.formacion=true;
+    toast('✅ Levantamiento de capacitación guardado','ok');
   }catch(e){ toast('Error: '+e.message,'err'); }
 }
 
@@ -336,13 +461,21 @@ async function rcGuardarAtencion(){
       cuestionario_completo:completo, cuestionario_json:JSON.stringify(cuest),
       ejecutivo:(typeof miNombre==='function'?miNombre():null) });
     if(error) throw error;
-    // Si hay una persona cargada, también deja el cuestionario en su ficha.
-    if(ACTUAL && ACTUAL.cv_id && Object.keys(cuest).length){
-      try{ await SB.from('cv_personas').update({cuestionario_json:JSON.stringify(cuest),updated_at:new Date().toISOString()}).eq('cv_id',ACTUAL.cv_id); }catch(e){}
+    // Si hay una persona cargada, deja en su ficha el cuestionario y las respuestas
+    // homologables (minería, contraindicación médica, exámenes preocupacionales).
+    if(ACTUAL && ACTUAL.cv_id){
+      const upd={updated_at:new Date().toISOString()};
+      if(Object.keys(cuest).length) upd.cuestionario_json=JSON.stringify(cuest);
+      if(RC.homolog.mineria) upd.exp_mineria=RC.homolog.mineria;
+      if(RC.homolog.contra)  upd.contraindicacion_medica=RC.homolog.contra;
+      if(RC.homolog.exam)    upd.examenes_preocupacionales=RC.homolog.exam;
+      if(Object.keys(upd).length>1){ try{ await SB.from('cv_personas').update(upd).eq('cv_id',ACTUAL.cv_id);
+        Object.assign(ACTUAL,{exp_mineria:RC.homolog.mineria||ACTUAL.exp_mineria,contraindicacion_medica:RC.homolog.contra||ACTUAL.contraindicacion_medica,examenes_preocupacionales:RC.homolog.exam||ACTUAL.examenes_preocupacionales}); }catch(e){} }
     }
     toast('✅ Atención guardada','ok');
     RC.did={apresto:false,intermediacion:false,formacion:false};
-    RC.servicios={apresto:false,intermediacion:false,formacion:false}; RC.cvPdf=null; rcRender();
+    RC.servicios={apresto:false,intermediacion:false,formacion:false};
+    RC.cvPdf=null; RC.homolog={mineria:'',contra:'',exam:''}; rcRender();
   }catch(e){ toast('Error al guardar: '+e.message,'err'); }
 }
 
