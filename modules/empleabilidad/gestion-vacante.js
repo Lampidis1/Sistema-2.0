@@ -70,12 +70,16 @@ function render(){
           ${!cs.length?'<tr><td colspan="6" style="text-align:center;color:#8a949a;padding:22px">Aún no hay candidatos derivados a esta vacante.</td></tr>'
           : cs.map((c,i)=>{
             const nom=[c.nombre||c.cv_nombres,c.apellidos||c.cv_apellidos].filter(Boolean).join(' ')||'—';
-            const tieneCV=!!(c.experiencia_json||c.resumen||c.academico_json);
+            const tieneApresto=!!(c.experiencia_json||c.resumen||c.academico_json);
+            const cvCell = [
+              c.cv_pdf_url?`<a class="btn g" href="${esc(c.cv_pdf_url)}" target="_blank" rel="noopener">⬇ CV (PDF)</a>`:'',
+              tieneApresto?`<button class="btn g" onclick="gvCV(${i})">⬇ CV apresto</button>`:''
+            ].filter(Boolean).join(' ') || '<span style="color:#8a949a;font-size:.78rem">sin CV</span>';
             return `<tr>
               <td><b>${esc(nom)}</b>${c.rut?`<br><span style="color:#8a949a">${esc(c.rut)}</span>`:''}</td>
               <td>${c.telefono?esc(c.telefono):''}${c.email?`<br>${esc(c.email)}`:''}</td>
               <td>${esc(c.localidad||c.comuna||'—')}</td>
-              <td>${tieneCV?`<button class="btn g" onclick="gvCV(${i})">⬇ CV PDF</button>`:'<span style="color:#8a949a;font-size:.78rem">sin CV</span>'}</td>
+              <td><div style="display:flex;gap:5px;flex-wrap:wrap">${cvCell}</div></td>
               <td><select class="est ${estCls(c.estado)}" onchange="gvEstado('${esc(c.derivacion_id)}',this)">${ESTADOS.map(o=>`<option ${o===(c.estado||'registrada')?'selected':''}>${o}</option>`).join('')}</select></td>
               <td><div class="save-row"><input id="seg_${i}" value="${esc(c.seguimiento_eecc||'')}" placeholder="Comentario / decisión" style="flex:1;min-width:150px">
                 <button class="btn" onclick="gvSeg('${esc(c.derivacion_id)}',${i})">Guardar</button></div></td>

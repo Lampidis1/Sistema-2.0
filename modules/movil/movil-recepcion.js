@@ -16,7 +16,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 let RC = { servicios:{apresto:false,intermediacion:false,formacion:false},
-           vacantes:[], vacLoaded:false, cursos:[], curLoaded:false,
+           vacantes:[], vacLoaded:false, cursos:[], curLoaded:false, cvPdf:null,
            did:{apresto:false,intermediacion:false,formacion:false}, cuestAbierto:false };
 
 function rcVal(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
@@ -188,26 +188,72 @@ async function rcGenerarLinkCV(){
 // ── 2 · INTERMEDIACIÓN → vacantes + derivar ──────────────────────────────────
 function rcInterHTML(){
   return `<div class="card"><div class="sec-t">🔗 Intermediación laboral</div>
-    <div class="rc-nota">Deriva a la persona a un puesto disponible. Necesita su CV (usa el link de apresto o cárgalo en Captura).</div>
+    <div class="rc-nota">Deriva a la persona a un puesto. El CV va con la derivación: el de <b>apresto</b> o un <b>PDF</b> que cargues.</div>
+    <div id="rcCvBlock"></div>
     <input class="search" id="rcVacBuscar" placeholder="🔍 Buscar cargo o empresa" oninput="rcRenderVacantes()">
     <div id="rcVacLista"><div class="rc-nota">Cargando vacantes…</div></div></div>`;
 }
+// Estado del CV que se adjuntará al derivar (apresto y/o PDF cargado).
+function rcCvRender(){
+  const el=document.getElementById('rcCvBlock'); if(!el) return;
+  const tieneApresto = !!(typeof ACTUAL!=='undefined' && ACTUAL && ACTUAL.cv_id);
+  el.innerHTML=`<div class="rc-cvblock">
+    <div class="rc-cv-txt">${tieneApresto?'✓ <b>CV de apresto</b> disponible':'Sin CV de apresto'}${RC.cvPdf?` · 📄 <b>${esc(RC.cvPdf.name)}</b>`:''}</div>
+    <button class="btn gray" onclick="document.getElementById('rcCvFile').click()">📄 ${RC.cvPdf?'Cambiar PDF':'Cargar CV (PDF)'}</button>
+    <input type="file" id="rcCvFile" accept="application/pdf" style="display:none" onchange="rcCargarCVpdf(this.files)">
+  </div>`;
+}
+async function rcCargarCVpdf(files){
+  const f=files&&files[0]; if(!f) return;
+  if(f.type!=='application/pdf'){ toast('Solo se acepta PDF','err'); return; }
+  if(f.size>10*1024*1024){ toast('El PDF supera los 10 MB','err'); return; }
+  const per=rcPersona();
+  try{
+    toast('Subiendo CV…');
+    const rc=String(per.rut||'').replace(/[^0-9kK]/g,'')||('x'+Date.now());
+    const path='cv/derivaciones/'+rc+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,6)+'.pdf';
+    const {error:up}=await SB.storage.from('documentos').upload(path,f,{upsert:false,contentType:'application/pdf'});
+    if(up) throw up;
+    const {data:sg,error:se}=await SB.storage.from('documentos').createSignedUrl(path,31536000); // 1 año
+    if(se) throw se;
+    RC.cvPdf={url:sg.signedUrl, name:f.name, path};
+    rcCvRender(); toast('✅ CV en PDF cargado','ok');
+  }catch(e){ toast('Error al subir: '+e.message,'err'); }
+}
 async function rcCargarVacantes(){
   try{ const {data,error}=await SB.from('vacantes').select('*').neq('estado_registro','Eliminado').neq('estado','cerrada').order('created_at',{ascending:false});
-    if(error) throw error; RC.vacantes=data||[]; RC.vacLoaded=true; rcRenderVacantes();
+    if(error) throw error; RC.vacantes=data||[]; RC.vacLoaded=true; rcCvRender(); rcRenderVacantes();
   }catch(e){ const l=document.getElementById('rcVacLista'); if(l) l.innerHTML='<div class="rc-nota">Error: '+esc(e.message)+'</div>'; }
 }
+function _rcComps(v){ try{ return JSON.parse(v.competencias_json||'[]')||[]; }catch(e){ return []; } }
 function rcRenderVacantes(){
   const l=document.getElementById('rcVacLista'); if(!l) return;
+  rcCvRender();
   const q=(rcVal('rcVacBuscar')||'').toLowerCase();
   const lista=RC.vacantes.filter(v=>!q||[v.cargo,v.empresa,v.compania].join(' ').toLowerCase().includes(q));
   l.innerHTML=!lista.length?'<div class="rc-nota">Sin vacantes abiertas.</div>'
-    :lista.map(v=>`<div class="rc-vac">
-      <div><div class="rc-vac-cargo">${esc(v.cargo||'Cargo')}</div>
-        <div class="rc-vac-emp">${esc(v.empresa||'')}${v.compania?' · '+esc(v.compania):''}${v.codigo_puesto?' · '+esc(v.codigo_puesto):''}</div></div>
-      <button class="btn sec" onclick="rcDerivar('${v.vacante_id}')">Derivar</button>
-    </div>`).join('');
+    :lista.map(v=>{
+      const det=[v.turno&&('Turno '+v.turno), v.residencia, v.formacion&&('Formación: '+v.formacion), v.n_vacantes&&(v.n_vacantes+' cupo(s)')].filter(Boolean);
+      const comps=_rcComps(v);
+      return `<div class="rc-vac-wrap">
+        <div class="rc-vac">
+          <div><div class="rc-vac-cargo">${esc(v.cargo||'Cargo')}</div>
+            <div class="rc-vac-emp">${esc(v.empresa||'')}${v.compania?' · '+esc(v.compania):''}${v.codigo_puesto?' · '+esc(v.codigo_puesto):''}</div></div>
+          <div class="rc-vac-btns">
+            <button class="btn gray" onclick="rcVacDet('${v.vacante_id}')">ⓘ Detalle</button>
+            <button class="btn sec" onclick="rcDerivar('${v.vacante_id}')">Derivar</button></div>
+        </div>
+        <div class="rc-vac-det" id="rcVacDet_${v.vacante_id}" style="display:none">
+          ${v.descripcion?`<div>${esc(v.descripcion)}</div>`:''}
+          ${det.length?`<div class="rc-vac-meta">${det.map(x=>`<span>${esc(x)}</span>`).join('')}</div>`:''}
+          ${v.datos_adicionales?`<div><b>Datos adicionales:</b> ${esc(v.datos_adicionales)}</div>`:''}
+          ${comps.length?`<div class="rc-vac-comps">${comps.map(c=>`<span class="${c.excluyente?'exc':''}">${c.excluyente?'⛔ ':''}${esc(c.texto||'')}</span>`).join('')}</div>`:''}
+          ${!v.descripcion&&!det.length&&!v.datos_adicionales&&!comps.length?'<div class="rc-nota" style="margin:0">Sin más detalle cargado.</div>':''}
+        </div>
+      </div>`;
+    }).join('');
 }
+function rcVacDet(id){ const d=document.getElementById('rcVacDet_'+id); if(d) d.style.display=d.style.display==='none'?'':'none'; }
 async function rcDerivar(vacanteId){
   const per=rcPersona(); if(!per.rut && !per.nombre){ toast('Identifica a la persona (RUT o nombre)','err'); return; }
   const v=RC.vacantes.find(x=>x.vacante_id===vacanteId); if(!v) return;
@@ -216,13 +262,15 @@ async function rcDerivar(vacanteId){
     const {error}=await SB.from('derivaciones').insert({
       derivacion_id:'der_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6),
       vacante_id:vacanteId, cargo_txt:v.cargo, rut:per.rut||null,
+      cv_id:(typeof ACTUAL!=='undefined'&&ACTUAL&&ACTUAL.cv_id)||null,
+      cv_pdf_url:(RC.cvPdf&&RC.cvPdf.url)||null,
       nombre:partes[0]||null, apellidos:partes.slice(1).join(' ')||null, telefono:per.telefono||null,
       eecc:v.empresa||null, localidad:per.comuna||v.residencia||null,
       estado:'registrada', fecha_derivacion:new Date().toISOString().slice(0,10),
       derivado_por:miNombre(), created_by:miNombre() });
     if(error) throw error;
     RC.did.intermediacion=true;
-    toast('✅ Derivado a '+(v.cargo||'la vacante'),'ok');
+    toast('✅ Derivado a '+(v.cargo||'la vacante')+(RC.cvPdf?' (con CV PDF)':''),'ok');
   }catch(e){ toast('Error: '+e.message,'err'); }
 }
 
@@ -293,7 +341,7 @@ async function rcGuardarAtencion(){
     }
     toast('✅ Atención guardada','ok');
     RC.did={apresto:false,intermediacion:false,formacion:false};
-    RC.servicios={apresto:false,intermediacion:false,formacion:false}; rcRender();
+    RC.servicios={apresto:false,intermediacion:false,formacion:false}; RC.cvPdf=null; rcRender();
   }catch(e){ toast('Error al guardar: '+e.message,'err'); }
 }
 

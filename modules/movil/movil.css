@@ -206,9 +206,20 @@ main{padding:22px 28px 40px;max-width:1240px;margin:0 auto}
 .rc-linkrow{display:flex;gap:8px}
 .rc-linkrow input{flex:1;min-width:120px;font-size:.82rem}
 @media(max-width:560px){ .rc-qr-box{justify-content:center} }
-.rc-vac{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--border,#D7DEE4);border-radius:11px;padding:11px 13px;margin-bottom:8px}
+.rc-cvblock{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--teal-lt,#E4F6F5);border:1px solid #cfe6e4;border-radius:10px;padding:9px 12px;margin:4px 0 12px}
+.rc-cv-txt{flex:1;min-width:150px;font-size:.83rem;color:var(--ink,#1C2632)}
+.rc-vac-wrap{border:1px solid var(--border,#D7DEE4);border-radius:11px;margin-bottom:8px;overflow:hidden}
+.rc-vac{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 13px}
+.rc-vac-btns{display:flex;gap:6px;flex-wrap:wrap}
 .rc-vac-cargo{font-weight:700;font-size:.95rem}
 .rc-vac-emp{font-size:.78rem;color:var(--text-muted,#6b7780)}
+.rc-vac-det{padding:0 13px 12px;font-size:.84rem;color:var(--ink,#1C2632);display:flex;flex-direction:column;gap:6px;border-top:1px solid #eef2f3}
+.rc-vac-det>div:first-child{margin-top:8px}
+.rc-vac-meta{display:flex;flex-wrap:wrap;gap:6px}
+.rc-vac-meta span{background:#f2f6f6;border-radius:6px;padding:2px 9px;font-size:.76rem}
+.rc-vac-comps{display:flex;flex-wrap:wrap;gap:5px}
+.rc-vac-comps span{border:1px solid var(--border,#D7DEE4);border-radius:6px;padding:2px 8px;font-size:.74rem}
+.rc-vac-comps span.exc{background:#fbe9e6;border-color:#e7b6ad;color:#c0311b;font-weight:600}
 @media(max-width:560px){ .rc-serv{grid-template-columns:1fr} }
 
 /* ── Dashboard de atenciones (db-*) + cuestionario desplegable (rc-cuest) ──── */
