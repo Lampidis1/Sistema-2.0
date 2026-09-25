@@ -13,7 +13,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="movil.css?v=20260925f">
+<link rel="stylesheet" href="movil.css?v=20260925g">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -97,13 +97,18 @@
               <option>Chilena</option><option>Boliviana</option><option>Peruana</option>
               <option>Colombiana</option><option>Venezolana</option><option>Argentina</option>
               <option>Ecuatoriana</option><option>Haitiana</option><option>Otra</option></select></div>
-          <div class="fld"><label>Localidad (comuna)</label>
-            <select id="fComuna">
+          <div class="fld"><label>Comuna</label>
+            <select id="fComuna" onchange="rcLlenarLocalidades()">
               <option value="">—</option>
               <option>Antofagasta</option><option>Mejillones</option><option>Sierra Gorda</option>
               <option>Taltal</option><option>Calama</option><option>Ollagüe</option>
               <option>San Pedro de Atacama</option><option>Tocopilla</option><option>María Elena</option>
               <option>Otra</option></select></div>
+        </div>
+        <div class="g2">
+          <div class="fld"><label>Localidad / pueblo</label>
+            <select id="fLocalidad"><option value="">—</option></select></div>
+          <div class="fld"></div>
         </div>
         <div class="g2" id="rowResid" style="display:none">
           <div class="fld"><label>¿Residencia definitiva? <span style="color:var(--gold)">(extranjero/a)</span></label>
@@ -202,7 +207,7 @@
   onAcceso: function(user){ return _movilOnAcceso(user); }
 };</script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="movil.js?v=20260925d"></script>
+<script src="movil.js?v=20260925g"></script>
 <script src="movil-recepcion.js?v=20260925f"></script>
 <script src="movil-intermediacion.js?v=20260925a"></script>
 <script src="movil-operativo.js?v=20260925a"></script>

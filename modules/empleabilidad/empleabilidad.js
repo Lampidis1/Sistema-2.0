@@ -99,8 +99,18 @@ function poblarFiltros(){
   selC.innerHTML='<option value="">Todas</option>'+comunas.map(c=>`<option>${esc(c)}</option>`).join('');
   selN.innerHTML='<option value="">Todas</option>'+nacs.map(n=>`<option>${esc(n)}</option>`).join('');
   selO.innerHTML='<option value="">— sin match —</option>'+OFERTAS.map(o=>`<option value="${o.oferta_id}">${esc(o.cargo||o.empresa)}</option>`).join('');
+  poblarLocalidades();
 }
-function limpiarFiltros(){ ['fComuna','fSexo','fNac','fOferta'].forEach(id=>document.getElementById(id).value=''); document.getElementById('fMatch').value=0; document.getElementById('dirSearch').value=''; renderDir(); }
+// Localidades disponibles (dependen de la comuna elegida en el filtro).
+function poblarLocalidades(){
+  const sel=document.getElementById('fLocalidad'); if(!sel) return;
+  const fc=(document.getElementById('fComuna')||{}).value||'';
+  const prev=sel.value;
+  const locs=[...new Set(CVS.filter(c=>!fc||c.comuna===fc).map(c=>c.localidad).filter(Boolean))].sort();
+  sel.innerHTML='<option value="">Todas</option>'+locs.map(l=>`<option ${l===prev?'selected':''}>${esc(l)}</option>`).join('');
+  if(prev&&!locs.includes(prev)) sel.value='';
+}
+function limpiarFiltros(){ ['fComuna','fLocalidad','fSexo','fNac','fOferta'].forEach(id=>document.getElementById(id).value=''); const dc=document.getElementById('fDirCV'); if(dc) dc.checked=false; document.getElementById('fMatch').value=0; document.getElementById('dirSearch').value=''; poblarLocalidades(); renderDir(); }
 function setVista(v){ VISTA=v; document.getElementById('vtTabla').classList.toggle('active',v==='tabla'); document.getElementById('vtAgenda').classList.toggle('active',v==='agenda'); renderDir(); }
 
 // ═══════════════════════ RENDER DIRECTORIO ═══════════════════════
@@ -108,11 +118,15 @@ function telLink(raw){ let n=String(raw||'').replace(/[^0-9+]/g,''); if(!n) retu
 function filtrarCVs(){
   const q=(document.getElementById('dirSearch').value||'').toLowerCase().trim();
   const fc=document.getElementById('fComuna').value, fs=document.getElementById('fSexo').value, fn=document.getElementById('fNac').value;
+  const fl=(document.getElementById('fLocalidad')||{}).value||'';
+  const soloDir=!!(document.getElementById('fDirCV')||{}).checked;
   OFERTA_MATCH=document.getElementById('fOferta').value;
   const fm=parseInt(document.getElementById('fMatch').value)||0;
   const oferta=OFERTAS.find(o=>o.oferta_id===OFERTA_MATCH);
   return CVS.filter(cv=>{
     if(fc&&cv.comuna!==fc) return false;
+    if(fl&&cv.localidad!==fl) return false;
+    if(soloDir&&!cv.directorio_cv) return false;
     if(fs&&cv.sexo!==fs) return false;
     if(fn&&cv.nacionalidad!==fn) return false;
     const pct = oferta?matchPct(cv,oferta):mejorMatch(cv);
@@ -128,12 +142,12 @@ function renderDir(){
   const cont=document.getElementById('dirContent');
   if(!list.length){ cont.innerHTML='<div class="empty">Sin resultados. Ajusta los filtros o agrega un CV.</div>'; return; }
   if(VISTA==='agenda'){ renderAgenda(list,cont); return; }
-  let h='<table class="cv-tbl"><thead><tr><th>Nombre</th><th>Comuna</th><th>Sexo</th><th>Nacionalidad</th><th>% Match</th><th></th></tr></thead><tbody>';
+  let h='<table class="cv-tbl"><thead><tr><th>Nombre</th><th>Comuna / localidad</th><th>Sexo</th><th>Nacionalidad</th><th>% Match</th><th></th></tr></thead><tbody>';
   list.forEach(cv=>{
     const pct=cv._pct||0; const col=pct>=70?'#1e7e34':pct>=40?'#b8860b':'#c0311b';
     h+=`<tr>
-      <td><b>${esc((cv.nombres||'')+' '+(cv.apellidos||''))}</b>${(cv.origen_plataforma==='movil'||cv.fuente==='movil')?' <span class="chip" style="background:#fff3d6;color:#8a6100">móvil</span>':''}<br><span style="font-size:.74rem;color:var(--text-muted)">${esc(cv.rut||'')}</span></td>
-      <td>${esc(cv.comuna||'-')}</td><td>${esc(cv.sexo||'-')}</td><td>${esc(cv.nacionalidad||'-')}</td>
+      <td>${cv.directorio_cv?'<span title="En el Directorio CCV">⭐</span> ':''}<b>${esc((cv.nombres||'')+' '+(cv.apellidos||''))}</b>${(cv.origen_plataforma==='movil'||cv.fuente==='movil')?' <span class="chip" style="background:#fff3d6;color:#8a6100">móvil</span>':''}<br><span style="font-size:.74rem;color:var(--text-muted)">${esc(cv.rut||'')}</span></td>
+      <td>${esc(cv.comuna||'-')}${cv.localidad?`<br><span style="font-size:.74rem;color:var(--text-muted)">${esc(cv.localidad)}</span>`:''}</td><td>${esc(cv.sexo||'-')}</td><td>${esc(cv.nacionalidad||'-')}</td>
       <td><span class="match-bar"><div style="width:${pct}%;background:${col}"></div></span> <b style="color:${col}">${pct}%</b>
         ${OFERTA_MATCH?`<button class="mx-btn" title="Ver el desglose del puntaje" onclick="matchExplicar('${cv.cv_id}','${OFERTA_MATCH}')">¿por qué?</button>`:''}
       </td>

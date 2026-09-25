@@ -39,7 +39,7 @@ let ES_EDICION=false; // si se está complementando un registro existente
 
 function limpiarForm(){
   const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.value=v||''; };
-  ['fNombres','fApellidos','fNac','fComuna','fRegion','fTel','fEmail','fTipoLic','fDisp','fAnios','fOficios','fEducacion','fCursos','fCertif','fObs',
+  ['fNombres','fApellidos','fNac','fComuna','fLocalidad','fRegion','fTel','fEmail','fTipoLic','fDisp','fAnios','fOficios','fEducacion','fCursos','fCertif','fObs',
    'fSexo','fResid','fLic','fMineria','fEstudios','fCesantia'].forEach(id=>set(id,''));
   set('fNacion','Chilena'); set('fRegion','Antofagasta');
   const rw=document.getElementById('rutWarn'); if(rw) rw.style.display='none';
@@ -59,7 +59,7 @@ function formToObj(){
   return {
     cv_id:(ACTUAL&&ACTUAL.cv_id)||('cv_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
     rut:document.getElementById('cRut').value.trim(), nombres:g('fNombres'), apellidos:g('fApellidos'),
-    fecha_nacimiento:g('fNac'), sexo:g('fSexo'), nacionalidad:g('fNacion'), comuna:g('fComuna'), region:g('fRegion'),
+    fecha_nacimiento:g('fNac'), sexo:g('fSexo'), nacionalidad:g('fNacion'), comuna:g('fComuna'), localidad:g('fLocalidad'), region:g('fRegion'),
     direccion:g('fDir'), telefono:fonoFmt(g('fTel')), email:g('fEmail'),
     licencia:g('fLic'), tipo_licencia:g('fTipoLic'), disponibilidad:g('fDisp'),
     exp_mineria:g('fMineria'), anios_exp:g('fAnios'), oficios:g('fOficios'),
@@ -72,6 +72,7 @@ function objToForm(c){
   const s=(id,v)=>{ const e=document.getElementById(id); if(e) e.value=v||''; };
   s('cRut',c.rut); s('fNombres',c.nombres); s('fApellidos',c.apellidos); s('fNac',c.fecha_nacimiento);
   s('fSexo',c.sexo); s('fNacion',c.nacionalidad); s('fComuna',c.comuna); s('fRegion',c.region);
+  if(typeof rcLlenarLocalidades==='function') rcLlenarLocalidades(); s('fLocalidad',c.localidad);
   s('fDir',c.direccion); s('fTel',c.telefono); s('fEmail',c.email);
   s('fLic',c.licencia); s('fTipoLic',c.tipo_licencia); s('fDisp',c.disponibilidad);
   s('fMineria',c.exp_mineria); s('fAnios',c.anios_exp); s('fOficios',c.oficios);
@@ -142,7 +143,7 @@ async function guardarRegistro(){
   const row={
     cv_id:nuevo.cv_id, rut:nuevo.rut, nombres:nuevo.nombres, apellidos:nuevo.apellidos,
     fecha_nacimiento:nuevo.fecha_nacimiento, sexo:nuevo.sexo, nacionalidad:nuevo.nacionalidad,
-    comuna:nuevo.comuna, region:nuevo.region, direccion:nuevo.direccion, telefono:nuevo.telefono, email:nuevo.email,
+    comuna:nuevo.comuna, localidad:nuevo.localidad, region:nuevo.region, direccion:nuevo.direccion, telefono:nuevo.telefono, email:nuevo.email,
     licencia:nuevo.licencia, tipo_licencia:nuevo.tipo_licencia, disponibilidad:nuevo.disponibilidad,
     exp_mineria:nuevo.exp_mineria, anios_exp:nuevo.anios_exp, oficios:nuevo.oficios,
     educacion:nuevo.educacion, certificaciones:nuevo.certificaciones, observaciones:nuevo.observaciones,
@@ -154,6 +155,9 @@ async function guardarRegistro(){
     estado_registro:'Activo', updated_by:miNombre(), updated_at:new Date().toISOString()
   };
   if(!previo) row.created_by=miNombre();
+  // "Vincular al Directorio CV": solo se toca si la casilla está en pantalla
+  // (apresto abierto); si no, se conserva el valor previo.
+  const dc=document.getElementById('rcDirCV'); if(dc) row.directorio_cv=dc.checked;
   const {error}=await SB.from('cv_personas').upsert(row,{onConflict:'cv_id'});
   if(error){ toast('Error: '+error.message,'err'); return; }
   // logs de trazabilidad campo por campo

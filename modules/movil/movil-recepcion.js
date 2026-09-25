@@ -18,7 +18,7 @@
 let RC = { servicios:{apresto:false,intermediacion:false,formacion:false},
            vacantes:[], vacLoaded:false, cursos:[], curLoaded:false, cvPdf:null,
            did:{apresto:false,intermediacion:false,formacion:false}, cuestAbierto:false,
-           homolog:{mineria:'',contra:'',exam:''}, formTab:'inscripcion' };
+           homolog:{mineria:'',contra:'',exam:''}, formTab:'inscripcion', dirCV:false };
 
 // Preguntas HOMOLOGABLES (van en Intermediación y Formación; si se responden en
 // una, se precargan en la otra). Se cargan de la ficha de la persona (cv_personas).
@@ -49,6 +49,29 @@ function rcHomologSync(from){
     const m=document.getElementById(p+'_min'), c=document.getElementById(p+'_contra'), e=document.getElementById(p+'_exam');
     if(m) m.value=RC.homolog.mineria||''; if(c) c.value=RC.homolog.contra||''; if(e) e.value=RC.homolog.exam||'';
   });
+}
+
+// Localidades por comuna (Región de Antofagasta, derivadas del geojson de
+// localidades). Alimentan el selector dependiente #fLocalidad.
+const RC_LOCALIDADES={
+  "Antofagasta":["Antofagasta","Caleta Constitución","Cerro Moreno","Coloso","La Negra"],
+  "Mejillones":["Bonanza","Hornitos","Itata","Mejillones","Michilla Bajo / Caleta Michilla"],
+  "Sierra Gorda":["Baquedano","Sierra Gorda"],
+  "Taltal":["Paposo","Taltal"],
+  "Calama":["Calama","Caspana","Quetena","San Francisco de Chiu Chiu"],
+  "San Pedro de Atacama":["Camar","Machuca","Peine","Río Grande","San Pedro de Atacama","Socaire","Talabre","Toconao","Villa Solor"],
+  "Ollagüe":["Ollagüe"],
+  "Tocopilla":["Caleta Urco","Playa Quebrada Honda","Punta Ampa","Tocopilla"],
+  "María Elena":["María Elena","Quillagua"]
+};
+// Rellena #fLocalidad según la comuna elegida, conservando el valor actual si sigue válido.
+function rcLlenarLocalidades(){
+  const sel=document.getElementById('fLocalidad'); if(!sel) return;
+  const com=(document.getElementById('fComuna')||{}).value||'';
+  const prev=sel.value;
+  const list=RC_LOCALIDADES[com]||[];
+  sel.innerHTML='<option value="">—</option>'+list.map(l=>`<option ${l===prev?'selected':''}>${esc(l)}</option>`).join('')
+    +(prev&&!list.includes(prev)?`<option selected>${esc(prev)}</option>`:'');
 }
 
 function rcVal(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
@@ -189,6 +212,8 @@ function rcLeerCuest(){
 function rcAprestoHTML(){
   return `<div class="card"><div class="sec-t">📝 Apresto laboral</div>
     <div class="rc-nota">Genera un link personal para que la persona <b>cree su CV</b> paso a paso (con ejemplos de qué poner) y lo descargue en PDF. Va por token; no expone el RUT.</div>
+    <label class="rc-dircv"><input type="checkbox" id="rcDirCV" ${RC.dirCV?'checked':''} onchange="RC.dirCV=this.checked">
+      <span>⭐ <b>Vincular al Directorio CV</b> — guarda este CV en el Directorio CCV (localidades prioritarias) para búsquedas por comuna y localidad.</span></label>
     <div class="btn-row"><button class="btn" onclick="rcGenerarLinkCV()">🔗 Generar link para crear CV</button></div>
     <div id="rcLinkOut"></div></div>`;
 }
@@ -483,7 +508,7 @@ async function rcGuardarAtencion(){
     toast('✅ Atención guardada','ok');
     RC.did={apresto:false,intermediacion:false,formacion:false};
     RC.servicios={apresto:false,intermediacion:false,formacion:false};
-    RC.cvPdf=null; RC.homolog={mineria:'',contra:'',exam:''}; rcRender();
+    RC.cvPdf=null; RC.homolog={mineria:'',contra:'',exam:''}; RC.dirCV=false; rcRender();
   }catch(e){ toast('Error al guardar: '+e.message,'err'); }
 }
 

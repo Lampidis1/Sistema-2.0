@@ -11,7 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="empleabilidad.css?v=20260925b">
+<link rel="stylesheet" href="empleabilidad.css?v=20260925c">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -88,7 +88,9 @@
       <!-- filtros izquierda -->
       <aside class="filtros">
         <h3>🔍 Filtros</h3>
-        <div class="f-group"><label>Comuna</label><select id="fComuna" onchange="renderDir()"><option value="">Todas</option></select></div>
+        <div class="f-group"><label>Comuna</label><select id="fComuna" onchange="poblarLocalidades();renderDir()"><option value="">Todas</option></select></div>
+        <div class="f-group"><label>Localidad</label><select id="fLocalidad" onchange="renderDir()"><option value="">Todas</option></select></div>
+        <label class="f-check"><input type="checkbox" id="fDirCV" onchange="renderDir()"> ⭐ Solo Directorio CCV</label>
         <div class="f-group"><label>Sexo</label><select id="fSexo" onchange="renderDir()"><option value="">Todos</option><option>Femenino</option><option>Masculino</option><option>Otro</option></select></div>
         <div class="f-group"><label>Nacionalidad</label><select id="fNac" onchange="renderDir()"><option value="">Todas</option></select></div>
         <div class="f-group"><label>Oferta laboral</label><select id="fOferta" onchange="renderDir()"><option value="">— sin match —</option></select></div>
@@ -260,7 +262,7 @@
   onAcceso: function(user){ return _empOnAcceso(user); }
 };</script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="empleabilidad.js?v=20260925a"></script>
+<script src="empleabilidad.js?v=20260925c"></script>
 <script src="empleabilidad-lectura.js?v=20260816a"></script>
 <script src="empleabilidad-match.js?v=20260816a"></script>
 <script src="empleabilidad-harvard.js?v=20260913a"></script>
