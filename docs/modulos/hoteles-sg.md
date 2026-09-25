@@ -60,26 +60,28 @@ ocuparse como simple**. Lo calcula la vista, no el navegador.
 
 ## El mapa no depende de ningún servidor de mapas
 
-**Leaflet 1.9.4** (BSD-2, sin dependencias) por CDN, versión fija como las
-otras librerías. Pero **el mapa en sí es un archivo del repositorio**:
+Desde 2026-09 el mapa usa el **motor propio del sistema** `shared/js/mapa.js`
+(`window.MapaAM`): dibuja GeoJSON sobre un `<canvas>` con pan, zoom y clic en los
+pines. **Ya no usa Leaflet ni tiles online** — se quitó la dependencia de
+`unpkg.com`/OpenStreetMap tiles (Reglas 5 y 6): ningún tercero ve la IP de quien
+entra, y no se baja nada de un CDN de mapas.
 
-`shared/assets/mapa-sierra-gorda.geojson` — 55 KB con el pueblo completo:
-124 elementos entre calles, manzanas, edificios y la línea férrea.
+Las capas del pueblo son archivos del repositorio (`shared/assets/geo/`):
 
-Ventajas de tenerlo local en vez de pedir imágenes a un servidor de mapas:
+- `sierra-gorda-calles.geojson`, `sierra-gorda-edificios.geojson`,
+  `sierra-gorda-espacios.geojson` (extraídos de OpenStreetMap).
 
-- **Ningún tercero ve la IP** de quien entra a la página (a diferencia de
-  `tile.openstreetmap.org` o Google Maps).
-- **Funciona aunque el servicio de mapas de turno se caiga** o cambie sus
-  condiciones de uso.
-- Pesa menos que las imágenes de un solo nivel de zoom, y se ve nítido en
-  cualquier zoom porque es vectorial.
-- Los marcadores también son propios (`divIcon` con CSS) y muestran las
-  habitaciones libres: los iconos que trae Leaflet se bajan de su CDN.
+Los **hospedajes** siguen viniendo de Supabase (`hoteles_sg_publico`) como pines
+lat/long; el pin verde muestra las habitaciones libres y al tocarlo abre la ficha.
 
-**Atribución obligatoria:** los datos son de OpenStreetMap bajo ODbL, así que
-el mapa muestra «Calles © colaboradores de OpenStreetMap (ODbL)». No se puede
-quitar.
+Ventajas: nítido en cualquier zoom (vectorial), funciona aunque un servicio de
+mapas se caiga, y no expone la IP del usuario. El motor es reutilizable
+(Empleabilidad y Móvil usan el mismo con los GeoJSON de la Región de Antofagasta).
+
+**Atribución:** las capas de calles/edificios provienen de OpenStreetMap (ODbL).
+
+> El GeoJSON antiguo `shared/assets/mapa-sierra-gorda.geojson` quedó obsoleto
+> (lo reemplazan las capas `shared/assets/geo/sierra-gorda-*`).
 
 ### Cómo actualizar el plano del pueblo
 

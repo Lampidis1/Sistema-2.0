@@ -8,15 +8,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
 <script src="../../config/supabase.config.js"></script>
-<!-- Leaflet: mapa. BSD-2, sin dependencias. Las imágenes del mapa vienen de
-     OpenStreetMap — ver docs/modulos/hoteles-sg.md sobre ese punto. -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Mapa: motor propio (Canvas, sin tiles ni Leaflet ni servicios externos). -->
+<script src="../../shared/js/mapa.js?v=20260925a"></script>
 <!-- SheetJS: exportar a Excel la seleccion de hospedajes. Ya es una de las
      librerias del sistema (CLAUDE.md §7), fijada a version exacta. -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="../../shared/css/ficha-modal.css?v=20260808f">
-<link rel="stylesheet" href="hoteles-sg.css?v=20260816a">
+<link rel="stylesheet" href="hoteles-sg.css?v=20260925a">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/). -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
 </head>
@@ -80,6 +78,6 @@
   <div class="modal" id="fichaBox"></div>
 </div>
 
-<script src="hoteles-sg.js?v=20260816a"></script>
+<script src="hoteles-sg.js?v=20260925a"></script>
 </body>
 </html>

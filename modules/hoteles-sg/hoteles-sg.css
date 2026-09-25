@@ -112,9 +112,11 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text)}
 .tabla td.sec{color:var(--text-muted);font-weight:400}
 .ocup{color:#b86000;font-weight:600}
 
-/* Mapa propio (GeoJSON local, sin imágenes de terceros) */
-#mapa{background:#f7faf9}
-.calle-lbl{font-family:'Barlow',sans-serif;font-size:.62rem;color:#7c8a92;white-space:nowrap;text-shadow:0 0 3px #f7faf9,0 0 3px #f7faf9,0 0 3px #f7faf9;pointer-events:none;transform:translate(-50%,-50%)}
+/* Mapa propio (motor Canvas shared/js/mapa.js, sin imágenes de terceros) */
+#mapa{background:#eef3f2;position:relative;overflow:hidden}
+.mapa-zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:5px;z-index:10}
+.mapa-zoom button{width:34px;height:34px;font-size:20px;line-height:1;border:1.5px solid var(--border);background:#fff;color:var(--primary-dark);border-radius:8px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15);font-weight:700;display:flex;align-items:center;justify-content:center}
+.mapa-zoom button:hover{background:var(--primary-light)}
 .mapa-error{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-style:italic;z-index:500}
 
 /* Pin propio: sin imágenes externas y con las habitaciones libres a la vista */

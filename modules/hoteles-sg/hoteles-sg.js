@@ -19,10 +19,9 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&am
 let DATOS = [];
 let VISTA = 'mapa';   // el mapa es lo primero que se ve
 let MODO = 'fichas';
-let MAPA = null;
-let MARCADORES = [];
+let MAPA = null;   // instancia de MapaAM (motor propio, Canvas — shared/js/mapa.js)
 
-const SIERRA_GORDA = [-22.8917, -69.3196];   // centro del pueblo
+const SIERRA_GORDA = [-22.8917, -69.3196];   // centro del pueblo [lat, lng]
 
 document.addEventListener('DOMContentLoaded', cargar);
 
@@ -188,91 +187,47 @@ function contactoHTML(h, bloque) {
 //
 // El archivo se extrajo una vez de OpenStreetMap. Para actualizarlo, ver
 // docs/modulos/hoteles-sg.md.
-const ESTILO_MAPA = {
-  principal: { color: '#9aa8ae', weight: 5 },
-  calle:     { color: '#b9c4c9', weight: 3.5 },
-  camino:    { color: '#cfd7da', weight: 1.6, dashArray: '4,4' },
-  tren:      { color: '#8b98a0', weight: 2, dashArray: '9,6' },
-  edificio:  { color: '#cbd5d8', weight: .8, fill: true, fillColor: '#e3eaec', fillOpacity: 1 },
-  zona:      { color: '#dfe7e4', weight: .8, fill: true, fillColor: '#eef3f0', fillOpacity: .8 },
-};
-
-function dibujarPueblo() {
-  fetch('../../shared/assets/mapa-sierra-gorda.geojson')
-    .then(r => r.json())
-    .then(gj => {
-      L.geoJSON(gj, {
-        style: f => Object.assign({ fill: false, lineCap: 'round', lineJoin: 'round' },
-                                  ESTILO_MAPA[f.properties.c] || ESTILO_MAPA.camino),
-        interactive: false,
-      }).addTo(MAPA).bringToBack();
-
-      // Nombre de la calle, UNA vez por calle. Una misma calle viene partida en
-      // varios segmentos: se rotula el mas largo, no cada trozo.
-      const porNombre = {};
-      gj.features.filter(f => f.properties.n && (f.properties.c === 'calle' || f.properties.c === 'principal'))
-        .forEach(f => {
-          const cs = f.geometry.coordinates;
-          const largo = cs.length;
-          if (!porNombre[f.properties.n] || largo > porNombre[f.properties.n].largo) {
-            porNombre[f.properties.n] = { cs: cs, largo: largo };
-          }
-        });
-      Object.keys(porNombre).forEach(n => {
-        const cs = porNombre[n].cs;
-        const m = cs[Math.floor(cs.length / 2)];
-        if (!m) return;
-        L.marker([m[1], m[0]], {
-          interactive: false,
-          icon: L.divIcon({ className: 'calle-lbl', html: n, iconSize: [0, 0] }),
-        }).addTo(MAPA);
-      });
-    })
-    .catch(() => {
-      document.getElementById('mapa').insertAdjacentHTML('beforeend',
-        '<div class="mapa-error">No se pudo cargar el plano del pueblo.</div>');
-    });
+// El mapa se dibuja con el motor propio shared/js/mapa.js (Canvas), SIN tiles ni
+// Leaflet: las capas (calles, edificios, espacios) son GeoJSON del repo y los
+// hospedajes son pines lat/long. Ningún tercero ve la IP de quien entra, y la
+// página funciona aunque el servicio de mapas de turno se caiga.
+async function initMapa() {
+  if (MAPA) return;
+  MAPA = MapaAM.crear(document.getElementById('mapa'), { onPinClick: p => verFicha(p.id) });
+  const b = await MapaAM.cargar({
+    calles: '../../shared/assets/geo/sierra-gorda-calles.geojson',
+    edif:   '../../shared/assets/geo/sierra-gorda-edificios.geojson',
+    esp:    '../../shared/assets/geo/sierra-gorda-espacios.geojson',
+  });
+  MAPA.setBase({
+    poligonos: [b.edif, b.esp].filter(Boolean),
+    lineas:    [b.calles].filter(Boolean),
+    estilos: { fondo: '#eef3f2', lineaStroke: '#b9c7c4', lineaW: 1.6,
+               poligonoFill: 'rgba(120,140,150,.16)', poligonoStroke: 'rgba(90,110,120,.35)' },
+  });
+  // Centrado en el pueblo (el GeoJSON de calles trae también la red vial regional).
+  MAPA.centrar(SIERRA_GORDA[1], SIERRA_GORDA[0], 46000);
 }
 
-function renderMapa() {
+async function renderMapa() {
+  await initMapa();
   const conUbic = disponibles().filter(h => h.lat && h.lng);
   const sinUbic = disponibles().filter(h => !h.lat || !h.lng);
 
-  if (!MAPA) {
-    MAPA = L.map('mapa', { attributionControl: false }).setView(SIERRA_GORDA, 17);
-    L.control.attribution({ prefix: false })
-      .addAttribution('Calles © colaboradores de OpenStreetMap (ODbL)').addTo(MAPA);
-    dibujarPueblo();
-  }
-  MARCADORES.forEach(m => MAPA.removeLayer(m));
-  MARCADORES = [];
-
-  // Varios hospedajes comparten esquina: se separan un poco para que no se
-  // tapen entre ellos. El desplazamiento es de metros, no cambia la calle.
+  // Varios hospedajes comparten esquina: se separan en espiral para no taparse.
   const usados = {};
-  conUbic.forEach(h => {
+  const pines = conUbic.map(h => {
     const k = h.lat.toFixed(5) + ',' + h.lng.toFixed(5);
     const n = (usados[k] = (usados[k] || 0) + 1) - 1;
-    // espiral: separa lo suficiente para poder tocar cada uno con el dedo
     const ang = n * 2.399963, rad = n === 0 ? 0 : 0.00019 * Math.sqrt(n + 0.6);
-    const lat = h.lat + rad * Math.cos(ang), lng = h.lng + rad * Math.sin(ang);
-    // pin propio: muestra las habitaciones libres y no depende de imagenes
-    // externas (los iconos por defecto de Leaflet se bajan de su CDN)
-    const m = L.marker([lat, lng], {
-      icon: L.divIcon({
-        className: 'pin-wrap',
-        html: `<div class="pin"><span>${h.hab_disponibles}</span></div>`,
-        iconSize: [30, 38], iconAnchor: [15, 38], popupAnchor: [0, -34],
-      }),
-      title: h.nombre,
-    }).addTo(MAPA);
-    m._hospId = h.id;
-    m.bindPopup(`<b>${esc(h.nombre)}</b><br>${esc(h.direccion || '')}<br>
-      <span style="color:#006973"><b>${h.hab_disponibles}</b> hab. libres · <b>${h.camas_max}</b> camas</span><br>
-      ${h.fono ? '📞 ' + esc(h.fono) : ''}`);
-    MARCADORES.push(m);
+    const sel = SELECCION.has(h.id);
+    return {
+      id: h.id, lat: h.lat + rad * Math.cos(ang), lng: h.lng + rad * Math.sin(ang),
+      color: sel ? '#F2A900' : '#1e7e34', r: sel ? 12 : 10,
+      label: h.hab_disponibles, data: h,
+    };
   });
-  setTimeout(() => MAPA.invalidateSize(), 60);   // el mapa nace oculto en su pestaña
+  if (MAPA) MAPA.setPines(pines);
 
   pintarTablaMapa(conUbic);
 
@@ -296,6 +251,7 @@ function selToggle(id, ev){
   if(ev) ev.stopPropagation();
   if(SELECCION.has(id)) SELECCION.delete(id); else SELECCION.add(id);
   selPintarBarra();
+  if(VISTA === 'mapa' && MAPA) renderMapa();   // recolorear el pin seleccionado
 }
 function selTodos(chk){
   const vis = disponibles().filter(h => h.lat && h.lng).map(h => h.id);
@@ -413,11 +369,11 @@ function exportarSeleccion(){
 
 // Centra el mapa en un hospedaje y abre su globo.
 function irAlPin(id) {
-  const m = MARCADORES.find(x => x._hospId === id);
-  if (!m) return;
-  MAPA.setView(m.getLatLng(), 18, { animate: true });
-  m.openPopup();
+  const h = DATOS.find(x => x.id === id);
+  if (!h || !MAPA || !h.lat || !h.lng) return;
+  MAPA.centrar(h.lng, h.lat, 130000);
   document.getElementById('mapa').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setTimeout(() => verFicha(id), 350);
 }
 
 // ── 3 · TODOS, AGRUPADOS POR EMPRESA ────────────────────────────────────────
@@ -480,7 +436,7 @@ function verFicha(id) {
             ${hermanos.map(x => `<div class="dcf-giro" style="cursor:pointer" onclick="verFicha('${x.id}')">• ${esc(x.nombre)} ${x.hab_total ? `<span style="color:var(--text-muted)">(${x.hab_total} hab)</span>` : ''}</div>`).join('')}` : ''}
           ${fotosHTML(h)}
           ${h.lat && h.lng ? `<div class="dcf-sec-t" style="margin-top:18px">Ubicación</div>
-            <button class="ficha-btn" style="width:auto;padding:8px 16px" onclick="cerrarFicha();setVista('mapa');setTimeout(()=>MAPA.setView([${h.lat},${h.lng}],18),150)">📍 Ver en el mapa</button>` : ''}
+            <button class="ficha-btn" style="width:auto;padding:8px 16px" onclick="cerrarFicha();setVista('mapa');setTimeout(()=>MAPA&&MAPA.centrar(${h.lng},${h.lat},130000),250)">📍 Ver en el mapa</button>` : ''}
         </div>
       </div>
     </div>`;

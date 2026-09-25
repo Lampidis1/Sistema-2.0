@@ -301,11 +301,13 @@ Ya no está vacío. Lo que vive ahí hoy:
 | `js/auth-guard.js` | Bloque de login unificado (`window.AUTH_CFG`) | movil, empleabilidad, admin, planer |
 | `js/faena-consulta.js` | Consulta de solo lectura por faena | centinela, antucoya, zaldivar |
 | `js/rca-reporte.js` | Render del reporte RCA (`window.RCAReporte`) | rca (app + página pública `reporte.html`) |
+| `js/mapa.js` | **Motor de mapa vectorial** (`window.MapaAM`, Canvas, sin tiles) | hoteles-sg (empleabilidad y móvil próximamente) |
 | `css/faena-consulta.css` | Estilos de lo anterior | centinela, antucoya, zaldivar |
 | `css/ficha-modal.css` | **Ficha emergente del proveedor** | proveedores, mgi |
 | `css/responsive.css` | **Ajustes de tableta y teléfono** | **los 10 puntos de entrada** |
 | `assets/logo-amsa-*.png` | Logos | todos |
-| `assets/mapa-sierra-gorda.geojson` | Plano del pueblo (55 KB, de OpenStreetMap) | hoteles-sg |
+| `assets/geo/*.geojson` | **Datos cartográficos** (comunas/localidades de Antofagasta + calles/edificios de Sierra Gorda) | hoteles-sg (empleabilidad y móvil) — ver `assets/geo/README.md` |
+| `assets/mapa-sierra-gorda.geojson` | Plano del pueblo (obsoleto; lo reemplaza `geo/sierra-gorda-*`) | — |
 | `assets/oficios-mineria.json` | **Diccionario de oficios y competencias** | empleabilidad |
 
 ### `assets/oficios-mineria.json` — el diccionario del match
