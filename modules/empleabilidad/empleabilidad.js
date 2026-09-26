@@ -733,7 +733,7 @@ function exportarExcelDir(){
   const rows=list.map(cv=>({
     RUT:cv.rut||'', Nombres:cv.nombres||'', Apellidos:cv.apellidos||'',
     'Fecha Nac':cv.fecha_nacimiento||'', Sexo:cv.sexo||'', Nacionalidad:cv.nacionalidad||'',
-    Comuna:cv.comuna||'', Ciudad:cv.ciudad||'', Direccion:cv.direccion||'',
+    Comuna:cv.comuna||'', Localidad:cv.localidad||'', 'En Directorio CCV':cv.directorio_cv?'Sí':'', Ciudad:cv.ciudad||'', Direccion:cv.direccion||'',
     Telefono:cv.telefono||'', Email:cv.email||'', Resumen:cv.resumen||'',
     // experiencia combinada en una celda, cada experiencia separada por " | ", campos por ";"
     Experiencia:(cv.experiencia||[]).map(e=>[e.cargo,e.empresa,e.ciudad,e.pais,(e.desde||'')+'-'+(e.hasta||''),(e.funciones||[]).join(', ')].join(';')).join(' | '),
@@ -743,6 +743,8 @@ function exportarExcelDir(){
   }));
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.json_to_sheet(rows);
+  // Anchos de columna para que la planilla se lea sin redimensionar.
+  ws['!cols']=[{wch:13},{wch:16},{wch:18},{wch:11},{wch:9},{wch:14},{wch:16},{wch:16},{wch:14},{wch:16},{wch:16},{wch:14},{wch:16},{wch:40},{wch:50},{wch:50},{wch:50},{wch:9}];
   XLSX.utils.book_append_sheet(wb,ws,'Directorio CV');
   // hoja de instrucciones para análisis / CSV
   const instr=[

@@ -147,17 +147,29 @@ async function imBorrar(id){
     imCerrar(); IM.loaded=false; await imRender(); toast('🗑 Vacante eliminada','ok');
   }catch(e){ toast('Error: '+e.message,'err'); }
 }
-// Genera el link del portal de la empresa (token) para esta vacante.
-async function imLinkEmpresa(vid){
+// Muestra el formulario del link (clave opcional + vigencia) para esta vacante.
+function imLinkEmpresa(vid){
+  const box=document.getElementById('imLink_'+vid); if(!box) return;
+  box.innerHTML=`<div class="card" style="margin-top:8px;padding:12px">
+    <div class="rc-nota" style="margin:0 0 6px">Puedes proteger el link con una <b>clave</b> y darle <b>vigencia</b>.</div>
+    <div class="g2">
+      <div class="fld"><label>Clave (opcional)</label><input id="imClave_${vid}" placeholder="vacía = sin clave"></div>
+      <div class="fld"><label>Vigencia</label><select id="imDias_${vid}"><option value="">Sin vencimiento</option><option value="7">7 días</option><option value="15">15 días</option><option value="30" selected>30 días</option><option value="90">90 días</option></select></div>
+    </div>
+    <div class="btn-row"><button class="btn" onclick="imCrearLink('${vid}')">🔗 Generar link</button></div>
+    <div id="imLinkOut_${vid}"></div></div>`;
+}
+async function imCrearLink(vid){
   const v=IM.vacantes.find(x=>x.vacante_id===vid);
+  const clave=imVal('imClave_'+vid), dias=(document.getElementById('imDias_'+vid)||{}).value||'';
   try{
-    const {data,error}=await SB.from('vacante_links').insert({vacante_id:vid, empresa:(v&&v.empresa)||null, created_by:miNombre()}).select('token').single();
-    if(error) throw error;
+    const {data,error}=await SB.rpc('vacante_link_crear',{p_vacante_id:vid,p_empresa:(v&&v.empresa)||null,p_clave:clave||null,p_dias:dias?parseInt(dias):null});
+    if(error) throw error; if(data&&data.error) throw new Error(data.error);
     const url=location.origin+'/modules/empleabilidad/gestion-vacante.html?t='+data.token;
-    const box=document.getElementById('imLink_'+vid);
-    if(box) box.innerHTML=`<div class="rc-linkrow" style="margin-top:8px"><input id="imUrl_${vid}" readonly value="${esc(url)}" onclick="this.select()">
+    const out=document.getElementById('imLinkOut_'+vid);
+    if(out) out.innerHTML=`<div class="rc-linkrow" style="margin-top:8px"><input id="imUrl_${vid}" readonly value="${esc(url)}" onclick="this.select()">
       <button class="btn sec" onclick="rcCopiar('imUrl_${vid}')">Copiar</button></div>
-      <div class="rc-nota">Envía este link a la empresa: verá los candidatos derivados, descargará sus CV y marcará el seguimiento de contratación.</div>`;
+      <div class="rc-nota">Link generado${clave?' · <b>protegido con clave: '+esc(clave)+'</b> (compártela por separado)':''}${dias?(' · vence en '+dias+' días'):' · sin vencimiento'}. La empresa verá los derivados, descargará sus CV y marcará el seguimiento.</div>`;
     toast('🔗 Link de empresa creado','ok');
-  }catch(e){ toast('Error: '+e.message,'err'); }
+  }catch(e){ toast('Error: '+(e.message||e),'err'); }
 }

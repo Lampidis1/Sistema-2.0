@@ -182,19 +182,46 @@ async function ilGuardarVacante(id){
     ilCerrar(); await ilCargar(); ilRender(); toast('✅ Vacante guardada','ok');
   }catch(e){ toast('Error: '+e.message,'err'); }
 }
-// Genera el link del portal de la empresa (token) para gestionar los derivados.
-async function ilLinkEmpresa(vid){
+// Genera el link del portal de la empresa (token) para gestionar los derivados,
+// con clave de visualización opcional y vigencia; Empleabilidad puede cerrarlo.
+function ilLinkEmpresa(vid){
   const v=IL.vacantes.find(x=>x.vacante_id===vid);
+  ilModal(`<h3>🔗 Link para la empresa</h3>
+    <div class="il-nota">Enlace para <b>${esc((v&&v.empresa)||'la empresa')}</b> · «${esc((v&&v.cargo)||'')}»: verá los candidatos derivados, descargará sus CV y marcará el seguimiento. Puedes protegerlo con una <b>clave</b> y darle <b>vigencia</b>.</div>
+    <div class="il-g2">
+      <div><label>Clave de visualización (opcional)</label><input id="lkClave" placeholder="vacía = sin clave"></div>
+      <div><label>Vigencia del acceso</label>
+        <select id="lkDias"><option value="">Sin vencimiento</option><option value="7">7 días</option><option value="15">15 días</option><option value="30" selected>30 días</option><option value="90">90 días</option></select></div>
+    </div>
+    <div id="lkVacOut"></div>
+    <div class="il-modal-acc"><span></span><div>
+      <button class="il-btn g" onclick="ilCerrar()">Cerrar</button>
+      <button class="il-btn" onclick="ilCrearLinkEmpresa('${vid}')">Generar link</button></div></div>`);
+}
+async function ilCrearLinkEmpresa(vid){
+  const v=IL.vacantes.find(x=>x.vacante_id===vid);
+  const clave=ilVal('lkClave'), dias=(document.getElementById('lkDias')||{}).value||'';
   try{
-    const {data,error}=await SB.from('vacante_links').insert({vacante_id:vid, empresa:(v&&v.empresa)||null, created_by:miNombre()}).select('token').single();
-    if(error) throw error;
+    const {data,error}=await SB.rpc('vacante_link_crear',{p_vacante_id:vid,p_empresa:(v&&v.empresa)||null,p_clave:clave||null,p_dias:dias?parseInt(dias):null});
+    if(error) throw error; if(data&&data.error) throw new Error(data.error);
     const url=location.origin+'/modules/empleabilidad/gestion-vacante.html?t='+data.token;
-    ilModal(`<h3>🔗 Link para la empresa</h3>
-      <div class="il-nota">Envíaselo a <b>${esc((v&&v.empresa)||'la empresa')}</b>: verá los candidatos derivados a «${esc((v&&v.cargo)||'')}», descargará sus CV y marcará el seguimiento de contratación/no contratación.</div>
+    document.getElementById('lkVacOut').innerHTML=`
+      <div class="il-nota" style="margin-top:10px">Link generado${clave?' · <b>protegido con clave</b>':''}${dias?(' · vence en '+dias+' días'):' · sin vencimiento'}:</div>
       <div style="display:flex;gap:8px"><input id="ilVacUrl" readonly value="${esc(url)}" style="flex:1" onclick="this.select()">
-      <button class="il-btn" onclick="ilCopiarLink('ilVacUrl')">Copiar</button></div>
-      <div class="il-modal-acc"><span></span><button class="il-btn g" onclick="ilCerrar()">Cerrar</button></div>`);
-  }catch(e){ toast('Error: '+e.message,'err'); }
+        <button class="il-btn" onclick="ilCopiarLink('ilVacUrl')">Copiar</button></div>
+      ${clave?`<div class="il-nota">Envía la clave por separado (no en el mismo mensaje): <b>${esc(clave)}</b></div>`:''}
+      <div class="save-row" style="margin-top:8px"><button class="il-btn g" onclick="ilCerrarAcceso('${data.token}',false,this)">🔒 Cerrar acceso</button></div>`;
+    toast('🔗 Link creado','ok');
+  }catch(e){ toast('Error: '+(e.message||e),'err'); }
+}
+async function ilCerrarAcceso(token,activo,btn){
+  try{ const {data,error}=await SB.rpc('vacante_link_estado',{p_token:token,p_activo:activo,p_dias:null});
+    if(error||(data&&data.error)) throw new Error('no');
+    toast(activo?'Acceso reabierto':'Acceso cerrado','ok');
+    if(btn) btn.outerHTML = activo
+      ? `<button class="il-btn g" onclick="ilCerrarAcceso('${token}',false,this)">🔒 Cerrar acceso</button>`
+      : `<button class="il-btn g" onclick="ilCerrarAcceso('${token}',true,this)">🔓 Reabrir acceso</button>`;
+  }catch(e){ toast('No se pudo cambiar el acceso','err'); }
 }
 // Copia el valor de un input de link. Sirve tanto para el link de la empresa
 // (id 'ilVacUrl') como para el de armar-CV (por defecto 'lkUrl').
@@ -293,17 +320,26 @@ function ilExportVacantes(){
   IL.vacantes.forEach(v=>aoa.push([v.empresa||'',v.compania||'',v.tipo_contrato||'',v.codigo_puesto||'',v.cargo||'',v.n_vacantes||'',v.formacion||'',
     (v.competencias||[]).map(c=>(c.excluyente?'[EXCL] ':'')+c.texto).join(' · '),v.turno||'',v.con_campamento===true?'Sí':v.con_campamento===false?'No':'',
     (v.fecha_ingreso||'').slice(0,10),v.residencia||'',v.datos_adicionales||'']));
-  ilDescargar(aoa,'Vacantes','intermediacion_vacantes');
+  ilDescargar(aoa,'Vacantes','intermediacion_vacantes',[22,18,20,14,26,9,20,40,10,14,13,20,32]);
 }
 function ilExportDerivaciones(){
   const aoa=[['Cargo','Nombre y apellido','RUT','Teléfono','Comuna/localidad','Empresa (EECC)','Estado','Fecha derivación','Seguimiento EECC','Comentarios']];
   IL.derivaciones.slice().sort((a,b)=>String(a.cargo_txt||'').localeCompare(String(b.cargo_txt||''),'es'))
     .forEach(d=>aoa.push([d.cargo_txt||'',[d.nombre,d.apellidos].filter(Boolean).join(' '),d.rut||'',d.telefono||'',
       d.localidad||'',d.eecc||'',d.estado||'registrada',(d.fecha_derivacion||'').slice(0,10),d.seguimiento_eecc||'',d.comentarios||'']));
-  ilDescargar(aoa,'Derivados','derivados_por_cargo');
+  ilDescargar(aoa,'Derivados','derivados_por_cargo',[26,26,14,15,18,22,14,15,34,34]);
 }
-function ilDescargar(aoa,hoja,nombre){
-  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),hoja);
+// Ancho de columnas (en caracteres) para que la planilla se vea ordenada y no
+// obligue a redimensionar. Si no se pasa, se estima del contenido.
+function ilAnchosAuto(aoa){
+  const n=(aoa[0]||[]).length, w=new Array(n).fill(10);
+  aoa.forEach(r=>r.forEach((c,i)=>{ const L=String(c==null?'':c).length; if(L+2>w[i]) w[i]=Math.min(60,L+2); }));
+  return w;
+}
+function ilDescargar(aoa,hoja,nombre,anchos){
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=(anchos||ilAnchosAuto(aoa)).map(w=>({wch:w}));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,hoja);
   XLSX.writeFile(wb,nombre+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
