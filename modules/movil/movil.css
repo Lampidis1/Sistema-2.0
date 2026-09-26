@@ -255,3 +255,10 @@ main{padding:22px 28px 40px;max-width:1240px;margin:0 auto}
 .rc-dircv{display:flex;gap:8px;align-items:flex-start;margin:8px 0;padding:8px 10px;
   background:#fff8e6;border:1px solid #f0d98a;border-radius:8px;font-size:.8rem;line-height:1.35;cursor:pointer}
 .rc-dircv input{margin-top:2px;flex:none}
+
+/* Competencias del cargo en el modal de vacante (igual que Empleabilidad) */
+.im-comp-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.im-comp-row input[type=text]{flex:1}
+.im-exc{display:flex;align-items:center;gap:5px;font-size:.75rem;color:#c0311b;white-space:nowrap;font-weight:700;margin:0;cursor:pointer}
+.im-exc input{width:auto;flex:none}
+.im-comp-del{width:auto;padding:6px 10px}

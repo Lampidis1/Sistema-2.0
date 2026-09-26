@@ -6,7 +6,10 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;',
 function toast(m,t){ const e=document.getElementById('toast'); e.textContent=m; e.className='toast '+(t||''); e.style.display='block'; setTimeout(()=>e.style.display='none',2600); }
 let _mdownTarget=null;
 function ovDown(e){ _mdownTarget=e.target; }
-function ovClick(e,closeFn){ if(_mdownTarget===e.currentTarget && e.target===e.currentTarget){ closeFn(); } _mdownTarget=null; }
+// Los modales NO se cierran al hacer clic fuera (se cierran solo con la ✕ o
+// Cancelar): cerrar por error perdía lo escrito. Convención del proyecto para
+// toda ventana emergente — ver docs/PENDIENTES.md.
+function ovClick(e,closeFn){ _mdownTarget=null; }
 
 async function _empOnAcceso(user){
   document.getElementById('gate').style.display='none';

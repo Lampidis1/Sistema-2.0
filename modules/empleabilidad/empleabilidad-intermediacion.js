@@ -22,7 +22,7 @@ function ilNow(){ return new Date().toISOString(); }
 function ilVal(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
 function ilParse(s){ try{ const v=JSON.parse(s||'[]'); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
 function ilModal(html){ let h=document.getElementById('ilModalHost'); if(!h){ h=document.createElement('div'); h.id='ilModalHost'; document.body.appendChild(h); }
-  h.innerHTML='<div class="il-ov" onclick="if(event.target===this)ilCerrar()"><div class="il-box">'+html+'</div></div>'; }
+  h.innerHTML='<div class="il-ov"><div class="il-box">'+html+'</div></div>'; }  /* no cierra al clic fuera (solo ✕/Cancelar) */
 function ilCerrar(){ const h=document.getElementById('ilModalHost'); if(h) h.innerHTML=''; }
 
 async function renderIntermediacion(){
@@ -196,7 +196,10 @@ async function ilLinkEmpresa(vid){
       <div class="il-modal-acc"><span></span><button class="il-btn g" onclick="ilCerrar()">Cerrar</button></div>`);
   }catch(e){ toast('Error: '+e.message,'err'); }
 }
-function ilCopiarLink(id){ const i=document.getElementById(id); if(!i) return; i.select(); try{ navigator.clipboard.writeText(i.value); }catch(e){} toast('🔗 Copiado','ok'); }
+// Copia el valor de un input de link. Sirve tanto para el link de la empresa
+// (id 'ilVacUrl') como para el de armar-CV (por defecto 'lkUrl').
+function ilCopiarLink(id){ const i=document.getElementById(id||'lkUrl'); if(!i) return; i.select();
+  try{ navigator.clipboard.writeText(i.value); }catch(e){ try{document.execCommand('copy');}catch(_){} } toast('🔗 Copiado','ok'); }
 async function ilBorrarVacante(id){
   if(!confirm('¿Eliminar esta vacante?')) return;
   try{ const {error}=await SB.from('vacantes').update({estado_registro:'Eliminado',updated_at:ilNow()}).eq('vacante_id',id); if(error) throw error;
@@ -329,5 +332,3 @@ async function ilGenerarLink(){
       <div class="il-nota"><a href="${esc(url)}" target="_blank" rel="noopener">Abrir en una pestaña nueva ↗</a></div>`;
   }catch(e){ toast('Error al generar link: '+e.message,'err'); }
 }
-function ilCopiarLink(){ const i=document.getElementById('lkUrl'); if(!i) return; i.select();
-  try{ navigator.clipboard.writeText(i.value); }catch(e){ try{document.execCommand('copy');}catch(_){} } toast('🔗 Link copiado','ok'); }

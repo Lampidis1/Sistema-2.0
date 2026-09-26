@@ -256,7 +256,7 @@ function mapFichaGrupo(g){
   const pct=n=>ats.length?Math.round(n/ats.length*100):0;
   const porComuna={}; ats.forEach(a=>{const c=a.comuna||'—';porComuna[c]=(porComuna[c]||0)+1;});
   const el=document.getElementById('emFicha');
-  el.innerHTML=`<div class="em-ov" onmousedown="if(event.target===this)mapCerrarFicha()"><div class="em-fbox">
+  el.innerHTML=`<div class="em-ov"><div class="em-fbox">
     <div class="em-fh"><div>📍 ${esc(nom)}</div><button onclick="mapCerrarFicha()">✕</button></div>
     <div class="em-fkpis">
       <div><b>${ats.length}</b><span>Atenciones</span></div>

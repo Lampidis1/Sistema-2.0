@@ -1023,3 +1023,24 @@ Quedaron sin uso en `modules/movil/movil.js`:
 No se borraron para no arriesgar (Regla 1). `exportarCuestionario()` SÍ se sigue
 usando en la pestaña Levantados y no se toca. Retirar las 3 funciones muertas en
 un cambio aparte, verificando que ningún `onclick` las llame.
+
+---
+
+## P-17 · Convención: las ventanas emergentes NO se cierran al clic fuera
+
+Cerrar un modal por un clic fuera hacía perder lo escrito (muy molesto al
+recargar el mismo cambio). **Convención del proyecto:** toda ventana emergente
+se cierra solo con su botón ✕ / Cancelar, nunca por clic en el fondo.
+
+Aplicado (2026-09-25) en **Empleabilidad** (`ovClick` neutralizado en
+`empleabilidad.js`; `il-ov`/`em-ov` sin handler en intermediación, formación y
+mapa) y **Móvil** (`im-ov` en `movil-intermediacion.js`, que también sirve los
+modales de la Recepción).
+
+Pendiente de replicar la misma convención (quitar `onclick="if(event.target===
+this)…"`) en los módulos aún no tocados: **feria** (`feria-admin.js`,
+`feria-empresa.js`), **mgi**, **hoteles-sg**, y las fichas de faena
+(**centinela**, **antucoya**, **zaldivar**). Es un cambio de una línea por
+archivo; se dejó fuera por Regla 1 (no tocar producción de otros módulos sin
+pedirlo). El popup de "ejemplo" de `armar-cv.js` se dejó como está (es ayuda de
+solo lectura con botón «Entendido»).

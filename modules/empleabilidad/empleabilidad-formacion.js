@@ -12,7 +12,7 @@ let FL = { cursos:[], loaded:false };
 function flVal(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
 function flUid(){ return 'curso_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6); }
 function flModal(html){ let h=document.getElementById('flModalHost'); if(!h){ h=document.createElement('div'); h.id='flModalHost'; document.body.appendChild(h); }
-  h.innerHTML='<div class="il-ov" onclick="if(event.target===this)flCerrar()"><div class="il-box">'+html+'</div></div>'; }
+  h.innerHTML='<div class="il-ov"><div class="il-box">'+html+'</div></div>'; }  /* no cierra al clic fuera (solo ✕/Cancelar) */
 function flCerrar(){ const h=document.getElementById('flModalHost'); if(h) h.innerHTML=''; }
 
 async function renderFormacion(){
