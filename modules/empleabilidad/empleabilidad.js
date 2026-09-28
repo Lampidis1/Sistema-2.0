@@ -352,7 +352,32 @@ function renderFicha(){
     }
   }
 
+  // Observaciones con historial (fecha + usuario), asociadas al candidato.
+  h+=`<div class="cv-sec">Observaciones</div>
+    <div id="obsHist" class="obs-hist"><div class="obs-vacio">Cargando…</div></div>
+    <div class="fld"><textarea id="obsNueva" placeholder="Agregar una observación de seguimiento..."></textarea></div>
+    <div class="toolbar" style="margin-top:4px"><button class="btn" onclick="agregarObs()">＋ Agregar observación</button></div>`;
   document.getElementById('cvModalBody').innerHTML=h;
+  cargarObs(CV_EDIT&&CV_EDIT.cv_id);
+}
+// ── Observaciones (historial por candidato, tabla cv_observaciones) ──────────
+async function cargarObs(cvId){
+  const el=document.getElementById('obsHist'); if(!el||!cvId) return;
+  try{
+    const {data,error}=await SB.from('cv_observaciones').select('*').eq('cv_id',cvId).order('creado_at',{ascending:false});
+    if(error) throw error;
+    const obs=data||[];
+    el.innerHTML = obs.length ? obs.map(o=>`<div class="obs-item"><div class="obs-meta">${esc((o.creado_at||'').slice(0,16).replace('T',' '))} · ${esc(o.creado_por||'—')}</div><div class="obs-txt">${esc(o.texto||'')}</div></div>`).join('')
+      : '<div class="obs-vacio">Sin observaciones aún.</div>';
+  }catch(e){ el.innerHTML='<div class="obs-vacio" style="color:#c0311b">No se pudieron cargar las observaciones.</div>'; }
+}
+async function agregarObs(){
+  const inp=document.getElementById('obsNueva'); const t=(inp&&inp.value||'').trim(); const cvId=CV_EDIT&&CV_EDIT.cv_id;
+  if(!t){ toast('Escribe la observación','err'); return; }
+  if(!cvId){ toast('Guarda el CV primero','err'); return; }
+  try{ const {error}=await SB.from('cv_observaciones').insert({cv_id:cvId, texto:t, creado_por:miNombre()}); if(error) throw error;
+    if(inp) inp.value=''; toast('Observación agregada','ok'); cargarObs(cvId);
+  }catch(e){ toast('No se pudo guardar: '+e.message,'err'); }
 }
 function expItem(e,i){
   return `<div class="exp-item"><span class="del-item" onclick="delExp(${i})">✕</span>

@@ -176,6 +176,9 @@ async function guardarRegistro(){
   if(error){ toast('Error: '+error.message,'err'); return false; }
   // logs de trazabilidad campo por campo
   await registrarCambios(previo, nuevo);
+  // Observación nueva → al historial (cv_observaciones), sin perder las anteriores.
+  try{ if(nuevo.observaciones && nuevo.observaciones!==((previo&&previo.observaciones)||''))
+    await SB.from('cv_observaciones').insert({cv_id:nuevo.cv_id, texto:nuevo.observaciones, creado_por:miNombre()}); }catch(e){}
   toast('✅ Registro guardado','ok');
   ACTUAL={cv_id:nuevo.cv_id, cuestionario:nuevo.cuestionario, ...nuevo}; ES_EDICION=true;
   document.getElementById('editInfo').textContent='Guardado ✓ · '+((nuevo.nombres||'')+' '+(nuevo.apellidos||''));

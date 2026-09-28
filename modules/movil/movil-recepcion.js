@@ -49,6 +49,27 @@ function rcOficioToggle(v, checked){
   RC.oficios=s; rcOficiosRender();
 }
 
+// ── Realtime de cargos (vacantes/cursos): se refresca la lista sin recargar ──
+let RC_RT=null;
+function rcRealtimeInit(){
+  if(RC_RT || typeof SB==='undefined' || !SB || typeof SB.channel!=='function') return;
+  try{
+    RC_RT=SB.channel('cargos-rt')
+      .on('postgres_changes',{event:'*',schema:'public',table:'vacantes'},()=>rcRefrescarCargos('vacantes'))
+      .on('postgres_changes',{event:'*',schema:'public',table:'cursos'},  ()=>rcRefrescarCargos('cursos'))
+      .subscribe();
+  }catch(e){ RC_RT=null; }
+}
+function rcRefrescarCargos(tipo){
+  if(tipo==='vacantes'){
+    RC.vacLoaded=false; if(document.getElementById('rcVacLista') && typeof rcCargarVacantes==='function') rcCargarVacantes();
+    if(typeof IM!=='undefined'){ IM.loaded=false; const p=document.getElementById('page-intermediacion');
+      if(p && p.classList.contains('active') && typeof imRender==='function') imRender(); }
+  }else{
+    RC.curLoaded=false; if(document.getElementById('rcCurLista') && typeof rcCargarCursos==='function') rcCargarCursos();
+  }
+}
+
 // ── Salud: discapacidad + contraindicación médica (en Recepción) ─────────────
 function rcDiscapCambio(){
   const d=(document.getElementById('fDiscap')||{}).value, t=(document.getElementById('fDiscapTipo')||{}).value;
@@ -165,6 +186,7 @@ function rcRender(){
   rcEligibilidad();
   if(typeof rcContraRender==='function') rcContraRender();
   if(typeof rcDiscapCambio==='function') rcDiscapCambio();
+  rcRealtimeInit();
 }
 
 // Casilla de un servicio (marcable), con candado si está bloqueado.

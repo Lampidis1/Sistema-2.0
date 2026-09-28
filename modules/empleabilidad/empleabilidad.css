@@ -300,3 +300,11 @@
 .cv-per-sep{color:#8a949a;font-size:.85rem}
 .cv-chk{display:flex;align-items:center;gap:6px;font-size:.8rem;cursor:pointer;margin-left:4px}
 .cv-chk input{width:auto}
+
+/* Observaciones con historial (ficha CV) */
+.cv-sec{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.05rem;color:var(--teal-dk,#006973);text-transform:uppercase;margin:14px 0 6px;border-bottom:1px solid var(--border,#D7DEE4);padding-bottom:3px}
+.obs-hist{max-height:190px;overflow:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.obs-item{background:#f7fafa;border:1px solid var(--border,#D7DEE4);border-radius:8px;padding:7px 10px}
+.obs-meta{font-size:.72rem;color:var(--text-muted,#5F6973);margin-bottom:2px}
+.obs-txt{font-size:.86rem;white-space:pre-wrap}
+.obs-vacio{color:var(--text-muted,#5F6973);font-size:.82rem}
