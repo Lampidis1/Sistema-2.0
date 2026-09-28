@@ -152,6 +152,16 @@ Mapa.prototype._render = function(){
   const ctx=this.ctx, e=this.base.estilos||{};
   ctx.clearRect(0,0,this.w,this.h);
   ctx.fillStyle = e.fondo||'#eef3f2'; ctx.fillRect(0,0,this.w,this.h);
+  // imágenes de fondo georreferenciadas (p. ej. satelital estática). Cada una:
+  // {img:Image, bounds:[oLng,sLat,eLng,nLat], alpha?}. Se dibujan bajo todo.
+  (this.base.rasters||[]).forEach(R=>{
+    if(!R||!R.img||!R.img.complete||!R.img.naturalWidth||!R.bounds) return;
+    const tl=this.toPx(R.bounds[0],R.bounds[3]), br=this.toPx(R.bounds[2],R.bounds[1]);
+    const w=br[0]-tl[0], h=br[1]-tl[1]; if(w<=0||h<=0) return;
+    if(R.alpha!=null) ctx.globalAlpha=R.alpha;
+    try{ ctx.drawImage(R.img, tl[0], tl[1], w, h); }catch(_){}
+    ctx.globalAlpha=1;
+  });
   // polígonos (comunas / edificios / agua / áreas verdes). Cada feature puede
   // traer su propio color en properties: _fill, _stroke, _w; y _min para ocultarse
   // al alejar (ppd < _min). Si no, usa los estilos de la capa. Retrocompatible.

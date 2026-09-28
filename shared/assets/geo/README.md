@@ -19,6 +19,7 @@ Datos vectoriales **públicos** (geometría de límites y calles) para dibujar m
 | `sierra-gorda-edificios.geojson` | Edificios. | OpenStreetMap. |
 | `sierra-gorda-servicios.geojson` | Puntos de servicio. | OpenStreetMap. |
 | `sierra-gorda-espacios.geojson` | Espacios/áreas. | OpenStreetMap. |
+| `sat/<ciudad>.jpg` + `sat/index.json` | **Imagen satelital estática** por ciudad (Antofagasta, Calama, Tocopilla, Mejillones, Baquedano, Peine, Sierra Gorda, Taltal), con su bbox. Fondo del mapa al activar «🛰 Satélite» y acercarse a la ciudad. **Sentinel-2 cloudless 2023 · EOX IT Services GmbH · CC BY 4.0** (contains modified Copernicus Sentinel data). Descarga puntual (WMS EOX), incrustada como asset; sin tiles ni llamadas en runtime. ~10 m/píxel (contexto de ciudad, no detalle de edificios). Para actualizarla: volver a correr la descarga con otro año/fecha. | EOX / ESA Copernicus |
 
 ## Detalles técnicos
 

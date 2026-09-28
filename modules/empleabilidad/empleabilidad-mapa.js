@@ -13,7 +13,19 @@
 // <script src> clásico, nunca type="module" (CLAUDE.md §6). Prefijo map/EM.
 // ═══════════════════════════════════════════════════════════════════════════
 
-let EM = { operativos:[], atenciones:[], base:null, mapa:null, filtro:'mes', ref:null, modo:'', thresh:2500, cargado:false };
+let EM = { operativos:[], atenciones:[], base:null, mapa:null, filtro:'mes', ref:null, modo:'', thresh:2500, cargado:false, sat:false, satImg:{} };
+// Imágenes satelitales (Sentinel-2 cloudless · EOX · CC BY 4.0) por ciudad,
+// con su bbox [oLng,sLat,eLng,nLat]. Extracción puntual incrustada (sat/*.jpg).
+const EM_SAT={
+  antofagasta:{file:'sat/antofagasta.jpg',  bounds:[-70.453,-23.7014,-70.343,-23.5914]},
+  calama:     {file:'sat/calama.jpg',       bounds:[-68.9772,-22.5124,-68.8772,-22.4124]},
+  tocopilla:  {file:'sat/tocopilla.jpg',     bounds:[-70.2259,-22.12,-70.1699,-22.064]},
+  mejillones: {file:'sat/mejillones.jpg',    bounds:[-70.4783,-23.1302,-70.4183,-23.0702]},
+  baquedano:  {file:'sat/baquedano.jpg',     bounds:[-69.8575,-23.3478,-69.8295,-23.3198]},
+  peine:      {file:'sat/peine.jpg',         bounds:[-68.0747,-23.6966,-68.0487,-23.6706]},
+  'sierra-gorda':{file:'sat/sierra-gorda.jpg',bounds:[-69.3402,-22.9115,-69.3002,-22.8715]},
+  taltal:     {file:'sat/taltal.jpg',        bounds:[-70.5138,-25.4379,-70.4538,-25.3779]}
+};
 const EM_FLABEL={dia:'Día',semana:'Semana',mes:'Mes',anio:'Año',todo:'Todo'};
 function emHoy(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
 function emRef(){ if(!EM.ref) EM.ref=emHoy(); return EM.ref; }
@@ -25,6 +37,7 @@ async function mapRender(){
   cont.innerHTML=`
     <div class="em-head">
       <div class="em-title">🗺 Mapa de operativos del móvil</div>
+      <button id="emSatBtn" class="em-satbtn ${EM.sat?'on':''}" onclick="mapSatToggle()" title="Fondo satelital al acercarse a una ciudad">${EM.sat?'🛰 Satélite: ON':'🛰 Satélite'}</button>
       <div id="emFiltros" class="em-filtros"></div>
     </div>
     <div class="em-rango" id="emRango"></div>
@@ -165,6 +178,7 @@ async function mapInit(){
   EM.baseObj.estilos.lineaMinPpd=EM.thresh*1.4;
   EM.calles={}; // se recargan las capas de ciudad al hacer zoom (baseObj es nuevo)
   EM.modo=''; mapPintar();
+  if(EM.sat) mapSatAplicar(); // re-aplica el satélite cacheado al baseObj nuevo
 }
 function mapOnView(m){
   const nuevo = m.view.ppd < EM.thresh ? 'comuna' : 'operativo';
@@ -173,6 +187,7 @@ function mapOnView(m){
   if(m.view.ppd >= EM.thresh){
     const c=mapCiudadCercana(m.view.cx, m.view.cy);
     if(c && !EM.calles[c.slug]) mapCargarZona(c);
+    if(EM.sat) mapSatActual();
   }
 }
 function mapCiudadCercana(lng,lat){
@@ -220,6 +235,32 @@ async function mapCargarZona(c){
   if(lug){ (lug.features||[]).forEach(f=>{ const s=st.lugares[(f.properties||{}).tipo]; if(s) Object.assign(f.properties,s); });
     EM.baseObj.puntos.push(lug); }
   EM.calles[c.slug]=(calles||poly||costa||lug)?'ok':'error';
+  EM.mapa.setBase(EM.baseObj);
+}
+
+// ── capa satelital (raster de fondo, por ciudad, bajo demanda) ───────────────
+function mapSatToggle(){
+  EM.sat=!EM.sat;
+  const b=document.getElementById('emSatBtn'); if(b){ b.classList.toggle('on',EM.sat); b.textContent=EM.sat?'🛰 Satélite: ON':'🛰 Satélite'; }
+  if(EM.sat) mapSatActual(); else mapSatAplicar();
+}
+// Carga la imagen de la ciudad cercana si estamos acercados (ppd>=thresh).
+function mapSatActual(){
+  if(!EM.sat||!EM.mapa || EM.mapa.view.ppd < EM.thresh) return;
+  const c=mapCiudadCercana(EM.mapa.view.cx, EM.mapa.view.cy); if(c) mapSatCargar(c.slug);
+}
+function mapSatCargar(slug){
+  const meta=EM_SAT[slug]; if(!meta || EM.satImg[slug]) return;
+  const rec={img:new Image(), bounds:meta.bounds};
+  EM.satImg[slug]=rec;
+  rec.img.onload=()=>{ if(EM.sat) mapSatAplicar(); };
+  rec.img.src='../../shared/assets/geo/'+meta.file+'?v=20260928';
+}
+function mapSatAplicar(){
+  if(!EM.baseObj||!EM.mapa) return;
+  EM.baseObj.rasters = EM.sat
+    ? Object.keys(EM.satImg).map(s=>EM.satImg[s]).filter(r=>r&&r.img&&r.img.complete&&r.img.naturalWidth).map(r=>({img:r.img,bounds:r.bounds,alpha:1}))
+    : [];
   EM.mapa.setBase(EM.baseObj);
 }
 

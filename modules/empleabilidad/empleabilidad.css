@@ -287,3 +287,9 @@
 .rep-chk{display:inline-flex;align-items:center;gap:5px;font-size:.8rem;margin:3px 12px 3px 0}
 .rep-chk input{flex:none}
 @media(max-width:900px){ .rep-wrap{grid-template-columns:1fr} .rep-mapa{height:240px} }
+
+/* Botón de satélite del dashboard mapa */
+.em-satbtn{border:1.5px solid var(--teal-dk,#006973);background:#fff;color:var(--teal-dk,#006973);
+  border-radius:20px;padding:5px 14px;font-size:.82rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.em-satbtn:hover{background:#e4f6f5}
+.em-satbtn.on{background:var(--teal-dk,#006973);color:#fff}

@@ -1,0 +1,82 @@
+{
+ "antofagasta": {
+  "bounds": [
+   -70.453,
+   -23.7014,
+   -70.343,
+   -23.5914
+  ],
+  "file": "sat/antofagasta.jpg",
+  "layer": "s2cloudless-2023"
+ },
+ "calama": {
+  "bounds": [
+   -68.9772,
+   -22.5124,
+   -68.8772,
+   -22.4124
+  ],
+  "file": "sat/calama.jpg",
+  "layer": "s2cloudless-2023"
+ },
+ "tocopilla": {
+  "bounds": [
+   -70.2259,
+   -22.12,
+   -70.1699,
+   -22.064
+  ],
+  "file": "sat/tocopilla.jpg",
+  "layer": "s2cloudless-2023"
+ },
+ "mejillones": {
+  "bounds": [
+   -70.4783,
+   -23.1302,
+   -70.4183,
+   -23.0702
+  ],
+  "file": "sat/mejillones.jpg",
+  "layer": "s2cloudless-2023"
+ },
+ "baquedano": {
+  "bounds": [
+   -69.8575,
+   -23.3478,
+   -69.8295,
+   -23.3198
+  ],
+  "file": "sat/baquedano.jpg",
+  "layer": "s2cloudless-2023"
+ },
+ "peine": {
+  "bounds": [
+   -68.0747,
+   -23.6966,
+   -68.0487,
+   -23.6706
+  ],
+  "file": "sat/peine.jpg",
+  "layer": "s2cloudless-2023"
+ },
+ "sierra-gorda": {
+  "bounds": [
+   -69.3402,
+   -22.9115,
+   -69.3002,
+   -22.8715
+  ],
+  "file": "sat/sierra-gorda.jpg",
+  "layer": "s2cloudless-2023"
+ },
+ "taltal": {
+  "bounds": [
+   -70.5138,
+   -25.4379,
+   -70.4538,
+   -25.3779
+  ],
+  "file": "sat/taltal.jpg",
+  "layer": "s2cloudless-2023"
+ }
+}
