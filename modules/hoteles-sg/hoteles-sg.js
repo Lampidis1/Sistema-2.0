@@ -20,6 +20,26 @@ let DATOS = [];
 let VISTA = 'mapa';   // el mapa es lo primero que se ve
 let MODO = 'fichas';
 let MAPA = null;   // instancia de MapaAM (motor propio, Canvas — shared/js/mapa.js)
+let SG_BASE = null, SG_SAT_ON = false, SG_SATIMG = null;
+// Imagen satelital de Sierra Gorda (Sentinel-2 cloudless · EOX · CC BY 4.0).
+const SG_SAT = { file: 'sat/sierra-gorda.jpg', bounds: [-69.3402, -22.9115, -69.3002, -22.8715] };
+function satSG() {
+  SG_SAT_ON = !SG_SAT_ON;
+  const btn = document.getElementById('sgSatBtn');
+  if (btn) { btn.classList.toggle('on', SG_SAT_ON); btn.textContent = SG_SAT_ON ? '🛰 Satélite: ON' : '🛰 Satélite'; }
+  if (SG_SAT_ON && !SG_SATIMG) {
+    SG_SATIMG = new Image();
+    SG_SATIMG.onload = () => { if (SG_SAT_ON) aplicarSatSG(); };
+    SG_SATIMG.src = '../../shared/assets/geo/' + SG_SAT.file + '?v=20260928';
+  }
+  aplicarSatSG();
+}
+function aplicarSatSG() {
+  if (!MAPA || !SG_BASE) return;
+  SG_BASE.rasters = (SG_SAT_ON && SG_SATIMG && SG_SATIMG.complete && SG_SATIMG.naturalWidth)
+    ? [{ img: SG_SATIMG, bounds: SG_SAT.bounds, alpha: 1 }] : [];
+  MAPA.setBase(SG_BASE);
+}
 
 const SIERRA_GORDA = [-22.8917, -69.3196];   // centro del pueblo [lat, lng]
 
@@ -199,12 +219,14 @@ async function initMapa() {
     edif:   '../../shared/assets/geo/sierra-gorda-edificios.geojson',
     esp:    '../../shared/assets/geo/sierra-gorda-espacios.geojson',
   });
-  MAPA.setBase({
+  SG_BASE = {
     poligonos: [b.edif, b.esp].filter(Boolean),
     lineas:    [b.calles].filter(Boolean),
+    rasters:   SG_SAT_ON && SG_SATIMG && SG_SATIMG.complete ? [{ img: SG_SATIMG, bounds: SG_SAT.bounds, alpha: 1 }] : [],
     estilos: { fondo: '#eef3f2', lineaStroke: '#b9c7c4', lineaW: 1.6,
                poligonoFill: 'rgba(120,140,150,.16)', poligonoStroke: 'rgba(90,110,120,.35)' },
-  });
+  };
+  MAPA.setBase(SG_BASE);
   // Límite de zoom/paneo al área del pueblo (los hospedajes con ubicación), para
   // que el mapa no se pierda al alejar ni al arrastrar. Se calcula de todos los
   // hospedajes con coordenadas, con un margen.

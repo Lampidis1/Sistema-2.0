@@ -169,3 +169,10 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text)}
 .sin-conf-chip{display:inline-block;background:#fff3cd;color:#8a6100;border:1px solid #f0d9a0;
                border-radius:11px;padding:1px 8px;font-size:.68rem;font-weight:700;
                vertical-align:middle;white-space:nowrap}
+
+/* Botón de satélite del mapa de Sierra Gorda */
+.mapa-ctrl{display:flex;justify-content:flex-end;margin-bottom:6px}
+.sg-satbtn{border:1.5px solid #006973;background:#fff;color:#006973;border-radius:20px;
+  padding:5px 14px;font-size:.82rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.sg-satbtn:hover{background:#e4f6f5}
+.sg-satbtn.on{background:#006973;color:#fff}
