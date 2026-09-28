@@ -156,6 +156,7 @@ const EM_CIUDADES=[
   {slug:'mejillones',   lng:-70.4483, lat:-23.1002, file:'calles-mejillones.geojson'},
   {slug:'peine',        lng:-68.0617, lat:-23.6836, file:'calles-peine.geojson'},
   {slug:'baquedano',    lng:-69.8435, lat:-23.3338, file:'calles-baquedano.geojson'},
+  {slug:'taltal',       lng:-70.4838, lat:-25.4079, file:null}, // sin geometría de calles: usa satélite + etiquetas
   {slug:'sierra-gorda', lng:-69.3202, lat:-22.8915, file:'sierra-gorda-calles.geojson'}
 ];
 EM.calles = EM.calles || {};
@@ -215,13 +216,13 @@ async function mapFetchGeo(file){
 // etiquetas (calles/lugares). Aplica estilo por clase/tipo y las agrega al mapa.
 // Zonas que además de calles tienen capas de contexto extraídas (agua/verde/costa
 // /etiquetas). Se listan aquí para no pedir archivos inexistentes (evita 404).
-const EM_ZONAS_EXTRA=new Set([]);
+const EM_ZONAS_EXTRA=new Set(['antofagasta','calama','tocopilla','mejillones','taltal','baquedano','peine','sierra-gorda']);
 async function mapCargarZona(c){
   EM.calles[c.slug]='cargando';
   const st=mapEstiloZona();
   const extra=EM_ZONAS_EXTRA.has(c.slug);
   const [calles,poly,costa,lug]=await Promise.all([
-    mapFetchGeo(c.file),
+    c.file?mapFetchGeo(c.file):null,
     extra?mapFetchGeo('poly-'+c.slug+'.geojson'):null,
     extra?mapFetchGeo('costa-'+c.slug+'.geojson'):null,
     extra?mapFetchGeo('lugares-'+c.slug+'.geojson'):null

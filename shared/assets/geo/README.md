@@ -16,6 +16,9 @@ Datos vectoriales **públicos** (geometría de límites y calles) para dibujar m
 | `localidades-antofagasta.geojson` | 34 localidades habitadas (Ciudad/Pueblo/Caleta/Aldea) como puntos, con nombre, comuna, entidad y población 2017. | INE 2017 / OpenStreetMap. |
 | `sierra-gorda-calles.geojson` | Calles de Sierra Gorda. | OpenStreetMap. |
 | `calles-<ciudad>.geojson` | Calles de Antofagasta, Calama, Tocopilla, Mejillones, Peine y Baquedano (líneas). Extraídas una vez de OSM (Overpass) y simplificadas. Las usa el dashboard de Empleabilidad **por demanda** (se cargan al hacer zoom en la ciudad). | OpenStreetMap (ODbL). |
+| `lugares-<ciudad>.geojson` | **Etiquetas** de calles (nombre al medio de cada calle) y de lugares (`place=*`, plazas, hitos) como puntos, con `nombre`/`tipo`. Rotulan el plano al acercarse. 8 localidades. | OpenStreetMap (ODbL). |
+| `poly-<ciudad>.geojson` | **Agua** (bahías/lagunas) y **áreas verdes** (parques/plazas) como polígonos, con `clase` agua/verde. | OpenStreetMap (ODbL). |
+| `costa-<ciudad>.geojson` | **Costa** y **ríos/canales** como líneas, con `clase` costa/rio. | OpenStreetMap (ODbL). |
 | `sierra-gorda-edificios.geojson` | Edificios. | OpenStreetMap. |
 | `sierra-gorda-servicios.geojson` | Puntos de servicio. | OpenStreetMap. |
 | `sierra-gorda-espacios.geojson` | Espacios/áreas. | OpenStreetMap. |

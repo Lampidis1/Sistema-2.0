@@ -219,12 +219,23 @@ async function initMapa() {
     edif:   '../../shared/assets/geo/sierra-gorda-edificios.geojson',
     esp:    '../../shared/assets/geo/sierra-gorda-espacios.geojson',
   });
+  // Capas de contexto extraídas de OSM (agua/verde + etiquetas de calles/lugares).
+  const geo = f => fetch('../../shared/assets/geo/' + f + '?v=20260928b').then(r => r.ok ? r.json() : null).catch(() => null);
+  const [poly, lug] = await Promise.all([ geo('poly-sierra-gorda.geojson'), geo('lugares-sierra-gorda.geojson') ]);
+  const STp = { agua:{_fill:'rgba(122,170,210,.42)',_stroke:'rgba(86,140,190,.55)',_w:0.8},
+                verde:{_fill:'rgba(150,198,150,.38)',_stroke:'rgba(120,175,120,.5)',_w:0.8} };
+  if (poly) (poly.features||[]).forEach(f=>{ const s=STp[(f.properties||{}).clase]; if(s) Object.assign(f.properties,s); });
+  if (lug) (lug.features||[]).forEach(f=>{ const p=f.properties||{};
+    if(p.tipo==='calle') Object.assign(p,{_nodot:true,_labelColor:'#61707c',_font:'11px system-ui,sans-serif'});
+    else Object.assign(p,{_nodot:true,_labelColor:'#26384a',_font:'600 12px system-ui,sans-serif'}); });
   SG_BASE = {
-    poligonos: [b.edif, b.esp].filter(Boolean),
+    poligonos: [b.edif, b.esp, poly].filter(Boolean),
     lineas:    [b.calles].filter(Boolean),
+    puntos:    [lug].filter(Boolean),
     rasters:   SG_SAT_ON && SG_SATIMG && SG_SATIMG.complete ? [{ img: SG_SATIMG, bounds: SG_SAT.bounds, alpha: 1 }] : [],
     estilos: { fondo: '#eef3f2', lineaStroke: '#b9c7c4', lineaW: 1.6,
-               poligonoFill: 'rgba(120,140,150,.16)', poligonoStroke: 'rgba(90,110,120,.35)' },
+               poligonoFill: 'rgba(120,140,150,.16)', poligonoStroke: 'rgba(90,110,120,.35)',
+               puntoLabelKey:'nombre', puntoHalo:'rgba(238,243,242,.9)' },
   };
   MAPA.setBase(SG_BASE);
   // Límite de zoom/paneo al área del pueblo (los hospedajes con ubicación), para
