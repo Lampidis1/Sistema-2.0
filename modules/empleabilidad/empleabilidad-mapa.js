@@ -163,15 +163,16 @@ async function mapInit(){
   // Al alejar solo ciudades/pueblos rotulados y sin calles; al acercar, todo.
   EM.baseObj.estilos.puntoLabelMinPpd=EM.thresh;
   EM.baseObj.estilos.lineaMinPpd=EM.thresh*1.4;
+  EM.calles={}; // se recargan las capas de ciudad al hacer zoom (baseObj es nuevo)
   EM.modo=''; mapPintar();
 }
 function mapOnView(m){
   const nuevo = m.view.ppd < EM.thresh ? 'comuna' : 'operativo';
   if(nuevo!==EM.modo){ EM.modo=nuevo; mapPintar(false); }
-  // Carga diferida de calles de la ciudad cuando se hace zoom en ella.
+  // Carga diferida de las capas de la ciudad cuando se hace zoom en ella.
   if(m.view.ppd >= EM.thresh){
     const c=mapCiudadCercana(m.view.cx, m.view.cy);
-    if(c && !EM.calles[c.slug]) mapCargarCalles(c);
+    if(c && !EM.calles[c.slug]) mapCargarZona(c);
   }
 }
 function mapCiudadCercana(lng,lat){
@@ -179,15 +180,47 @@ function mapCiudadCercana(lng,lat){
   EM_CIUDADES.forEach(c=>{ const d=Math.hypot((c.lng-lng)*Math.cos(lat*Math.PI/180), c.lat-lat); if(d<bd){ bd=d; best=c; } });
   return best;
 }
-async function mapCargarCalles(c){
+// Estilos de las capas de ciudad (se aplican por feature; el zoom _min se ata a
+// EM.thresh para que aparezcan al acercarse a la ciudad, no antes).
+function mapEstiloZona(){
+  const t=EM.thresh||2500;
+  return {
+    poly:{ agua:{_fill:'rgba(122,170,210,.42)',_stroke:'rgba(86,140,190,.55)',_w:0.8,_min:t},
+           verde:{_fill:'rgba(150,198,150,.35)',_stroke:'rgba(120,175,120,.5)',_w:0.8,_min:t} },
+    costa:{ costa:{_stroke:'#5f9fd0',_w:1.6}, rio:{_stroke:'#8fbbe0',_w:1.0} },
+    lugares:{ place:{_nodot:true,_min:t*1.05,_labelColor:'#26384a',_font:'600 12px system-ui,sans-serif'},
+              calle:{_nodot:true,_min:t*2.2,_labelColor:'#61707c',_font:'11px system-ui,sans-serif'} }
+  };
+}
+async function mapFetchGeo(file){
+  try{ const r=await fetch('../../shared/assets/geo/'+file+'?v=20260928'); if(!r.ok) return null; return await r.json(); }
+  catch(e){ return null; }
+}
+// Carga por demanda TODAS las capas de la ciudad: calles + agua/verde + costa +
+// etiquetas (calles/lugares). Aplica estilo por clase/tipo y las agrega al mapa.
+// Zonas que además de calles tienen capas de contexto extraídas (agua/verde/costa
+// /etiquetas). Se listan aquí para no pedir archivos inexistentes (evita 404).
+const EM_ZONAS_EXTRA=new Set([]);
+async function mapCargarZona(c){
   EM.calles[c.slug]='cargando';
-  try{
-    const r=await fetch('../../shared/assets/geo/'+c.file+'?v=20260925');
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const gj=await r.json();
-    EM.calles[c.slug]=gj;
-    if(EM.baseObj && EM.mapa){ EM.baseObj.lineas.push(gj); EM.mapa.setBase(EM.baseObj); }
-  }catch(e){ EM.calles[c.slug]='error'; }
+  const st=mapEstiloZona();
+  const extra=EM_ZONAS_EXTRA.has(c.slug);
+  const [calles,poly,costa,lug]=await Promise.all([
+    mapFetchGeo(c.file),
+    extra?mapFetchGeo('poly-'+c.slug+'.geojson'):null,
+    extra?mapFetchGeo('costa-'+c.slug+'.geojson'):null,
+    extra?mapFetchGeo('lugares-'+c.slug+'.geojson'):null
+  ]);
+  if(!EM.baseObj || !EM.mapa){ EM.calles[c.slug]='error'; return; }
+  if(calles) EM.baseObj.lineas.push(calles);
+  if(poly){ (poly.features||[]).forEach(f=>{ const s=st.poly[(f.properties||{}).clase]; if(s) Object.assign(f.properties,s); });
+    EM.baseObj.poligonos.push(poly); }
+  if(costa){ (costa.features||[]).forEach(f=>{ const s=st.costa[(f.properties||{}).clase]; if(s) Object.assign(f.properties,s); });
+    EM.baseObj.lineas.push(costa); }
+  if(lug){ (lug.features||[]).forEach(f=>{ const s=st.lugares[(f.properties||{}).tipo]; if(s) Object.assign(f.properties,s); });
+    EM.baseObj.puntos.push(lug); }
+  EM.calles[c.slug]=(calles||poly||costa||lug)?'ok':'error';
+  EM.mapa.setBase(EM.baseObj);
 }
 
 // ── pintar pines + lista + KPIs ──────────────────────────────────────────────
@@ -259,7 +292,11 @@ function mapZoomGrupo(g){
   else if(g.xy){ lng=g.xy[0]; lat=g.xy[1]; }                     // grupo por operativo
   else if(g.op && g.op.lng!=null){ lng=g.op.lng; lat=g.op.lat; } // respaldo
   if(lng==null || lat==null) return;
-  const ppd=Math.min(EM.mapa.maxppd||400000, Math.max((EM.thresh||2500)*2.2, (EM.thresh||2500)+1));
+  // Acercamiento fuerte: ~500 m de radio alrededor del punto (así se ven las
+  // calles y el contexto). ppd = anchoCanvas · 111320 / (2 · radio_m).
+  const w=(EM.mapa.w)||600, radioM=500;
+  let ppd=w*111320/(2*radioM);
+  ppd=Math.min(EM.mapa.maxppd||400000, Math.max(EM.mapa.minppd||1, ppd));
   EM.mapa.centrar(lng, lat, ppd);
 }
 

@@ -152,12 +152,16 @@ Mapa.prototype._render = function(){
   const ctx=this.ctx, e=this.base.estilos||{};
   ctx.clearRect(0,0,this.w,this.h);
   ctx.fillStyle = e.fondo||'#eef3f2'; ctx.fillRect(0,0,this.w,this.h);
-  // polígonos (edificios / comunas)
+  // polígonos (comunas / edificios / agua / áreas verdes). Cada feature puede
+  // traer su propio color en properties: _fill, _stroke, _w; y _min para ocultarse
+  // al alejar (ppd < _min). Si no, usa los estilos de la capa. Retrocompatible.
   (this.base.poligonos||[]).forEach(gj=>{
-    ctx.fillStyle = e.poligonoFill||'rgba(0,163,153,.10)';
-    ctx.strokeStyle = e.poligonoStroke||'rgba(0,105,115,.35)';
-    ctx.lineWidth = e.poligonoW||1;
     (gj&&gj.features||[]).forEach(f=>{
+      const pf=f.properties||{};
+      if(pf._min && this.view.ppd < pf._min) return;
+      ctx.fillStyle   = pf._fill   || e.poligonoFill   || 'rgba(0,163,153,.10)';
+      ctx.strokeStyle = pf._stroke || e.poligonoStroke || 'rgba(0,105,115,.35)';
+      ctx.lineWidth   = pf._w      || e.poligonoW      || 1;
       eachRing(f.geometry, ring=>{
         ctx.beginPath();
         ring.forEach((p,i)=>{ const q=this.toPx(p[0],p[1]); i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]); });
@@ -166,39 +170,49 @@ Mapa.prototype._render = function(){
       });
     });
   });
-  // líneas (calles) — se pueden ocultar al alejar (e.lineaMinPpd)
-  ctx.strokeStyle = e.lineaStroke||'#cdd8d6'; ctx.lineWidth = e.lineaW||1.4;
+  // líneas (calles / costa / agua lineal). Gate global e.lineaMinPpd + override por
+  // feature (_stroke, _w, _min). Retrocompatible con las calles ya existentes.
   ctx.lineJoin='round'; ctx.lineCap='round';
   if(!(e.lineaMinPpd && this.view.ppd < e.lineaMinPpd))
   (this.base.lineas||[]).forEach(gj=>{
-    (gj&&gj.features||[]).forEach(f=>eachRing(f.geometry, ring=>{
-      ctx.beginPath();
-      ring.forEach((p,i)=>{ const q=this.toPx(p[0],p[1]); i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]); });
-      ctx.stroke();
-    }));
+    (gj&&gj.features||[]).forEach(f=>{
+      const pf=f.properties||{};
+      if(pf._min && this.view.ppd < pf._min) return;
+      ctx.strokeStyle = pf._stroke || e.lineaStroke || '#cdd8d6';
+      ctx.lineWidth   = pf._w      || e.lineaW      || 1.4;
+      eachRing(f.geometry, ring=>{
+        ctx.beginPath();
+        ring.forEach((p,i)=>{ const q=this.toPx(p[0],p[1]); i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]); });
+        ctx.stroke();
+      });
+    });
   });
   // puntos de referencia (ciudades / localidades): punto pequeño + etiqueta
   const lblKey = e.puntoLabelKey||'nombre';
   (this.base.puntos||[]).forEach(gj=>{
     (gj&&gj.features||[]).forEach(f=>{
       if(!f.geometry||f.geometry.type!=='Point') return;
+      const pf=f.properties||{};
+      if(pf._min && this.view.ppd < pf._min) return;        // etiqueta gated por zoom
       const c=f.geometry.coordinates, q=this.toPx(c[0],c[1]);
       if(q[0]<-20||q[1]<-20||q[0]>this.w+20||q[1]>this.h+20) return;
-      ctx.beginPath(); ctx.arc(q[0],q[1],e.puntoR||2.6,0,Math.PI*2);
-      ctx.fillStyle=e.puntoColor||'#5f6973'; ctx.fill();
+      if(!pf._nodot){ ctx.beginPath(); ctx.arc(q[0],q[1],pf._r||e.puntoR||2.6,0,Math.PI*2);
+        ctx.fillStyle=pf._color||e.puntoColor||'#5f6973'; ctx.fill(); }
       const lbl=(f.properties&&f.properties[lblKey])||'';
       // Para no saturar: al alejar (ppd < puntoLabelMinPpd) solo se rotulan las
       // entidades "siempre" (p. ej. Ciudad/Pueblo); al acercar, todas.
       let mostrar=!!lbl;
-      if(mostrar && e.puntoLabelMinPpd && this.view.ppd < e.puntoLabelMinPpd){
+      // Los puntos con _min propio ya pasaron su gate de zoom: se muestran tal cual.
+      if(mostrar && !pf._min && e.puntoLabelMinPpd && this.view.ppd < e.puntoLabelMinPpd){
         const ent=f.properties&&f.properties.entidad;
         mostrar = Array.isArray(e.puntoLabelSiempre) && e.puntoLabelSiempre.indexOf(ent)>=0;
       }
       if(mostrar){
-        ctx.font=e.puntoFont||'11px system-ui,sans-serif';
-        ctx.textAlign='left'; ctx.textBaseline='middle';
+        ctx.font=pf._font||e.puntoFont||'11px system-ui,sans-serif';
+        const cen=!!pf._nodot; ctx.textAlign=cen?'center':'left'; ctx.textBaseline='middle';
+        const lx=cen?q[0]:q[0]+5;
         ctx.lineWidth=3; ctx.strokeStyle=e.puntoHalo||'rgba(255,255,255,.85)';
-        ctx.strokeText(lbl,q[0]+5,q[1]); ctx.fillStyle=e.puntoLabelColor||'#3a4550'; ctx.fillText(lbl,q[0]+5,q[1]);
+        ctx.strokeText(lbl,lx,q[1]); ctx.fillStyle=pf._labelColor||e.puntoLabelColor||'#3a4550'; ctx.fillText(lbl,lx,q[1]);
       }
     });
   });
