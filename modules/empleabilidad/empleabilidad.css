@@ -230,6 +230,9 @@
 .em-lista-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.92rem;color:#006973;text-transform:uppercase;margin-bottom:8px}
 .em-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:.86rem}
 .em-row:hover{background:#f2f6f6}.em-row b{color:#006973;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem}
+.em-row-r{display:flex;align-items:center;gap:8px;flex:none}
+.em-row-i{border:1px solid var(--border,#D7DEE4);background:#fff;color:#006973;border-radius:50%;width:22px;height:22px;line-height:1;cursor:pointer;font-size:.8rem;flex:none}
+.em-row-i:hover{background:#e4f6f5}
 .em-nota{font-size:.83rem;color:#5F6973;padding:8px 4px}
 .em-mapa .mapa-zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:5px;z-index:10}
 .em-mapa .mapa-zoom button{width:34px;height:34px;font-size:20px;line-height:1;border:1.5px solid #D7DEE4;background:#fff;color:#006973;border-radius:8px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15);font-weight:700;display:flex;align-items:center;justify-content:center}

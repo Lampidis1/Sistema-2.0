@@ -240,10 +240,27 @@ function mapLista(grupos){
     : ord.map(x=>{
         const nom=EM.modo==='comuna'?x.comuna
           :(x.op?((x.op.lugar?x.op.lugar+' · ':'')+(x.op.comuna||'')):(x.comuna+' · sin operativo'));
-        return `<div class="em-row"><div>${esc(nom||'—')}</div><b>${x.n}</b></div>`;
+        return `<div class="em-row" title="Ver la zona en el mapa"><div>${esc(nom||'—')}</div>
+          <span class="em-row-r"><b>${x.n}</b><button class="em-row-i" title="Ver detalle">ⓘ</button></span></div>`;
       }).join(''));
-  // enlazar cada fila a su grupo para abrir la ficha (sin serializar en el HTML)
-  [...el.querySelectorAll('.em-row')].forEach((r,i)=>{ r.onclick=()=>mapFichaGrupo(ord[i]); });
+  // clic en la fila → centra/hace zoom en esa zona; el botón ⓘ abre la ficha.
+  [...el.querySelectorAll('.em-row')].forEach((r,i)=>{
+    r.onclick=()=>mapZoomGrupo(ord[i]);
+    const info=r.querySelector('.em-row-i');
+    if(info) info.onclick=(e)=>{ e.stopPropagation(); mapFichaGrupo(ord[i]); };
+  });
+}
+// Centra el mapa en la ubicación del grupo con un zoom que da contexto de la
+// zona (calles de la ciudad). Sirve para el clic en la lista de la derecha.
+function mapZoomGrupo(g){
+  if(!EM.mapa || !g) return;
+  let lng=null, lat=null;
+  if(g.lng!=null && g.lat!=null){ lng=g.lng; lat=g.lat; }        // grupo por comuna
+  else if(g.xy){ lng=g.xy[0]; lat=g.xy[1]; }                     // grupo por operativo
+  else if(g.op && g.op.lng!=null){ lng=g.op.lng; lat=g.op.lat; } // respaldo
+  if(lng==null || lat==null) return;
+  const ppd=Math.min(EM.mapa.maxppd||400000, Math.max((EM.thresh||2500)*2.2, (EM.thresh||2500)+1));
+  EM.mapa.centrar(lng, lat, ppd);
 }
 
 // ── ficha del pin / fila ─────────────────────────────────────────────────────
