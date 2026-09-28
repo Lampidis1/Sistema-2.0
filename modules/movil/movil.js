@@ -39,9 +39,12 @@ let ES_EDICION=false; // si se está complementando un registro existente
 
 function limpiarForm(){
   const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.value=v||''; };
-  ['fNombres','fApellidos','fNac','fComuna','fLocalidad','fRegion','fTel','fEmail','fTipoLic','fDisp','fAnios','fOficios','fEducacion','fCursos','fCertif','fObs',
-   'fSexo','fResid','fLic','fMineria','fEstudios','fCesantia'].forEach(id=>set(id,''));
+  ['fNombres','fApellidos','fNac','fComuna','fLocalidad','fRegion','fTel','fEmail','fTipoLic','fAnios','fOficios','fEducacion','fCursos','fCertif','fObs',
+   'fSexo','fResid','fLic','fMineria','fEstudios','fCesantia','fDiscap','fDiscapTipo','fDiscapDet'].forEach(id=>set(id,''));
   set('fNacion','Chilena'); set('fRegion','Antofagasta');
+  if(typeof RC!=='undefined'){ RC.contra={items:[],alergia:'',tratamiento:'',otras:''}; }
+  if(typeof rcContraRender==='function') rcContraRender();
+  if(typeof rcDiscapCambio==='function') rcDiscapCambio();
   const rw=document.getElementById('rutWarn'); if(rw) rw.style.display='none';
   const ei=document.getElementById('editInfo'); if(ei) ei.textContent='';
   if(typeof rcEligibilidad==='function') rcEligibilidad();
@@ -65,6 +68,11 @@ function formToObj(){
     exp_mineria:g('fMineria'), anios_exp:g('fAnios'), oficios:g('fOficios'),
     educacion:[g('fEstudios'),g('fEducacion')].filter(Boolean).join(' — '),
     certificaciones:g('fCertif'), observaciones:g('fObs'),
+    // Salud (Recepción): discapacidad + contraindicación médica.
+    discapacidad:g('fDiscap'),
+    tipo_discapacidad:(g('fDiscap')==='Sí'?g('fDiscapTipo'):''),
+    discapacidad_detalle:(g('fDiscap')==='Sí'&&g('fDiscapTipo')==='Otra'?g('fDiscapDet'):''),
+    contraindicaciones_json:(typeof RC!=='undefined'&&RC.contra)?rcContraJSON():null,
     cursos, cuestionario:(ACTUAL&&ACTUAL.cuestionario)||{}
   };
 }
@@ -80,6 +88,10 @@ function objToForm(c){
   s('fCursos',(c.cursos||[]).map(x=>x.evento||'').filter(Boolean).join('\n'));
   // educación: separar estudios formales del detalle si viene con —
   if(c.educacion){ const parts=c.educacion.split(' — '); document.getElementById('fEstudios').value=parts[0]||''; document.getElementById('fEducacion').value=parts.slice(1).join(' — '); }
+  // Salud: discapacidad + contraindicación.
+  s('fDiscap',c.discapacidad); s('fDiscapTipo',c.tipo_discapacidad); s('fDiscapDet',c.discapacidad_detalle);
+  if(typeof rcDiscapCambio==='function') rcDiscapCambio();
+  if(typeof rcContraCargar==='function') rcContraCargar(c.contraindicaciones_json);
 }
 
 // ═══════════ TELÉFONO / RUT / CORREO — reglas comunes (shared/js/validaciones.js)
@@ -147,6 +159,8 @@ async function guardarRegistro(){
     licencia:nuevo.licencia, tipo_licencia:nuevo.tipo_licencia, disponibilidad:nuevo.disponibilidad,
     exp_mineria:nuevo.exp_mineria, anios_exp:nuevo.anios_exp, oficios:nuevo.oficios,
     educacion:nuevo.educacion, certificaciones:nuevo.certificaciones, observaciones:nuevo.observaciones,
+    discapacidad:nuevo.discapacidad||null, tipo_discapacidad:nuevo.tipo_discapacidad||null,
+    discapacidad_detalle:nuevo.discapacidad_detalle||null, contraindicaciones_json:nuevo.contraindicaciones_json||null,
     cursos_json:JSON.stringify(nuevo.cursos||[]),
     cuestionario_json:JSON.stringify(nuevo.cuestionario||{}),
     fuente:'movil', origen_plataforma:'movil',
@@ -180,14 +194,12 @@ async function registrarCambios(previo, nuevo){
 // Las preguntas de residencia, nivel de estudios, especialización, situación/
 // cesantía y "qué servicio" ya se responden en los ANTECEDENTES de la recepción
 // (no se repiten aquí). El ejecutivo se toma automáticamente del usuario logueado.
+// Preguntas reubicadas a sus servicios (ya no hay "Cuestionario complementario"):
+//  q_postulacion → Intermediación · q_apresto → Apresto · q_tipo_cap → Formación
 const CUEST=[
-  {k:'q_discapacidad',t:'¿Cuenta con algún tipo de discapacidad?',op:['No','Sí']},
-  {k:'q_discapacidad_cual',t:'En caso afirmativo, ¿cuál?',op:null},
-  {k:'q_capacitarse',t:'¿Le gustaría capacitarse?',op:['Sí','No']},
   {k:'q_postulacion',t:'Si postuló a vacantes, ¿interna o externa?',op:['Interna (Antofagasta Minerals)','Externa (Empresa colaboradora)']},
   {k:'q_apresto',t:'Si hubo orientación (apresto), ¿qué temática?',op:['Mejora de curriculum vitae','Postulación digital efectiva','Preparación para entrevista laboral']},
-  {k:'q_tipo_cap',t:'Si registró capacitación, ¿a qué tipo postula?',op:['Ruta formativa Antofagasta Minerals','Capacitación de empresa colaboradora']},
-  {k:'q_vacante_antucoya',t:'¿Postula a vacante interna Antucoya (Operador/a de Producción y Equipos de Apoyo)?',op:['Sí','No']}
+  {k:'q_tipo_cap',t:'Si registró capacitación, ¿a qué tipo postula?',op:['Ruta formativa Antofagasta Minerals','Capacitación de empresa colaboradora']}
 ];
 function construirCuestionario(){
   const cont=document.getElementById('qForm'); let h='';

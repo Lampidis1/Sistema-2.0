@@ -19,20 +19,17 @@ let REP = { ats:[], ops:[], opById:{}, cvById:{}, cargado:false, mapa:null, base
 // Preguntas del cuestionario complementario (espejo de CUEST en movil.js —
 // mantener en sync; la reestructuración de preguntas unificará esto a futuro).
 const REP_CUEST=[
-  {k:'q_discapacidad',t:'¿Cuenta con algún tipo de discapacidad?'},
-  {k:'q_discapacidad_cual',t:'En caso afirmativo, ¿cuál?'},
-  {k:'q_capacitarse',t:'¿Le gustaría capacitarse?'},
   {k:'q_postulacion',t:'Si postuló a vacantes, ¿interna o externa?'},
   {k:'q_apresto',t:'Si hubo orientación (apresto), ¿qué temática?'},
-  {k:'q_tipo_cap',t:'Si registró capacitación, ¿a qué tipo postula?'},
-  {k:'q_vacante_antucoya',t:'¿Postula a vacante interna Antucoya (Operador/a de Producción y Equipos de Apoyo)?'}
+  {k:'q_tipo_cap',t:'Si registró capacitación, ¿a qué tipo postula?'}
 ];
 // Columnas agrupadas. g='' = columna suelta (sin cuestionario encima).
 const REP_GRUPOS=[
   {g:'', cols:[
     {k:'rut',t:'RUT'},{k:'nombre',t:'Nombre'},{k:'apellido',t:'Apellido'},{k:'comuna',t:'Comuna'},{k:'sexo',t:'Género'}]},
   {g:'Antecedentes', cols:[
-    {k:'nacionalidad',t:'Nacionalidad'},{k:'residencia',t:'Residencia definitiva'},{k:'nivel_estudios',t:'Nivel de estudios'},{k:'cesantia',t:'Tiempo de cesantía'}]},
+    {k:'nacionalidad',t:'Nacionalidad'},{k:'residencia',t:'Residencia definitiva'},{k:'nivel_estudios',t:'Nivel de estudios'},{k:'cesantia',t:'Tiempo de cesantía'},
+    {k:'discapacidad',t:'Discapacidad'},{k:'contra',t:'Contraindicaciones'}]},
   {g:'Servicios realizados', cols:[
     {k:'apresto',t:'Apresto'},{k:'intermediacion',t:'Intermediación'},{k:'formacion',t:'Formación'}]},
   {g:'Cuestionario complementario', cols: REP_CUEST.map(q=>({k:q.k,t:q.t}))},
@@ -84,7 +81,7 @@ async function repCargar(){
     const ids=[...new Set(REP.ats.map(a=>a.cv_id).filter(Boolean))];
     REP.cvById={};
     if(ids.length){
-      const {data}=await SB.from('cv_personas').select('cv_id,nombres,apellidos,comuna,nacionalidad').in('cv_id',ids);
+      const {data}=await SB.from('cv_personas').select('cv_id,nombres,apellidos,comuna,nacionalidad,discapacidad,tipo_discapacidad,contraindicaciones_json').in('cv_id',ids);
       (data||[]).forEach(c=>REP.cvById[c.cv_id]=c);
     }
     REP.cargado=true;
@@ -114,6 +111,8 @@ function repVal(a,k){
     case 'residencia': return a.residencia||'';
     case 'nivel_estudios': return a.nivel_estudios||'';
     case 'cesantia': return a.cesantia||'';
+    case 'discapacidad': return cv.discapacidad ? (cv.discapacidad==='Sí'?('Sí'+(cv.tipo_discapacidad?(' · '+cv.tipo_discapacidad):'')):cv.discapacidad) : '';
+    case 'contra': { try{ const o=JSON.parse(cv.contraindicaciones_json||'{}'); return (o.items||[]).join(', '); }catch(e){ return ''; } }
     case 'apresto': return a.apresto?'Sí':'—';
     case 'intermediacion': return a.intermediacion?'Sí':'—';
     case 'formacion': return a.formacion?'Sí':'—';

@@ -18,14 +18,73 @@
 let RC = { servicios:{apresto:false,intermediacion:false,formacion:false},
            vacantes:[], vacLoaded:false, cursos:[], curLoaded:false, cvPdf:null,
            did:{apresto:false,intermediacion:false,formacion:false}, cuestAbierto:false,
-           homolog:{mineria:'',contra:'',exam:''}, formTab:'inscripcion', dirCV:false };
+           homolog:{mineria:'',exam:''}, contra:{items:[],alergia:'',tratamiento:'',otras:''},
+           oficios:[], oficiosOtras:'', formTab:'inscripcion', dirCV:false };
+
+// Oficios para el levantamiento de capacitación (selección múltiple).
+const RC_OFICIOS=[
+  {cat:'Transporte', items:['Licencias de conducir B-D']},
+  {cat:'Mantenimiento industrial', items:['Mantenimiento base','Mantenimiento de sistemas']},
+  {cat:'Operaciones', items:['Operador base planta','Operador de maquinaria']},
+  {cat:'Servicios de aseo y alimentación', items:['Auxiliar de servicios','Higiene','Manipulación de alimentos']},
+  {cat:'Construcción', items:['Maestro de construcción','Ayudante de obras','Soldadura','Electricidad']},
+  {cat:'Almacenamiento y bodegaje', items:['Operario de bodega','Inventario']},
+  {cat:'Orden y seguridad', items:['Guardias de seguridad']},
+  {cat:'Administración', items:['Asistente administrativo','Contabilidad básica','Recursos humanos']},
+  {cat:'Herramientas digitales para el empleo', items:['Office','Manejo web','Uso de Apps']},
+  {cat:'Otras', items:[]}
+];
+function rcOficiosHTML(){
+  const has=v=>(RC.oficios||[]).indexOf(v)>=0;
+  const chk=v=>`<label class="rc-chkline"><input type="checkbox" ${has(v)?'checked':''} onchange="rcOficioToggle('${esc(v).replace(/'/g,"\\'")}',this.checked)"> ${esc(v)}</label>`;
+  let h=RC_OFICIOS.map(g=>`<div class="rc-ofi-grp"><div class="rc-ofi-cat">${esc(g.cat)}</div>`
+    +(g.items.length?g.items.map(chk).join(''):chk('Otras'))+`</div>`).join('');
+  if(has('Otras')) h+=`<div class="fld" style="margin-top:4px"><label>Especifique la capacitación</label><input value="${esc(RC.oficiosOtras||'')}" oninput="RC.oficiosOtras=this.value"></div>`;
+  return h;
+}
+function rcOficiosRender(){ const el=document.getElementById('lvOficios'); if(el) el.innerHTML=rcOficiosHTML(); }
+function rcOficioToggle(v, checked){
+  let s=(RC.oficios||[]).slice();
+  if(checked){ if(s.indexOf(v)<0) s.push(v); } else s=s.filter(x=>x!==v);
+  RC.oficios=s; rcOficiosRender();
+}
+
+// ── Salud: discapacidad + contraindicación médica (en Recepción) ─────────────
+function rcDiscapCambio(){
+  const d=(document.getElementById('fDiscap')||{}).value, t=(document.getElementById('fDiscapTipo')||{}).value;
+  const rowT=document.getElementById('rowDiscapTipo'), rowD=document.getElementById('rowDiscapDet');
+  if(rowT) rowT.style.display = d==='Sí'?'':'none';
+  if(rowD) rowD.style.display = (d==='Sí'&&t==='Otra')?'':'none';
+}
+// Contraindicación médica: checkboxes múltiples ("No presenta" excluyente) con
+// campos de especificación para Alergias / En tratamiento / Otras.
+function rcContraRender(){
+  const el=document.getElementById('rcContra'); if(!el) return;
+  const sel=RC.contra.items||[], has=v=>sel.indexOf(v)>=0;
+  const det=(key,label,show)=> show?`<div class="fld" style="margin:4px 0 0 22px"><label>${label}</label><input value="${esc(RC.contra[key]||'')}" oninput="RC.contra['${key}']=this.value"></div>`:'';
+  el.innerHTML=`<div class="rc-contra">${RC_CONTRA.map(o=>`<label class="rc-chkline"><input type="checkbox" ${has(o)?'checked':''} onchange="rcContraToggle('${esc(o).replace(/'/g,"\\'")}',this.checked)"> ${esc(o)}</label>`).join('')}</div>`
+    +det('alergia','Especifique alergia', has('Alergias'))
+    +det('tratamiento','Especifique tratamiento', has('En tratamiento médico activo'))
+    +det('otras','Especifique otra condición', has('Otras'));
+}
+function rcContraToggle(val, checked){
+  let s=(RC.contra.items||[]).slice();
+  if(val==='No presenta'){ s = checked?['No presenta']:[]; }
+  else { s=s.filter(x=>x!=='No presenta'); if(checked){ if(s.indexOf(val)<0) s.push(val); } else { s=s.filter(x=>x!==val); } }
+  RC.contra.items=s; rcContraRender();
+}
+function rcContraCargar(json){
+  try{ const o=JSON.parse(json||'{}')||{}; RC.contra={items:Array.isArray(o.items)?o.items:[], alergia:o.alergia||'', tratamiento:o.tratamiento||'', otras:o.otras||''}; }
+  catch(e){ RC.contra={items:[],alergia:'',tratamiento:'',otras:''}; }
+  rcContraRender();
+}
+function rcContraJSON(){ return JSON.stringify({items:RC.contra.items||[], alergia:RC.contra.alergia||'', tratamiento:RC.contra.tratamiento||'', otras:RC.contra.otras||''}); }
 
 // Preguntas HOMOLOGABLES (van en Intermediación y Formación; si se responden en
 // una, se precargan en la otra). Se cargan de la ficha de la persona (cv_personas).
 function rcHomologCargar(){
   const a=(typeof ACTUAL!=='undefined'&&ACTUAL)||{};
   if(!RC.homolog.mineria && a.exp_mineria) RC.homolog.mineria=a.exp_mineria;
-  if(!RC.homolog.contra && a.contraindicacion_medica) RC.homolog.contra=a.contraindicacion_medica;
   if(!RC.homolog.exam && a.examenes_preocupacionales) RC.homolog.exam=a.examenes_preocupacionales;
 }
 const RC_CONTRA=['No presenta','Hipertensión','Diabetes','Alergias','Problemas cardíacos','Asma u otra enfermedad respiratoria','Condición musculoesquelética','En tratamiento médico activo','Otras'];
@@ -37,8 +96,6 @@ function rcHomologHTML(pref){
     <div class="rc-nota" style="margin:0 0 4px"><b>Datos comunes</b> (se comparten con el otro servicio)</div>
     <div class="fld"><label>¿Experiencia en minería?</label>
       <select id="${pref}_min" onchange="RC.homolog.mineria=this.value;rcHomologSync('${pref}')"><option value="">—</option><option ${h.mineria==='Sí'?'selected':''}>Sí</option><option ${h.mineria==='No'?'selected':''}>No</option></select></div>
-    <div class="fld"><label>¿Presenta alguna contraindicación médica actualmente?</label>
-      <select id="${pref}_contra" onchange="RC.homolog.contra=this.value;rcHomologSync('${pref}')">${opt(RC_CONTRA,h.contra)}</select></div>
     <div class="fld"><label>¿Cuenta con disponibilidad para exámenes preocupacionales?</label>
       <select id="${pref}_exam" onchange="RC.homolog.exam=this.value;rcHomologSync('${pref}')">${opt(RC_EXAM,h.exam)}</select></div>
   </div>`;
@@ -46,8 +103,8 @@ function rcHomologHTML(pref){
 // Refleja el cambio en el otro apartado si está visible.
 function rcHomologSync(from){
   ['inter','form'].filter(p=>p!==from).forEach(p=>{
-    const m=document.getElementById(p+'_min'), c=document.getElementById(p+'_contra'), e=document.getElementById(p+'_exam');
-    if(m) m.value=RC.homolog.mineria||''; if(c) c.value=RC.homolog.contra||''; if(e) e.value=RC.homolog.exam||'';
+    const m=document.getElementById(p+'_min'), e=document.getElementById(p+'_exam');
+    if(m) m.value=RC.homolog.mineria||''; if(e) e.value=RC.homolog.exam||'';
   });
 }
 
@@ -101,22 +158,13 @@ function rcRender(){
 
     <div id="rcPaneles"></div>
 
-    <div class="card">
-      <div class="rc-cuest-head" onclick="rcToggleCuest()">
-        <div class="sec-t" style="margin:0">📝 Cuestionario complementario</div>
-        <span class="rc-caret" id="rcCaret">${RC.cuestAbierto?'▲':'▼'}</span>
-      </div>
-      <div id="rcCuestBody" style="${RC.cuestAbierto?'':'display:none'}">
-        <div class="q-help">Se guarda con la atención. Puedes dejarlo incompleto.</div>
-        ${rcCuestHTML()}
-      </div>
-    </div>
-
     <div class="btn-row btn-row-final">
       <button class="btn" onclick="rcGuardarTodo()">💾 Guardar atención</button>
     </div>`;
   rcEjecutivoMostrar();
   rcEligibilidad();
+  if(typeof rcContraRender==='function') rcContraRender();
+  if(typeof rcDiscapCambio==='function') rcDiscapCambio();
 }
 
 // Casilla de un servicio (marcable), con candado si está bloqueado.
@@ -207,6 +255,13 @@ function rcLeerCuest(){
   const out={}; (typeof CUEST!=='undefined'?CUEST:[]).forEach(c=>{ const el=document.getElementById('rcq_'+c.k); if(el&&el.value) out[c.k]=el.value; });
   return out;
 }
+// Renderiza una pregunta reubicada del cuestionario (por su clave) dentro del panel.
+function rcCuestField(key){
+  const c=(typeof CUEST!=='undefined'?CUEST:[]).find(x=>x.k===key); if(!c) return '';
+  const q=(typeof ACTUAL!=='undefined'&&ACTUAL&&ACTUAL.cuestionario)||{}; const val=q[c.k]||'';
+  if(c.op) return `<div class="fld"><label>${esc(c.t)}</label><select id="rcq_${c.k}"><option value="">—</option>${c.op.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
+  return `<div class="fld"><label>${esc(c.t)}</label><input id="rcq_${c.k}" value="${esc(val)}"></div>`;
+}
 
 
 // ── 1 · APRESTO → link para crear el CV ──────────────────────────────────────
@@ -215,6 +270,7 @@ function rcAprestoHTML(){
     <div class="rc-nota">Genera un link personal para que la persona <b>cree su CV</b> paso a paso (con ejemplos de qué poner) y lo descargue en PDF. Va por token; no expone el RUT.</div>
     <label class="rc-dircv"><input type="checkbox" id="rcDirCV" ${RC.dirCV?'checked':''} onchange="RC.dirCV=this.checked">
       <span>⭐ <b>Vincular al Directorio CV</b> — guarda este CV en el Directorio CCV (localidades prioritarias) para búsquedas por comuna y localidad.</span></label>
+    ${rcCuestField('q_apresto')}
     <div class="btn-row"><button class="btn" onclick="rcGenerarLinkCV()">🔗 Generar link para crear CV</button></div>
     <div id="rcLinkOut"></div></div>`;
 }
@@ -261,6 +317,7 @@ function rcInterHTML(){
     <div id="rcCvBlock"></div>
     <input class="search" id="rcVacBuscar" placeholder="🔍 Buscar cargo o empresa" oninput="rcRenderVacantes()">
     <div id="rcVacLista"><div class="rc-nota">Cargando vacantes…</div></div>
+    ${rcCuestField('q_postulacion')}
     ${rcHomologHTML('inter')}</div>`;
 }
 // Estado del CV que se adjuntará al derivar (apresto y/o PDF cargado).
@@ -367,11 +424,14 @@ function rcInscripcionHTML(){
   return `<div class="rc-nota">La persona postula a un curso difundido en el móvil (igual que la derivación a vacantes).</div>
     ${puedeCrear?'<div class="btn-row"><button class="btn" onclick="rcCursoNuevo()">➕ Crear curso</button></div>':''}
     <input class="search" id="rcCurBuscar" placeholder="🔍 Buscar curso" oninput="rcRenderCursos()">
-    <div id="rcCurLista"><div class="rc-nota">Cargando cursos…</div></div>`;
+    <div id="rcCurLista"><div class="rc-nota">Cargando cursos…</div></div>
+    ${rcCuestField('q_tipo_cap')}`;
 }
 function rcLevantamientoHTML(){
   return `<div class="rc-nota">Levantamiento del interés de capacitación de la persona (homologación del formulario).</div>
-    <div class="fld"><label>Área de interés</label><input id="lvArea" placeholder="Operación, mantención, administración…"></div>
+    <div class="fld"><label>¿Al candidato/a le gustaría capacitarse en alguno de los siguientes oficios?</label>
+      <div class="rc-nota" style="margin:2px 0 6px">Selección múltiple.</div>
+      <div id="lvOficios">${rcOficiosHTML()}</div></div>
     <div class="g2">
       <div class="fld"><label>Modalidad preferida</label><select id="lvModal"><option value="">—</option><option>Presencial</option><option>Online</option><option>Mixta</option></select></div>
       <div class="fld"><label>Disponibilidad</label><select id="lvDisp"><option value="">—</option><option>Inmediata</option><option>Por turnos</option><option>Fines de semana</option><option>Horario limitado</option></select></div>
@@ -464,10 +524,13 @@ async function rcGuardarLevantamiento(){
       formacion_id:'form_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6),
       rut:per.rut||null, nombre:per.nombre||null, telefono:per.telefono||null, comuna:per.comuna||null,
       ruta:'amsa', tipo:'Levantamiento de capacitación',
-      area_interes:g('lvArea')||null, modalidad:g('lvModal')||null, disponibilidad:g('lvDisp')||null,
+      area_interes:((RC.oficios||[]).join(', ')+((RC.oficios||[]).indexOf('Otras')>=0&&RC.oficiosOtras?(': '+RC.oficiosOtras):''))||null,
+      oficios_interes_json:JSON.stringify({items:RC.oficios||[], otras:RC.oficiosOtras||''}),
+      modalidad:g('lvModal')||null, disponibilidad:g('lvDisp')||null,
       comentario:g('lvComent')||null, registrado_por:miNombre() });
     if(error) throw error;
     RC.did.formacion=true;
+    RC.oficios=[]; RC.oficiosOtras=''; if(typeof rcOficiosRender==='function') rcOficiosRender();
     toast('✅ Levantamiento de capacitación guardado','ok');
   }catch(e){ toast('Error: '+e.message,'err'); }
 }
@@ -498,20 +561,21 @@ async function rcGuardarAtencion(){
       ejecutivo:(typeof miNombre==='function'?miNombre():null) });
     if(error) throw error;
     // Si hay una persona cargada, deja en su ficha el cuestionario y las respuestas
-    // homologables (minería, contraindicación médica, exámenes preocupacionales).
+    // homologables (minería, exámenes preocupacionales). La contraindicación y la
+    // discapacidad se guardan con el registro (guardarRegistro).
     if(ACTUAL && ACTUAL.cv_id){
       const upd={updated_at:new Date().toISOString()};
       if(Object.keys(cuest).length) upd.cuestionario_json=JSON.stringify(cuest);
       if(RC.homolog.mineria) upd.exp_mineria=RC.homolog.mineria;
-      if(RC.homolog.contra)  upd.contraindicacion_medica=RC.homolog.contra;
       if(RC.homolog.exam)    upd.examenes_preocupacionales=RC.homolog.exam;
       if(Object.keys(upd).length>1){ try{ await SB.from('cv_personas').update(upd).eq('cv_id',ACTUAL.cv_id);
-        Object.assign(ACTUAL,{exp_mineria:RC.homolog.mineria||ACTUAL.exp_mineria,contraindicacion_medica:RC.homolog.contra||ACTUAL.contraindicacion_medica,examenes_preocupacionales:RC.homolog.exam||ACTUAL.examenes_preocupacionales}); }catch(e){} }
+        Object.assign(ACTUAL,{exp_mineria:RC.homolog.mineria||ACTUAL.exp_mineria,examenes_preocupacionales:RC.homolog.exam||ACTUAL.examenes_preocupacionales}); }catch(e){} }
     }
     toast('✅ Atención guardada','ok');
     RC.did={apresto:false,intermediacion:false,formacion:false};
     RC.servicios={apresto:false,intermediacion:false,formacion:false};
-    RC.cvPdf=null; RC.homolog={mineria:'',contra:'',exam:''}; RC.dirCV=false; rcRender();
+    RC.cvPdf=null; RC.homolog={mineria:'',exam:''}; RC.contra={items:[],alergia:'',tratamiento:'',otras:''};
+    RC.dirCV=false; rcRender(); if(typeof rcContraRender==='function') rcContraRender();
   }catch(e){ toast('Error al guardar: '+e.message,'err'); }
 }
 

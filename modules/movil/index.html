@@ -13,7 +13,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="movil.css?v=20260928j">
+<link rel="stylesheet" href="movil.css?v=20260928l">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -131,6 +131,19 @@
           <div class="fld"><label>Teléfono</label><input id="fTel" inputmode="tel" placeholder="+56912345678" onblur="normFono(this)"></div>
         </div>
         <div class="fld"><label>Correo</label><input id="fEmail" inputmode="email" onblur="emailBlur(this)"></div>
+        <!-- Salud: discapacidad + contraindicación médica (antes en el cuestionario) -->
+        <div class="g2">
+          <div class="fld"><label>¿Posee algún tipo de discapacidad?</label>
+            <select id="fDiscap" onchange="rcDiscapCambio()"><option value="">—</option><option>No</option><option>Sí</option></select></div>
+          <div class="fld" id="rowDiscapTipo" style="display:none"><label>Tipo de discapacidad</label>
+            <select id="fDiscapTipo" onchange="rcDiscapCambio()"><option value="">—</option>
+              <option>Física</option><option>Visual</option><option>Auditiva</option><option>Intelectual</option>
+              <option>Psíquica</option><option>Múltiple</option><option>Otra</option></select></div>
+        </div>
+        <div class="fld" id="rowDiscapDet" style="display:none"><label>Especifique la discapacidad</label><input id="fDiscapDet"></div>
+        <div class="fld"><label>¿Presenta alguna contraindicación médica actualmente?</label>
+          <div class="rc-nota" style="margin:2px 0 6px">Ej.: enfermedades, tratamientos o condiciones que puedan afectar su participación en actividades físicas o laborales.</div>
+          <div id="rcContra"></div></div>
         <div class="btn-row">
           <button class="btn sec" onclick="nuevoRegistro()">＋ Nuevo</button>
           <button class="btn gray" onclick="document.getElementById('cvArch').click()">📄 Cargar CV (PDF/Word)</button>
@@ -153,7 +166,6 @@
             <div class="fld"><label>Licencia de conducir</label><select id="fLic"><option value="">—</option><option>Sí</option><option>No</option></select></div>
             <div class="fld"><label>Tipo de licencia</label><input id="fTipoLic" placeholder="B, A2, D..."></div>
           </div>
-          <div class="fld"><label>Disponibilidad laboral</label><input id="fDisp" placeholder="Inmediata, por turnos..."></div>
           <div class="g2">
             <div class="fld"><label>¿Experiencia en minería?</label><select id="fMineria"><option value="">—</option><option>Sí</option><option>No</option></select></div>
             <div class="fld"><label>Años de experiencia</label><input id="fAnios" inputmode="numeric"></div>
@@ -208,8 +220,8 @@
 };</script>
 <script src="../../shared/js/validaciones.js?v=20260928k"></script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="movil.js?v=20260928k"></script>
-<script src="movil-recepcion.js?v=20260928j"></script>
+<script src="movil.js?v=20260928l"></script>
+<script src="movil-recepcion.js?v=20260928l"></script>
 <script src="movil-intermediacion.js?v=20260925i"></script>
 <script src="movil-operativo.js?v=20260925a"></script>
 <script src="movil-dashboard.js?v=20260914b"></script></body>

@@ -265,3 +265,12 @@ main{padding:22px 28px 40px;max-width:1240px;margin:0 auto}
 
 /* Campo con valor inválido (RUT/teléfono/correo) */
 .campo-mal{border-color:#c0311b !important;background:#fdeeeb}
+
+/* Checkboxes de salud (contraindicación) y oficios (levantamiento) */
+.rc-chkline{display:flex;align-items:center;gap:8px;font-size:.86rem;padding:3px 0;cursor:pointer}
+.rc-chkline input{width:auto;flex:none}
+.rc-contra{display:flex;flex-direction:column;gap:2px;margin-top:2px}
+.rc-ofi-grp{border-top:1px dashed var(--border,#D7DEE4);padding:6px 0;margin-top:4px}
+.rc-ofi-grp:first-child{border-top:none}
+.rc-ofi-cat{font-size:.74rem;font-weight:700;color:var(--teal-dk,#006973);text-transform:uppercase;margin-bottom:3px}
+.rc-ofi-grp .rc-chkline{margin-left:6px}
