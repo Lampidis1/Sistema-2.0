@@ -242,7 +242,24 @@ async function mapCargarZona(c){
 function mapSatToggle(){
   EM.sat=!EM.sat;
   const b=document.getElementById('emSatBtn'); if(b){ b.classList.toggle('on',EM.sat); b.textContent=EM.sat?'🛰 Satélite: ON':'🛰 Satélite'; }
-  if(EM.sat) mapSatActual(); else mapSatAplicar();
+  if(EM.sat){
+    // El satélite solo cubre las ciudades: si estás en vista región, te llevo
+    // automáticamente a la ciudad con más atenciones para que se vea de inmediato.
+    if(EM.mapa && EM.mapa.view.ppd < EM.thresh){ mapSatIrACiudad(); if(typeof toast==='function') toast('🛰 Satélite activado — acercando a la ciudad','ok'); }
+    else mapSatActual();
+  } else mapSatAplicar();
+}
+// Acerca (~500 m) al operativo con más atenciones en el rango; si no hay, a la
+// primera ciudad con capa disponible. El zoom dispara la carga del satélite.
+function mapSatIrACiudad(){
+  if(!EM.mapa) return;
+  const cont={}; mapAtenciones().forEach(a=>{ if(a._op) cont[a.operativo_id]=(cont[a.operativo_id]||0)+1; });
+  let best=null, bestN=-1;
+  EM.operativos.forEach(o=>{ if(o.lat==null||o.lng==null) return; const n=cont[o.operativo_id]||0; if(n>bestN){ bestN=n; best=o; } });
+  let lng, lat;
+  if(best){ lng=best.lng; lat=best.lat; } else { const c=EM_CIUDADES[0]; lng=c.lng; lat=c.lat; }
+  const w=(EM.mapa.w)||600, ppd=Math.min(EM.mapa.maxppd||400000, w*111320/(2*500));
+  EM.mapa.centrar(lng, lat, ppd);
 }
 // Carga la imagen de la ciudad cercana si estamos acercados (ppd>=thresh).
 function mapSatActual(){
