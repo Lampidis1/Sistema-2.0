@@ -281,14 +281,26 @@ async function cargarArchivo(files){
 
 // ═══════════ EXPORTAR CV PDF (formato modelo, con QR) ═══════════
 async function exportarCVactual(){
-  const c=formToObj();
+  // Combina lo escrito en el formulario con lo que la persona ya tenía guardado
+  // (experiencia/académicos/cursos que pudo llenar por el link de apresto), para
+  // que el PDF salga CONSOLIDADO y completo.
+  const c=Object.assign({}, ACTUAL||{}, formToObj());
   if(!c.nombres&&!c.apellidos){ toast('Completa el nombre primero','err'); return; }
-  await exportarCVpdfObj(c);
+  await exportarCVpdfObj(normalizarParaPDF(c));
 }
 async function exportarCVde(id){ const c=LEVANTADOS.find(x=>x.cv_id===id); if(!c)return; await exportarCVpdfObj(normalizarParaPDF(c)); }
+// Arma el objeto de CV con TODA la información: usa las listas ya parseadas si
+// existen, y si no, las obtiene de los *_json (experiencia/académicos/cursos que
+// la persona llenó por el link de apresto). Nada se descarta.
 function normalizarParaPDF(c){
-  return {...c, experiencia:[], academico:[], cursos:c.cursos||[],
-    idiomas:[], software:[] };
+  const pj=s=>{ try{ const x=JSON.parse(s||'[]'); return Array.isArray(x)?x:[]; }catch(e){ return []; } };
+  const usar=(arr,json)=> (Array.isArray(arr)&&arr.length)?arr:pj(json);
+  return {...c,
+    experiencia: usar(c.experiencia, c.experiencia_json),
+    academico:   usar(c.academico,   c.academico_json),
+    cursos:      usar(c.cursos,       c.cursos_json),
+    idiomas:     usar(c.idiomas,      c.idiomas_json),
+    software:    usar(c.software,     c.software_json) };
 }
 async function exportarCVpdfObj(c){
   const fichaUrl=location.origin+location.pathname.replace(/modules\/[^/]*\/.*$/,'modules/empleabilidad/')+'#cv='+encodeURIComponent(c.cv_id);
@@ -321,7 +333,8 @@ function generarCVpdf(c,opts){
   if((c.experiencia||[]).length){ titulo('Antecedentes Laborales');
     c.experiencia.forEach(e=>{ nl(); doc.setFont('times','bold'); doc.setFontSize(10.5);
       const emp=[(e.empresa||''),(e.ciudad||'')].filter(Boolean).join('. ')+((e.empresa||e.ciudad)?'.':'');
-      doc.text(emp,M,y); const per=[e.desde,e.hasta].filter(Boolean).join(' – ');
+      doc.text(emp,M,y);
+      const per=(typeof AMForm!=='undefined' && (e.inicio||e.fin||e.actual)) ? AMForm.periodoTexto(e.inicio,e.fin,e.actual) : [e.desde,e.hasta].filter(Boolean).join(' – ');
       if(per){doc.setFont('times','italic');doc.setFontSize(9.5);doc.text(per,W-M,y,{align:'right'});} y+=5;
       if(e.cargo){doc.setFont('times','bold');doc.setFontSize(10);doc.text(e.cargo,M,y);y+=5;}
       doc.setFont('times','normal');doc.setFontSize(10);
@@ -330,8 +343,15 @@ function generarCVpdf(c,opts){
       y+=3;
     });
   }
-  // Educación (texto directo del móvil)
-  if((c.educacion||'').trim()){ titulo('Antecedentes Académicos'); doc.setFont('times','normal'); doc.setFontSize(10.5); wrap(c.educacion,W-2*M).forEach(l=>{nl();doc.text(l,M,y);y+=5;}); y+=3; }
+  // Académicos: estructurados (si la persona los llenó por el link) o el texto del móvil.
+  if((c.academico||[]).length){ titulo('Antecedentes Académicos');
+    c.academico.forEach(a=>{ nl(); doc.setFont('times','bold'); doc.setFontSize(10.5);
+      const t=[a.nivel,a.titulo].filter(Boolean).join(' · ')||'Estudios'; doc.text(t,M,y);
+      if(a.periodo){doc.setFont('times','italic');doc.setFontSize(9.5);doc.text(String(a.periodo),W-M,y,{align:'right'});} y+=5;
+      const inst=[a.institucion,a.ciudad].filter(Boolean).join(', ');
+      if(inst){doc.setFont('times','normal');doc.setFontSize(10);doc.text(inst,M,y);y+=5;} y+=1;
+    }); y+=2;
+  } else if((c.educacion||'').trim()){ titulo('Antecedentes Académicos'); doc.setFont('times','normal'); doc.setFontSize(10.5); wrap(c.educacion,W-2*M).forEach(l=>{nl();doc.text(l,M,y);y+=5;}); y+=3; }
   // Información adicional
   const info=[];
   if(c.licencia||c.tipo_licencia)info.push('Licencia de conducir: '+[c.licencia,c.tipo_licencia].filter(Boolean).join(' '));

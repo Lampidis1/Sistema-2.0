@@ -43,13 +43,23 @@ function _pj(s){ try{ const x=JSON.parse(s||'[]'); return Array.isArray(x)?x:[];
 function acDesdeFila(row){
   CV.rut=row.rut||''; CV.nombres=row.nombres||''; CV.apellidos=row.apellidos||''; CV.direccion=row.direccion||'';
   CV.comuna=row.comuna||''; CV.telefono=row.telefono||''; CV.email=row.email||''; CV.resumen=row.resumen||''; CV.observaciones=row.observaciones||'';
-  CV._nivel=(row.educacion||'').split(' — ')[0]||'';   // nivel captado en Móvil (para precargar académicos)
+  // Antecedentes de la encuesta (Recepción): se reutilizan para no re-pedirlos.
+  const edu=(row.educacion||'').split(' — ');
+  CV._nivel=edu[0]||''; CV._espec=edu.slice(1).join(' — ')||'';
+  CV._oficios=row.oficios||''; CV._aniosExp=row.anios_exp||'';
+  // Licencia de conducir → a "Otros", para que aparezca en el CV sin re-ingresarla.
+  const lic=[row.licencia,row.tipo_licencia].filter(Boolean).join(' ');
+  if(lic && !/licencia/i.test(CV.observaciones)) CV.observaciones=(CV.observaciones?CV.observaciones+' · ':'')+'Licencia de conducir: '+lic;
   CV.experiencia=_pj(row.experiencia_json).map(e=>{ const fx=(e.funciones||[]).filter(Boolean);
     return {empresa:e.empresa||'',ciudad:e.ciudad||'',cargo:e.cargo||'',
       inicio:e.inicio||'', fin:e.fin||'', actual:!!e.actual, periodo:e.periodo||'',
       funciones:[fx[0]||'',fx[1]||'',fx[2]||''],logro:e.logro||''}; });
   CV.academico=_pj(row.academico_json).map(a=>({nivel:'',titulo:a.titulo||'',institucion:a.institucion||'',ciudad:'',periodo:a.periodo||''}));
   CV.cursos=_pj(row.cursos_json).map(c=>({evento:c.evento||c.tema||'',institucion:c.institucion||'',ciudad:'',anio:c.anio||''}));
+  // Certificaciones de la encuesta (texto por líneas/comas) → se suman como cursos.
+  (row.certificaciones||'').split(/\n|,/).map(s=>s.trim()).filter(Boolean).forEach(t=>{
+    if(!CV.cursos.some(c=>c.evento===t)) CV.cursos.push({evento:t,institucion:'',ciudad:'',anio:''});
+  });
   CV.idiomas=_pj(row.idiomas_json).map(i=>({idioma:i.idioma||'',nivel:i.nivel||''}));
   CV.software=_pj(row.software_json).map(s=>({nombre:s.nombre||'',nivel:s.nivel||''}));
 }
@@ -61,7 +71,9 @@ function acLlenar(){
   set('fDireccion',CV.direccion); set('fResumen',CV.resumen); set('fOtros',CV.observaciones);
   // Precarga: académicos y cursos parten con una fila lista (con el nivel captado
   // en Móvil si viene), para que la persona solo complete y no vea secciones vacías.
-  if(!CV.academico.length) CV.academico.push({nivel:CV._nivel||'',titulo:'',institucion:'',ciudad:'',periodo:''});
+  if(!CV.academico.length) CV.academico.push({nivel:CV._nivel||'',titulo:CV._espec||'',institucion:'',ciudad:'',periodo:''});
+  // Experiencia sembrada desde los oficios de la encuesta si no vino estructurada.
+  if(!CV.experiencia.length && CV._oficios) CV.experiencia.push({empresa:'',ciudad:'',cargo:CV._oficios,inicio:'',fin:'',actual:false,funciones:['','',''],logro:''});
   if(!CV.cursos.length) CV.cursos.push({evento:'',institucion:'',ciudad:'',anio:''});
   acRenderExp(); acRenderAca(); acRenderCur(); acRenderIdi(); acRenderSof();
 }

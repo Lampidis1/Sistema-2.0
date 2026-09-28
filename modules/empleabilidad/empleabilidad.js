@@ -360,7 +360,9 @@ function expItem(e,i){
     <div class="fld"><label>Empresa</label><input value="${esc(e.empresa||'')}" oninput="CV_EDIT.experiencia[${i}].empresa=this.value"></div></div>
     <div class="grid3"><div class="fld"><label>Ciudad</label><input value="${esc(e.ciudad||'')}" oninput="CV_EDIT.experiencia[${i}].ciudad=this.value"></div>
     <div class="fld"><label>País</label><input value="${esc(e.pais||'')}" oninput="CV_EDIT.experiencia[${i}].pais=this.value"></div>
-    <div class="fld"><label>Desde – Hasta</label><input value="${esc((e.desde||'')+(e.hasta?' – '+e.hasta:''))}" oninput="CV_EDIT.experiencia[${i}]._periodo=this.value;var p=this.value.split('–');CV_EDIT.experiencia[${i}].desde=(p[0]||'').trim();CV_EDIT.experiencia[${i}].hasta=(p[1]||'').trim()"></div></div>
+    <div class="fld"><label>Periodo (mes/año)</label>
+      <div class="cv-per">${AMForm.selMesAnio('cvexp'+i+'_ini', e.inicio||_mesAnio(e.desde), {onchange:'cvExpPer('+i+')'})} <span class="cv-per-sep">a</span> ${AMForm.selMesAnio('cvexp'+i+'_fin', e.fin||_mesAnio(e.hasta), {disabled:e.actual, onchange:'cvExpPer('+i+')'})}
+        <label class="cv-chk"><input type="checkbox" id="cvexp${i}_act" ${e.actual?'checked':''} onchange="cvExpActual(${i},this.checked)"> Actualmente trabajando aquí</label></div></div></div>
     <div class="fld"><label>Funciones (una por línea)</label><textarea oninput="CV_EDIT.experiencia[${i}].funciones=this.value.split(String.fromCharCode(10)).filter(x=>x.trim())">${esc((e.funciones||[]).join(String.fromCharCode(10)))}</textarea></div>
     <div class="fld"><label>Logro destacado</label><input value="${esc(e.logro||'')}" oninput="CV_EDIT.experiencia[${i}].logro=this.value"></div></div>`;
 }
@@ -378,7 +380,14 @@ function curItem(e,i){
     <div class="grid2"><div class="fld"><label>Institución</label><input value="${esc(e.institucion||'')}" oninput="CV_EDIT.cursos[${i}].institucion=this.value"></div>
     <div class="fld"><label>Año</label><input value="${esc(e.anio||'')}" oninput="CV_EDIT.cursos[${i}].anio=this.value"></div></div></div>`;
 }
-function addExp(){ CV_EDIT.experiencia.push({cargo:'',empresa:'',ciudad:'',pais:'',desde:'',hasta:'',funciones:[],logro:''}); document.getElementById('expList').insertAdjacentHTML('beforeend',expItem(CV_EDIT.experiencia[CV_EDIT.experiencia.length-1],CV_EDIT.experiencia.length-1)); }
+// Período mes/año de experiencia (CV interno). Solo 'YYYY-MM' es válido; el resto
+// (años sueltos legacy) se deja en desde/hasta como respaldo para el PDF.
+function _mesAnio(v){ return /^\d{4}-\d{2}$/.test(String(v||''))?v:''; }
+function cvExpPer(i){ const e=CV_EDIT&&CV_EDIT.experiencia[i]; if(!e) return;
+  const act=document.getElementById('cvexp'+i+'_act'); e.actual=!!(act&&act.checked);
+  e.inicio=AMForm.leerMesAnio('cvexp'+i+'_ini'); e.fin=e.actual?'':AMForm.leerMesAnio('cvexp'+i+'_fin'); }
+function cvExpActual(i,ch){ const e=CV_EDIT&&CV_EDIT.experiencia[i]; if(e) e.actual=!!ch; AMForm.setMesAnioDisabled('cvexp'+i+'_fin',ch); cvExpPer(i); }
+function addExp(){ CV_EDIT.experiencia.push({cargo:'',empresa:'',ciudad:'',pais:'',desde:'',hasta:'',inicio:'',fin:'',actual:false,funciones:[],logro:''}); document.getElementById('expList').insertAdjacentHTML('beforeend',expItem(CV_EDIT.experiencia[CV_EDIT.experiencia.length-1],CV_EDIT.experiencia.length-1)); }
 function delExp(i){ CV_EDIT.experiencia.splice(i,1); renderFicha(); }
 function addEdu(){ CV_EDIT.academico.push({titulo:'',institucion:'',periodo:'',ciudad:''}); document.getElementById('eduList').insertAdjacentHTML('beforeend',eduItem(CV_EDIT.academico[CV_EDIT.academico.length-1],CV_EDIT.academico.length-1)); }
 function delEdu(i){ CV_EDIT.academico.splice(i,1); renderFicha(); }
@@ -464,7 +473,7 @@ function generarCVpdf(c, opts){
       // línea 1: Empresa. Ciudad.                        Mes año – Mes año
       doc.setFont('times','bold'); doc.setFontSize(10.5); doc.setTextColor.apply(doc,dark);
       const emp=[(e.empresa||''), (e.ciudad||'')].filter(Boolean).join('. ')+((e.empresa||e.ciudad)?'.':'');
-      const per=[e.desde,e.hasta].filter(Boolean).join(' – ');
+      const per=(typeof AMForm!=='undefined' && (e.inicio||e.fin||e.actual)) ? AMForm.periodoTexto(e.inicio,e.fin,e.actual) : [e.desde,e.hasta].filter(Boolean).join(' – ');
       doc.text(emp,M,y);
       if(per){ doc.setFont('times','italic'); doc.setFontSize(9.5); doc.text(per,W-M,y,{align:'right'}); }
       y+=5;
@@ -744,7 +753,7 @@ function exportarExcelDir(){
     Comuna:cv.comuna||'', Localidad:cv.localidad||'', 'En Directorio CCV':cv.directorio_cv?'Sí':'', Ciudad:cv.ciudad||'', Direccion:cv.direccion||'',
     Telefono:cv.telefono||'', Email:cv.email||'', Resumen:cv.resumen||'',
     // experiencia combinada en una celda, cada experiencia separada por " | ", campos por ";"
-    Experiencia:(cv.experiencia||[]).map(e=>[e.cargo,e.empresa,e.ciudad,e.pais,(e.desde||'')+'-'+(e.hasta||''),(e.funciones||[]).join(', ')].join(';')).join(' | '),
+    Experiencia:(cv.experiencia||[]).map(e=>{const per=(typeof AMForm!=='undefined'&&(e.inicio||e.fin||e.actual))?AMForm.periodoTexto(e.inicio,e.fin,e.actual):((e.desde||'')+'-'+(e.hasta||''));return [e.cargo,e.empresa,e.ciudad,e.pais,per,(e.funciones||[]).join(', ')].join(';');}).join(' | '),
     Educacion:(cv.academico||[]).map(a=>[a.titulo,a.institucion,a.periodo,a.ciudad].join(';')).join(' | '),
     Cursos:(cv.cursos||[]).map(c=>[c.evento,c.tema,c.institucion,c.anio].join(';')).join(' | '),
     'Match %':cv._pct||0

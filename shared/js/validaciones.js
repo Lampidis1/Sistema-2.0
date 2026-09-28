@@ -73,9 +73,10 @@
     const desde=(opts.desdeAnio||ahora-60), hasta=(opts.hastaAnio||ahora+1);
     let anios=''; for(let a=hasta;a>=desde;a--) anios+='<option '+(String(a)===yy?'selected':'')+'>'+a+'</option>';
     const dis=opts.disabled?'disabled':'';
+    const oc=opts.onchange?(' onchange="'+opts.onchange+'"'):'';
     return '<span class="am-mesanio" data-id="'+id+'">'
-      +'<select id="'+id+'_m" '+dis+'><option value="">Mes</option>'+meses.map((mv,i)=>'<option value="'+mv+'" '+(mv===mm?'selected':'')+'>'+nombres[i]+'</option>').join('')+'</select>'
-      +'<select id="'+id+'_y" '+dis+'><option value="">Año</option>'+anios+'</select></span>';
+      +'<select id="'+id+'_m" '+dis+oc+'><option value="">Mes</option>'+meses.map((mv,i)=>'<option value="'+mv+'" '+(mv===mm?'selected':'')+'>'+nombres[i]+'</option>').join('')+'</select>'
+      +'<select id="'+id+'_y" '+dis+oc+'><option value="">Año</option>'+anios+'</select></span>';
   }
   function leerMesAnio(id){
     const m=document.getElementById(id+'_m'), y=document.getElementById(id+'_y');
