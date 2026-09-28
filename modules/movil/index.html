@@ -13,7 +13,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="movil.css?v=20260925h">
+<link rel="stylesheet" href="movil.css?v=20260928j">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -130,7 +130,7 @@
               <option>Un año o más</option><option>Trabajando</option></select></div>
           <div class="fld"><label>Teléfono</label><input id="fTel" inputmode="tel" placeholder="+56912345678" onblur="normFono(this)"></div>
         </div>
-        <div class="fld"><label>Correo</label><input id="fEmail" inputmode="email"></div>
+        <div class="fld"><label>Correo</label><input id="fEmail" inputmode="email" onblur="emailBlur(this)"></div>
         <div class="btn-row">
           <button class="btn sec" onclick="nuevoRegistro()">＋ Nuevo</button>
           <button class="btn gray" onclick="document.getElementById('cvArch').click()">📄 Cargar CV (PDF/Word)</button>
@@ -146,7 +146,7 @@
         </div>
         <div id="rcDatosBody" style="display:none">
           <div class="g2">
-            <div class="fld"><label>Fecha nacimiento</label><input id="fNac" placeholder="dd-mm-aaaa"></div>
+            <div class="fld"><label>Fecha nacimiento</label><input id="fNac" type="date"></div>
             <div class="fld"><label>Región</label><input id="fRegion" value="Antofagasta"></div>
           </div>
           <div class="g2">
@@ -206,9 +206,10 @@
   msgPassCorta: 'Mínimo 6 caracteres',
   onAcceso: function(user){ return _movilOnAcceso(user); }
 };</script>
+<script src="../../shared/js/validaciones.js?v=20260928a"></script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="movil.js?v=20260925g"></script>
-<script src="movil-recepcion.js?v=20260925f"></script>
+<script src="movil.js?v=20260928j"></script>
+<script src="movil-recepcion.js?v=20260928j"></script>
 <script src="movil-intermediacion.js?v=20260925i"></script>
 <script src="movil-operativo.js?v=20260925a"></script>
 <script src="movil-dashboard.js?v=20260914b"></script></body>

@@ -90,3 +90,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webk
 .ac-info-h{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.2rem;color:var(--teal);text-transform:uppercase;margin-bottom:10px}
 .ac-info-b{font-size:.92rem;line-height:1.6;color:var(--text);margin-bottom:16px;white-space:normal}
 .ac-info-box .ac-btn{width:100%}
+
+/* Validación y período mes/año (experiencia) */
+.ac-mal{border-color:#c0311b !important;background:#fdeeeb}
+.ac-per{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ac-per .am-mesanio{display:inline-flex;gap:6px}
+.ac-per select{padding:8px;border:1.5px solid var(--bd,#D7DEE4);border-radius:8px;font:inherit}
+.ac-per-sep{color:#8a949a;font-size:.85rem}
+.ac-chk{display:flex;align-items:center;gap:7px;font-size:.82rem;margin-top:6px;cursor:pointer}
+.ac-chk input{width:auto}

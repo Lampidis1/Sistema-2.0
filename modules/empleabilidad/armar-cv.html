@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="armar-cv.css?v=20260913b">
+<link rel="stylesheet" href="armar-cv.css?v=20260928j">
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
 </head>
 <body>
@@ -32,9 +32,9 @@
     <div class="ac-g2">
       <label class="ac-f"><span>Nombres</span><input id="fNombres"></label>
       <label class="ac-f"><span>Apellidos</span><input id="fApellidos"></label>
-      <label class="ac-f"><span>RUT</span><input id="fRut"></label>
-      <label class="ac-f"><span>Teléfono</span><input id="fTelefono" inputmode="tel"></label>
-      <label class="ac-f"><span>Correo</span><input id="fEmail" inputmode="email"></label>
+      <label class="ac-f"><span>RUT</span><input id="fRut" placeholder="12.345.678-9" onblur="this.value=AMForm.rutFormat(this.value);this.classList.toggle('ac-mal',!!this.value&&!AMForm.rutValido(this.value))"></label>
+      <label class="ac-f"><span>Teléfono</span><input id="fTelefono" inputmode="tel" placeholder="+56912345678" onblur="this.value=AMForm.fonoFormat(this.value);this.classList.toggle('ac-mal',!!this.value&&!AMForm.fonoValido(this.value))"></label>
+      <label class="ac-f"><span>Correo</span><input id="fEmail" inputmode="email" onblur="this.classList.toggle('ac-mal',!!this.value.trim()&&!AMForm.emailValido(this.value))"></label>
       <label class="ac-f"><span>Localidad</span><input id="fComuna" placeholder="Comuna donde vive"></label>
     </div>
 
@@ -73,6 +73,7 @@
 <div class="ac-toast" id="acToast"></div>
 
 <script src="empleabilidad-harvard.js?v=20260913a"></script>
-<script src="armar-cv.js?v=20260925a"></script>
+<script src="../../shared/js/validaciones.js?v=20260928a"></script>
+<script src="armar-cv.js?v=20260928j"></script>
 </body>
 </html>

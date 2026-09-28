@@ -262,3 +262,6 @@ main{padding:22px 28px 40px;max-width:1240px;margin:0 auto}
 .im-exc{display:flex;align-items:center;gap:5px;font-size:.75rem;color:#c0311b;white-space:nowrap;font-weight:700;margin:0;cursor:pointer}
 .im-exc input{width:auto;flex:none}
 .im-comp-del{width:auto;padding:6px 10px}
+
+/* Campo con valor inválido (RUT/teléfono/correo) */
+.campo-mal{border-color:#c0311b !important;background:#fdeeeb}

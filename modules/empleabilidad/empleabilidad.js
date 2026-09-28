@@ -388,6 +388,13 @@ function delCur(i){ CV_EDIT.cursos.splice(i,1); renderFicha(); }
 async function guardarCV(){
   const c=CV_EDIT; if(!c){ return; }
   if(!(c.nombres||'').trim() && !(c.apellidos||'').trim()){ toast('Ingresa al menos nombre o apellido','err'); return; }
+  // Mismas reglas que Recepción y link externo (shared/js/validaciones.js).
+  if(typeof AMForm!=='undefined'){
+    if((c.rut||'').trim()){ c.rut=AMForm.rutFormat(c.rut); if(!AMForm.rutValido(c.rut)){ toast('El RUT no es válido (revisa el dígito verificador)','err'); return; } }
+    if((c.telefono||'').trim()){ c.telefono=AMForm.fonoFormat(c.telefono); if(!AMForm.fonoValido(c.telefono)){ toast('El teléfono debe ser +569 seguido de 8 dígitos','err'); return; } }
+    if((c.telefono2||'').trim()){ c.telefono2=AMForm.fonoFormat(c.telefono2); if(!AMForm.fonoValido(c.telefono2)){ toast('El teléfono 2 debe ser +569 seguido de 8 dígitos','err'); return; } }
+    if((c.email||'').trim() && !AMForm.emailValido(c.email)){ toast('El correo no tiene un formato válido','err'); return; }
+  }
   const row={ cv_id:c.cv_id, rut:c.rut||'', nombres:c.nombres||'', apellidos:c.apellidos||'',
     fecha_nacimiento:c.fecha_nacimiento||'', sexo:c.sexo||'', nacionalidad:c.nacionalidad||'',
     direccion:c.direccion||'', comuna:c.comuna||'', ciudad:c.ciudad||'', telefono:c.telefono||'', telefono2:c.telefono2||'', email:c.email||'',

@@ -185,7 +185,8 @@ function rcRenderPaneles(){
 // se pierdan datos al cruzar entre secciones.
 async function rcGuardarTodo(){
   if(!rcVal('fNombres') && !rcVal('fApellidos') && !rcVal('cRut')){ toast('Identifica a la persona (RUT o nombre)','err'); return; }
-  if(typeof guardarRegistro==='function'){ try{ await guardarRegistro(); }catch(e){} }
+  if(typeof movValidarContacto==='function'){ const e=movValidarContacto(); if(e){ toast(e,'err'); return; } }
+  if(typeof guardarRegistro==='function'){ try{ const ok=await guardarRegistro(); if(ok===false) return; }catch(e){} }
   await rcGuardarAtencion();
 }
 
@@ -219,6 +220,8 @@ function rcAprestoHTML(){
 }
 async function rcGenerarLinkCV(){
   const per=rcPersona(); if(!per.rut){ toast('Escribe el RUT','err'); return; }
+  if(typeof AMForm!=='undefined' && !AMForm.rutValido(per.rut)){ toast('El RUT no es válido (revisa el dígito verificador).','err'); return; }
+  if(typeof movValidarContacto==='function'){ const e=movValidarContacto(); if(e){ toast(e,'err'); return; } }
   try{
     // Persiste lo ya escrito en la ficha (RUT, nombre, correo, teléfono, comuna,
     // etc.) ANTES de generar el link, para que la persona lo abra con esos datos

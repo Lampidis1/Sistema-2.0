@@ -82,28 +82,27 @@ function objToForm(c){
   if(c.educacion){ const parts=c.educacion.split(' — '); document.getElementById('fEstudios').value=parts[0]||''; document.getElementById('fEducacion').value=parts.slice(1).join(' — '); }
 }
 
-// ═══════════ TELÉFONO (formato +569XXXXXXXX) ═══════════
-function fonoFmt(v){
-  let d=String(v||'').replace(/\D/g,'').replace(/^56/,'');   // quitar prefijo país
-  if(d[0]==='9') d=d.slice(1);                                // quitar el 9 de móvil
-  d=d.slice(-8);                                              // dejar los 8 dígitos finales
-  return d.length===8 ? '+569'+d : String(v||'').trim();
-}
-function normFono(el){ if(el) el.value=fonoFmt(el.value); }
+// ═══════════ TELÉFONO / RUT / CORREO — reglas comunes (shared/js/validaciones.js)
+function fonoFmt(v){ return AMForm.fonoFormat(v); }
+function normFono(el){ if(!el) return; el.value=fonoFmt(el.value); el.classList.toggle('campo-mal', !!el.value && !AMForm.fonoValido(el.value)); }
 
-// ═══════════ BUSCAR POR RUT (precarga automática) ═══════════
 let _rutTimer=null, _rutCargado=null;
 function normRut(r){ return String(r||'').replace(/[.\-\s]/g,'').toLowerCase(); }
-// Formatea 123456789 → 12.345.678-9 (puntos de miles + guion antes del dígito verificador)
-function rutFmt(v){
-  let s=String(v||'').replace(/[^0-9kK]/g,'').toUpperCase();
-  if(s.length<2) return s;
-  const dv=s.slice(-1); let cuerpo=s.slice(0,-1), out='';
-  for(let i=cuerpo.length; i>0; i-=3){ out=cuerpo.slice(Math.max(0,i-3),i)+(out?'.'+out:''); }
-  return out+'-'+dv;
+function rutFmt(v){ return AMForm.rutFormat(v); }
+// Valida los campos de contacto de Recepción; devuelve mensaje de error o ''.
+function movValidarContacto(){
+  const g=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
+  const rut=g('cRut'), tel=g('fTel'), mail=g('fEmail');
+  if(rut && !AMForm.rutValido(rut)) return 'El RUT no es válido (revisa el dígito verificador).';
+  if(tel && !AMForm.fonoValido(fonoFmt(tel))) return 'El teléfono debe ser +569 seguido de 8 dígitos.';
+  if(mail && !AMForm.emailValido(mail)) return 'El correo no tiene un formato válido.';
+  return '';
 }
-// Al salir del campo: deja el RUT con formato y dispara la búsqueda de inmediato.
-function rutBlur(el){ if(!el) return; el.value=rutFmt(el.value); buscarPorRut(true); }
+// Al salir del campo: deja el RUT con formato, marca si es inválido, y busca.
+function rutBlur(el){ if(!el) return; el.value=rutFmt(el.value);
+  el.classList.toggle('campo-mal', !!el.value && !AMForm.rutValido(el.value));
+  buscarPorRut(true); }
+function emailBlur(el){ if(!el) return; el.classList.toggle('campo-mal', !!el.value.trim() && !AMForm.emailValido(el.value)); }
 function buscarPorRut(inmediato){
   clearTimeout(_rutTimer);
   const run=async()=>{
@@ -138,7 +137,8 @@ function complementar(id){
 // ═══════════ GUARDAR (con logs de trazabilidad) ═══════════
 async function guardarRegistro(){
   const nuevo=formToObj();
-  if(!nuevo.nombres && !nuevo.apellidos){ toast('Ingresa al menos nombre o apellido','err'); return; }
+  if(!nuevo.nombres && !nuevo.apellidos){ toast('Ingresa al menos nombre o apellido','err'); return false; }
+  const errC=movValidarContacto(); if(errC){ toast(errC,'err'); return false; }
   const previo = ES_EDICION ? LEVANTADOS.find(c=>c.cv_id===nuevo.cv_id) : null;
   const row={
     cv_id:nuevo.cv_id, rut:nuevo.rut, nombres:nuevo.nombres, apellidos:nuevo.apellidos,
@@ -159,13 +159,14 @@ async function guardarRegistro(){
   // (apresto abierto); si no, se conserva el valor previo.
   const dc=document.getElementById('rcDirCV'); if(dc) row.directorio_cv=dc.checked;
   const {error}=await SB.from('cv_personas').upsert(row,{onConflict:'cv_id'});
-  if(error){ toast('Error: '+error.message,'err'); return; }
+  if(error){ toast('Error: '+error.message,'err'); return false; }
   // logs de trazabilidad campo por campo
   await registrarCambios(previo, nuevo);
   toast('✅ Registro guardado','ok');
   ACTUAL={cv_id:nuevo.cv_id, cuestionario:nuevo.cuestionario, ...nuevo}; ES_EDICION=true;
   document.getElementById('editInfo').textContent='Guardado ✓ · '+((nuevo.nombres||'')+' '+(nuevo.apellidos||''));
   await cargarLevantados();
+  return true;
 }
 async function registrarCambios(previo, nuevo){
   const campos=['rut','nombres','apellidos','fecha_nacimiento','sexo','nacionalidad','comuna','region','direccion','telefono','email','licencia','tipo_licencia','disponibilidad','exp_mineria','anios_exp','oficios','educacion','certificaciones','observaciones'];

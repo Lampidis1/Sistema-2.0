@@ -45,7 +45,9 @@ function acDesdeFila(row){
   CV.comuna=row.comuna||''; CV.telefono=row.telefono||''; CV.email=row.email||''; CV.resumen=row.resumen||''; CV.observaciones=row.observaciones||'';
   CV._nivel=(row.educacion||'').split(' — ')[0]||'';   // nivel captado en Móvil (para precargar académicos)
   CV.experiencia=_pj(row.experiencia_json).map(e=>{ const fx=(e.funciones||[]).filter(Boolean);
-    return {empresa:e.empresa||'',ciudad:e.ciudad||'',periodo:e.periodo||'',cargo:e.cargo||'',funciones:[fx[0]||'',fx[1]||'',fx[2]||''],logro:e.logro||''}; });
+    return {empresa:e.empresa||'',ciudad:e.ciudad||'',cargo:e.cargo||'',
+      inicio:e.inicio||'', fin:e.fin||'', actual:!!e.actual, periodo:e.periodo||'',
+      funciones:[fx[0]||'',fx[1]||'',fx[2]||''],logro:e.logro||''}; });
   CV.academico=_pj(row.academico_json).map(a=>({nivel:'',titulo:a.titulo||'',institucion:a.institucion||'',ciudad:'',periodo:a.periodo||''}));
   CV.cursos=_pj(row.cursos_json).map(c=>({evento:c.evento||c.tema||'',institucion:c.institucion||'',ciudad:'',anio:c.anio||''}));
   CV.idiomas=_pj(row.idiomas_json).map(i=>({idioma:i.idioma||'',nivel:i.nivel||''}));
@@ -68,8 +70,11 @@ function acRenderExp(){
     <div class="ac-item-h">Empleo ${i+1}<button class="ac-del" onclick="acDel('exp',${i})">✕</button></div>
     <div class="ac-g2"><label class="ac-f"><span>Empresa</span><input id="exp${i}_empresa" value="${esc(e.empresa)}"></label>
       <label class="ac-f"><span>Ciudad</span><input id="exp${i}_ciudad" value="${esc(e.ciudad)}"></label></div>
-    <div class="ac-g2"><label class="ac-f"><span>Cargo</span><input id="exp${i}_cargo" value="${esc(e.cargo)}"></label>
-      <label class="ac-f"><span>Periodo (Mes año – Mes año)</span><input id="exp${i}_periodo" value="${esc(e.periodo)}"></label></div>
+    <label class="ac-f"><span>Cargo</span><input id="exp${i}_cargo" value="${esc(e.cargo)}"></label>
+    <div class="ac-f"><span>Periodo (mes/año)</span>
+      <div class="ac-per">${AMForm.selMesAnio('exp'+i+'_ini', e.inicio)} <span class="ac-per-sep">a</span> ${AMForm.selMesAnio('exp'+i+'_fin', e.fin, {disabled:e.actual})}</div>
+      <label class="ac-chk"><input type="checkbox" id="exp${i}_act" ${e.actual?'checked':''} onchange="acExpActual(${i},this.checked)"> Actualmente trabajando aquí</label>
+    </div>
     <label class="ac-f"><span>Función 1</span><input id="exp${i}_f0" value="${esc((e.funciones||[])[0]||'')}" placeholder="Qué hacías (principal)"></label>
     <label class="ac-f"><span>Función 2</span><input id="exp${i}_f1" value="${esc((e.funciones||[])[1]||'')}"></label>
     <label class="ac-f"><span>Función 3</span><input id="exp${i}_f2" value="${esc((e.funciones||[])[2]||'')}"></label>
@@ -110,18 +115,26 @@ function acSync(){
   CV.nombres=v('fNombres').trim(); CV.apellidos=v('fApellidos').trim(); CV.rut=v('fRut').trim();
   CV.telefono=v('fTelefono').trim(); CV.email=v('fEmail').trim(); CV.comuna=v('fComuna').trim();
   CV.direccion=v('fDireccion').trim(); CV.resumen=v('fResumen').trim(); CV.observaciones=v('fOtros').trim();
-  CV.experiencia.forEach((e,i)=>{ e.empresa=v('exp'+i+'_empresa'); e.ciudad=v('exp'+i+'_ciudad'); e.cargo=v('exp'+i+'_cargo'); e.periodo=v('exp'+i+'_periodo'); e.funciones=[v('exp'+i+'_f0'),v('exp'+i+'_f1'),v('exp'+i+'_f2')]; e.logro=v('exp'+i+'_logro'); });
+  CV.experiencia.forEach((e,i)=>{ e.empresa=v('exp'+i+'_empresa'); e.ciudad=v('exp'+i+'_ciudad'); e.cargo=v('exp'+i+'_cargo');
+    const act=document.getElementById('exp'+i+'_act'); e.actual=!!(act&&act.checked);
+    e.inicio=AMForm.leerMesAnio('exp'+i+'_ini'); e.fin=e.actual?'':AMForm.leerMesAnio('exp'+i+'_fin');
+    e.funciones=[v('exp'+i+'_f0'),v('exp'+i+'_f1'),v('exp'+i+'_f2')]; e.logro=v('exp'+i+'_logro'); });
   CV.academico.forEach((a,i)=>{ a.nivel=v('aca'+i+'_nivel'); a.titulo=v('aca'+i+'_titulo'); a.institucion=v('aca'+i+'_inst'); a.ciudad=v('aca'+i+'_ciudad'); a.periodo=''; });
   CV.cursos.forEach((c,i)=>{ c.evento=v('cur'+i+'_evento'); c.institucion=v('cur'+i+'_inst'); c.anio=v('cur'+i+'_anio'); });
   CV.idiomas.forEach((x,i)=>{ x.idioma=v('idi'+i+'_idioma'); x.nivel=v('idi'+i+'_nivel'); });
   CV.software.forEach((x,i)=>{ x.nombre=v('sof'+i+'_nombre'); x.nivel=v('sof'+i+'_nivel'); });
 }
 function acAdd(t){ acSync();
-  if(t==='exp'){ CV.experiencia.push({empresa:'',ciudad:'',periodo:'',cargo:'',funciones:['','',''],logro:''}); acRenderExp(); }
+  if(t==='exp'){ CV.experiencia.push({empresa:'',ciudad:'',cargo:'',inicio:'',fin:'',actual:false,funciones:['','',''],logro:''}); acRenderExp(); }
   if(t==='aca'){ CV.academico.push({nivel:'',titulo:'',institucion:'',ciudad:'',periodo:''}); acRenderAca(); }
   if(t==='cur'){ CV.cursos.push({evento:'',institucion:'',ciudad:'',anio:''}); acRenderCur(); }
   if(t==='idi'){ CV.idiomas.push({idioma:'',nivel:''}); acRenderIdi(); }
   if(t==='sof'){ CV.software.push({nombre:'',nivel:''}); acRenderSof(); }
+}
+// "Actualmente trabajando aquí": desactiva y limpia la fecha de término.
+function acExpActual(i, checked){
+  if(CV.experiencia[i]) CV.experiencia[i].actual=!!checked;
+  AMForm.setMesAnioDisabled('exp'+i+'_fin', checked);
 }
 function acDel(t,i){ acSync();
   ({exp:CV.experiencia,aca:CV.academico,cur:CV.cursos,idi:CV.idiomas,sof:CV.software})[t].splice(i,1);
@@ -148,8 +161,10 @@ function acInfo(key){
 function acInfoCerrar(){ const h=document.getElementById('acInfoHost'); if(h) h.innerHTML=''; }
 
 // ── Mapear CV → objeto para el exportador Harvard / payload ──────────────────
-function _expH(){ return CV.experiencia.map(e=>({cargo:e.cargo,empresa:e.empresa,ciudad:e.ciudad,periodo:e.periodo,desde:e.periodo,
-  funciones:(e.funciones||[]).map(s=>(s||'').trim()).filter(Boolean),logro:e.logro})); }
+function _expPeriodo(e){ return AMForm.periodoTexto(e.inicio,e.fin,e.actual)||e.periodo||''; }
+function _expH(){ return CV.experiencia.map(e=>{ const per=_expPeriodo(e); return {cargo:e.cargo,empresa:e.empresa,ciudad:e.ciudad,periodo:per,desde:per,
+  inicio:e.inicio||'',fin:e.fin||'',actual:!!e.actual,
+  funciones:(e.funciones||[]).map(s=>(s||'').trim()).filter(Boolean),logro:e.logro}; }); }
 // Títulos exactos del Modelo CV de AMSA para el PDF (el exportador Harvard los acepta por opción).
 const AC_TITULOS={perfil:'Resumen Profesional',educacion:'Antecedentes Académicos',experiencia:'Antecedentes Laborales',cursos:'Seminarios y Cursos',habilidades:'Información Adicional'};
 function _acaH(){ return CV.academico.map(a=>({titulo:(a.nivel?a.nivel+' · ':'')+(a.titulo||''),institucion:(a.institucion||'')+(a.ciudad?', '+a.ciudad:''),periodo:a.periodo})); }
@@ -169,6 +184,10 @@ function acDescargarPDF(){
 async function acGuardar(){
   acSync();
   if(!CV.rut){ acToast('Falta tu RUT','err'); return; }
+  if(!AMForm.rutValido(CV.rut)){ acToast('El RUT no es válido (revisa el dígito verificador)','err'); return; }
+  if(CV.telefono){ CV.telefono=AMForm.fonoFormat(CV.telefono); set('fTelefono',CV.telefono);
+    if(!AMForm.fonoValido(CV.telefono)){ acToast('El teléfono debe ser +569 seguido de 8 dígitos','err'); return; } }
+  if(CV.email && !AMForm.emailValido(CV.email)){ acToast('El correo no tiene un formato válido','err'); return; }
   if(!CV.nombres && !CV.apellidos){ acToast('Escribe tu nombre','err'); return; }
   const payload={ rut:CV.rut,nombres:CV.nombres,apellidos:CV.apellidos,direccion:CV.direccion,comuna:CV.comuna,
     telefono:CV.telefono,email:CV.email,resumen:CV.resumen,observaciones:CV.observaciones,
