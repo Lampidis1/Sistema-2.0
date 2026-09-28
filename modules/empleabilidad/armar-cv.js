@@ -54,7 +54,7 @@ function acDesdeFila(row){
     return {empresa:e.empresa||'',ciudad:e.ciudad||'',cargo:e.cargo||'',
       inicio:e.inicio||'', fin:e.fin||'', actual:!!e.actual, periodo:e.periodo||'',
       funciones:[fx[0]||'',fx[1]||'',fx[2]||''],logro:e.logro||''}; });
-  CV.academico=_pj(row.academico_json).map(a=>({nivel:'',titulo:a.titulo||'',institucion:a.institucion||'',ciudad:'',periodo:a.periodo||''}));
+  CV.academico=_pj(row.academico_json).map(a=>({nivel:a.nivel||'',titulo:a.titulo||'',institucion:a.institucion||'',ciudad:a.ciudad||'',inicio:a.inicio||'',fin:a.fin||'',actual:!!a.actual,periodo:a.periodo||''}));
   CV.cursos=_pj(row.cursos_json).map(c=>({evento:c.evento||c.tema||'',institucion:c.institucion||'',ciudad:'',anio:c.anio||''}));
   // Certificaciones de la encuesta (texto por líneas/comas) → se suman como cursos.
   (row.certificaciones||'').split(/\n|,/).map(s=>s.trim()).filter(Boolean).forEach(t=>{
@@ -71,7 +71,7 @@ function acLlenar(){
   set('fDireccion',CV.direccion); set('fResumen',CV.resumen); set('fOtros',CV.observaciones);
   // Precarga: académicos y cursos parten con una fila lista (con el nivel captado
   // en Móvil si viene), para que la persona solo complete y no vea secciones vacías.
-  if(!CV.academico.length) CV.academico.push({nivel:CV._nivel||'',titulo:CV._espec||'',institucion:'',ciudad:'',periodo:''});
+  if(!CV.academico.length) CV.academico.push({nivel:CV._nivel||'',titulo:CV._espec||'',institucion:'',ciudad:'',inicio:'',fin:'',actual:false,periodo:''});
   // Experiencia sembrada desde los oficios de la encuesta si no vino estructurada.
   if(!CV.experiencia.length && CV._oficios) CV.experiencia.push({empresa:'',ciudad:'',cargo:CV._oficios,inicio:'',fin:'',actual:false,funciones:['','',''],logro:''});
   if(!CV.cursos.length) CV.cursos.push({evento:'',institucion:'',ciudad:'',anio:''});
@@ -99,7 +99,10 @@ function acRenderAca(){
     <div class="ac-g2"><label class="ac-f"><span>Nivel</span><input id="aca${i}_nivel" value="${esc(a.nivel)}" placeholder="Enseñanza Media / Técnico / Título / Magíster"></label>
       <label class="ac-f"><span>Título / carrera</span><input id="aca${i}_titulo" value="${esc(a.titulo)}"></label></div>
     <div class="ac-g2"><label class="ac-f"><span>Institución</span><input id="aca${i}_inst" value="${esc(a.institucion)}"></label>
-      <label class="ac-f"><span>Ciudad · años</span><input id="aca${i}_ciudad" value="${esc((a.ciudad||'')+(a.periodo?(' · '+a.periodo):''))}"></label></div>
+      <label class="ac-f"><span>Ciudad</span><input id="aca${i}_ciudad" value="${esc(a.ciudad||'')}"></label></div>
+    <div class="ac-f"><span>Periodo (mes/año)</span>
+      <div class="ac-per">${AMForm.selMesAnio('aca'+i+'_ini', a.inicio)} <span class="ac-per-sep">a</span> ${AMForm.selMesAnio('aca'+i+'_fin', a.fin, {disabled:a.actual})}
+        <label class="ac-chk"><input type="checkbox" id="aca${i}_act" ${a.actual?'checked':''} onchange="acAcaActual(${i},this.checked)"> En curso</label></div></div>
   </div>`).join('')||'<div class="ac-empty">Sin estudios aún.</div>';
 }
 function acRenderCur(){
@@ -131,14 +134,16 @@ function acSync(){
     const act=document.getElementById('exp'+i+'_act'); e.actual=!!(act&&act.checked);
     e.inicio=AMForm.leerMesAnio('exp'+i+'_ini'); e.fin=e.actual?'':AMForm.leerMesAnio('exp'+i+'_fin');
     e.funciones=[v('exp'+i+'_f0'),v('exp'+i+'_f1'),v('exp'+i+'_f2')]; e.logro=v('exp'+i+'_logro'); });
-  CV.academico.forEach((a,i)=>{ a.nivel=v('aca'+i+'_nivel'); a.titulo=v('aca'+i+'_titulo'); a.institucion=v('aca'+i+'_inst'); a.ciudad=v('aca'+i+'_ciudad'); a.periodo=''; });
+  CV.academico.forEach((a,i)=>{ a.nivel=v('aca'+i+'_nivel'); a.titulo=v('aca'+i+'_titulo'); a.institucion=v('aca'+i+'_inst'); a.ciudad=v('aca'+i+'_ciudad');
+    const act=document.getElementById('aca'+i+'_act'); a.actual=!!(act&&act.checked);
+    a.inicio=AMForm.leerMesAnio('aca'+i+'_ini'); a.fin=a.actual?'':AMForm.leerMesAnio('aca'+i+'_fin'); });
   CV.cursos.forEach((c,i)=>{ c.evento=v('cur'+i+'_evento'); c.institucion=v('cur'+i+'_inst'); c.anio=v('cur'+i+'_anio'); });
   CV.idiomas.forEach((x,i)=>{ x.idioma=v('idi'+i+'_idioma'); x.nivel=v('idi'+i+'_nivel'); });
   CV.software.forEach((x,i)=>{ x.nombre=v('sof'+i+'_nombre'); x.nivel=v('sof'+i+'_nivel'); });
 }
 function acAdd(t){ acSync();
   if(t==='exp'){ CV.experiencia.push({empresa:'',ciudad:'',cargo:'',inicio:'',fin:'',actual:false,funciones:['','',''],logro:''}); acRenderExp(); }
-  if(t==='aca'){ CV.academico.push({nivel:'',titulo:'',institucion:'',ciudad:'',periodo:''}); acRenderAca(); }
+  if(t==='aca'){ CV.academico.push({nivel:'',titulo:'',institucion:'',ciudad:'',inicio:'',fin:'',actual:false,periodo:''}); acRenderAca(); }
   if(t==='cur'){ CV.cursos.push({evento:'',institucion:'',ciudad:'',anio:''}); acRenderCur(); }
   if(t==='idi'){ CV.idiomas.push({idioma:'',nivel:''}); acRenderIdi(); }
   if(t==='sof'){ CV.software.push({nombre:'',nivel:''}); acRenderSof(); }
@@ -147,6 +152,11 @@ function acAdd(t){ acSync();
 function acExpActual(i, checked){
   if(CV.experiencia[i]) CV.experiencia[i].actual=!!checked;
   AMForm.setMesAnioDisabled('exp'+i+'_fin', checked);
+}
+// "En curso": desactiva y limpia la fecha de término del estudio.
+function acAcaActual(i, checked){
+  if(CV.academico[i]) CV.academico[i].actual=!!checked;
+  AMForm.setMesAnioDisabled('aca'+i+'_fin', checked);
 }
 function acDel(t,i){ acSync();
   ({exp:CV.experiencia,aca:CV.academico,cur:CV.cursos,idi:CV.idiomas,sof:CV.software})[t].splice(i,1);
@@ -179,7 +189,7 @@ function _expH(){ return CV.experiencia.map(e=>{ const per=_expPeriodo(e); retur
   funciones:(e.funciones||[]).map(s=>(s||'').trim()).filter(Boolean),logro:e.logro}; }); }
 // Títulos exactos del Modelo CV de AMSA para el PDF (el exportador Harvard los acepta por opción).
 const AC_TITULOS={perfil:'Resumen Profesional',educacion:'Antecedentes Académicos',experiencia:'Antecedentes Laborales',cursos:'Seminarios y Cursos',habilidades:'Información Adicional'};
-function _acaH(){ return CV.academico.map(a=>({titulo:(a.nivel?a.nivel+' · ':'')+(a.titulo||''),institucion:(a.institucion||'')+(a.ciudad?', '+a.ciudad:''),periodo:a.periodo})); }
+function _acaH(){ return CV.academico.map(a=>({titulo:(a.nivel?a.nivel+' · ':'')+(a.titulo||''),institucion:(a.institucion||'')+(a.ciudad?', '+a.ciudad:''),periodo:AMForm.periodoTexto(a.inicio,a.fin,a.actual)||a.periodo||''})); }
 function _curH(){ return CV.cursos.map(c=>({evento:c.evento,tema:'',institucion:(c.institucion||'')+(c.ciudad?', '+c.ciudad:''),anio:c.anio})); }
 
 function acDescargarPDF(){

@@ -395,8 +395,10 @@ function eduItem(e,i){
   return `<div class="edu-item"><span class="del-item" onclick="delEdu(${i})">✕</span>
     <div class="grid2"><div class="fld"><label>Título</label><input value="${esc(e.titulo||'')}" oninput="CV_EDIT.academico[${i}].titulo=this.value"></div>
     <div class="fld"><label>Institución</label><input value="${esc(e.institucion||'')}" oninput="CV_EDIT.academico[${i}].institucion=this.value"></div></div>
-    <div class="grid2"><div class="fld"><label>Período</label><input value="${esc(e.periodo||'')}" oninput="CV_EDIT.academico[${i}].periodo=this.value"></div>
-    <div class="fld"><label>Ciudad</label><input value="${esc(e.ciudad||'')}" oninput="CV_EDIT.academico[${i}].ciudad=this.value"></div></div></div>`;
+    <div class="grid2"><div class="fld"><label>Ciudad</label><input value="${esc(e.ciudad||'')}" oninput="CV_EDIT.academico[${i}].ciudad=this.value"></div>
+    <div class="fld"><label>Periodo (mes/año)</label>
+      <div class="cv-per">${AMForm.selMesAnio('cvaca'+i+'_ini', e.inicio||_mesAnio(e.periodo), {onchange:'cvAcaPer('+i+')'})} <span class="cv-per-sep">a</span> ${AMForm.selMesAnio('cvaca'+i+'_fin', e.fin, {disabled:e.actual, onchange:'cvAcaPer('+i+')'})}
+        <label class="cv-chk"><input type="checkbox" id="cvaca${i}_act" ${e.actual?'checked':''} onchange="cvAcaActual(${i},this.checked)"> En curso</label></div></div></div></div>`;
 }
 function curItem(e,i){
   return `<div class="cur-item"><span class="del-item" onclick="delCur(${i})">✕</span>
@@ -414,7 +416,11 @@ function cvExpPer(i){ const e=CV_EDIT&&CV_EDIT.experiencia[i]; if(!e) return;
 function cvExpActual(i,ch){ const e=CV_EDIT&&CV_EDIT.experiencia[i]; if(e) e.actual=!!ch; AMForm.setMesAnioDisabled('cvexp'+i+'_fin',ch); cvExpPer(i); }
 function addExp(){ CV_EDIT.experiencia.push({cargo:'',empresa:'',ciudad:'',pais:'',desde:'',hasta:'',inicio:'',fin:'',actual:false,funciones:[],logro:''}); document.getElementById('expList').insertAdjacentHTML('beforeend',expItem(CV_EDIT.experiencia[CV_EDIT.experiencia.length-1],CV_EDIT.experiencia.length-1)); }
 function delExp(i){ CV_EDIT.experiencia.splice(i,1); renderFicha(); }
-function addEdu(){ CV_EDIT.academico.push({titulo:'',institucion:'',periodo:'',ciudad:''}); document.getElementById('eduList').insertAdjacentHTML('beforeend',eduItem(CV_EDIT.academico[CV_EDIT.academico.length-1],CV_EDIT.academico.length-1)); }
+function cvAcaPer(i){ const a=CV_EDIT&&CV_EDIT.academico[i]; if(!a) return;
+  const act=document.getElementById('cvaca'+i+'_act'); a.actual=!!(act&&act.checked);
+  a.inicio=AMForm.leerMesAnio('cvaca'+i+'_ini'); a.fin=a.actual?'':AMForm.leerMesAnio('cvaca'+i+'_fin'); }
+function cvAcaActual(i,ch){ const a=CV_EDIT&&CV_EDIT.academico[i]; if(a) a.actual=!!ch; AMForm.setMesAnioDisabled('cvaca'+i+'_fin',ch); cvAcaPer(i); }
+function addEdu(){ CV_EDIT.academico.push({titulo:'',institucion:'',periodo:'',ciudad:'',inicio:'',fin:'',actual:false}); document.getElementById('eduList').insertAdjacentHTML('beforeend',eduItem(CV_EDIT.academico[CV_EDIT.academico.length-1],CV_EDIT.academico.length-1)); }
 function delEdu(i){ CV_EDIT.academico.splice(i,1); renderFicha(); }
 function addCur(){ CV_EDIT.cursos.push({evento:'',tema:'',institucion:'',anio:''}); document.getElementById('curList').insertAdjacentHTML('beforeend',curItem(CV_EDIT.cursos[CV_EDIT.cursos.length-1],CV_EDIT.cursos.length-1)); }
 function delCur(i){ CV_EDIT.cursos.splice(i,1); renderFicha(); }
@@ -516,7 +522,7 @@ function generarCVpdf(c, opts){
   if((c.academico||[]).length){ titulo('Antecedentes Académicos');
     c.academico.forEach(a=>{
       nl(); doc.setFont('times','normal'); doc.setFontSize(10.5); doc.setTextColor.apply(doc,gray);
-      doc.text(a.periodo||'',M,y);
+      doc.text((typeof AMForm!=='undefined'&&(a.inicio||a.fin||a.actual)?AMForm.periodoTexto(a.inicio,a.fin,a.actual):(a.periodo||'')),M,y);
       doc.setTextColor.apply(doc,dark);
       const der=[a.titulo,[a.institucion,a.ciudad].filter(Boolean).join(', ')].filter(Boolean).join(' — ');
       wrap(der,W-M-45).forEach((l,i)=>{ if(i)nl(); doc.text(l,M+30,y); y+=5; });
@@ -779,7 +785,7 @@ function exportarExcelDir(){
     Telefono:cv.telefono||'', Email:cv.email||'', Resumen:cv.resumen||'',
     // experiencia combinada en una celda, cada experiencia separada por " | ", campos por ";"
     Experiencia:(cv.experiencia||[]).map(e=>{const per=(typeof AMForm!=='undefined'&&(e.inicio||e.fin||e.actual))?AMForm.periodoTexto(e.inicio,e.fin,e.actual):((e.desde||'')+'-'+(e.hasta||''));return [e.cargo,e.empresa,e.ciudad,e.pais,per,(e.funciones||[]).join(', ')].join(';');}).join(' | '),
-    Educacion:(cv.academico||[]).map(a=>[a.titulo,a.institucion,a.periodo,a.ciudad].join(';')).join(' | '),
+    Educacion:(cv.academico||[]).map(a=>{const per=(typeof AMForm!=='undefined'&&(a.inicio||a.fin||a.actual))?AMForm.periodoTexto(a.inicio,a.fin,a.actual):(a.periodo||'');return [a.titulo,a.institucion,per,a.ciudad].join(';');}).join(' | '),
     Cursos:(cv.cursos||[]).map(c=>[c.evento,c.tema,c.institucion,c.anio].join(';')).join(' | '),
     'Match %':cv._pct||0
   }));
