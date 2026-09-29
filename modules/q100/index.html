@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan de Acción Q100 · Antofagasta Minerals</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
+<script src="../../config/supabase.config.js"></script>
+<link rel="stylesheet" href="q100.css?v=20260929">
+<!-- Ajustes de tableta y teléfono comunes a todo el sistema. Va al final. -->
+<link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
+</head>
+<body>
+
+<!-- ════════ GATE (login / registro / pendiente) ════════ -->
+<div id="gate">
+  <div class="gate-card">
+    <img src="../../shared/assets/logo-amsa-873.png" alt="Antofagasta Minerals">
+    <div class="gate-t">Plan de Acción Q100</div>
+    <div class="gate-s">Seguimiento de metas prioritarias · VPAC</div>
+    <div id="gateErr" class="gate-err"></div>
+    <div id="loginStep">
+      <label>Correo</label>
+      <input id="lgEmail" type="email" inputmode="email" placeholder="usuario@aminerals.cl" autocomplete="username">
+      <label>Contraseña</label>
+      <input id="lgPass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrar()">
+      <button class="gate-btn" id="lgBtn" onclick="entrar()">Ingresar</button>
+      <div style="margin-top:14px;font-size:.82rem">¿Sin cuenta? <span class="gate-link" onclick="verRegistro()">Solicitar acceso</span></div>
+    </div>
+    <div id="regStep" style="display:none">
+      <div class="g2"><div><label>Nombre</label><input id="rgNombre"></div><div><label>Apellido</label><input id="rgApellido"></div></div>
+      <label>Correo</label><input id="rgEmail" type="email" inputmode="email">
+      <label>Contraseña (mín. 6)</label><input id="rgPass" type="password">
+      <button class="gate-btn" id="rgBtn" onclick="registrarse()">Solicitar acceso</button>
+      <div style="margin-top:12px;font-size:.82rem"><span class="gate-link" onclick="verLogin()">← Volver</span></div>
+    </div>
+    <div id="pendStep" style="display:none">
+      <div style="font-size:2.2rem">⏳</div>
+      <div style="font-weight:700;margin:6px 0">Cuenta pendiente</div>
+      <div style="font-size:.82rem;color:var(--gray)">Un administrador debe habilitar tu acceso al Plan de Acción Q100.</div>
+      <button class="gate-btn" style="margin-top:14px" onclick="salir()">Cerrar sesión</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ APP ════════ -->
+<div id="app" class="hidden">
+  <header class="top">
+    <div class="top-in">
+      <div>
+        <h1>Plan de Acción Q100</h1>
+        <div class="sub" id="subCtx">VPAC · vista corporativa</div>
+      </div>
+      <div class="sp">
+        <span id="hUser"></span>
+        <a href="../../index.html" title="Inicio">⌂</a>
+        <button onclick="salir()">Salir</button>
+      </div>
+    </div>
+  </header>
+  <div class="ribbon"></div>
+
+  <main class="wrap">
+    <div class="toolbar">
+      <span class="eyebrow">Estado del ciclo</span>
+      <select id="selCiclo" onchange="q100CargarDashboard()"></select>
+    </div>
+    <div id="loader">Cargando…</div>
+    <div id="dash" class="hidden">
+      <div class="kpis" id="kpis"></div>
+
+      <div class="grid2" style="margin-top:6px">
+        <section>
+          <div class="sec-h"><h2>Avance por meta</h2><span class="note">% promedio · n° acciones</span></div>
+          <div class="card"><div class="rows" id="metas"></div></div>
+        </section>
+        <section>
+          <div class="sec-h"><h2>Avance por área</h2><span class="note">responsable ante la gerencia</span></div>
+          <div class="card"><div class="rows" id="areas"></div></div>
+        </section>
+      </div>
+
+      <section>
+        <div class="sec-h"><h2>Contribución Meta × Área</h2><span class="note">% avance (celda vacía = sin acciones)</span></div>
+        <div class="card hm-wrap"><table class="hm" id="hm"></table>
+          <div class="hm-legend">
+            <span><i style="background:var(--red)"></i>&lt;40</span>
+            <span><i style="background:var(--gold-dk)"></i>40–54</span>
+            <span><i style="background:var(--gold)"></i>55–69</span>
+            <span><i style="background:#4dbdb3"></i>70–84</span>
+            <span><i style="background:var(--teal)"></i>≥85</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="sec-h"><h2>Cruces de gestión</h2><span class="note">lecturas para la gerencia corporativa</span></div>
+        <div class="cross" id="cruces"></div>
+      </section>
+
+      <footer id="foot"></footer>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<!-- Config del guard de autenticación (antes de auth-guard.js). -->
+<script>
+  window.AUTH_CFG = {
+    storageKey: 'am_q100_auth',
+    slug: 'q100',
+    altSlugs: [],
+    origen: 'q100',
+    rolSolicitado: 'usuario',
+    faenaSolicitada: 'q100',
+    msgPassCorta: 'Mínimo 6 caracteres',
+    onAcceso: function(user){ return q100Acceso(user); }
+  };
+</script>
+<script src="../../shared/js/auth-guard.js?v=20260929"></script>
+<script src="q100.js?v=20260929"></script>
+</body>
+</html>

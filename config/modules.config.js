@@ -184,6 +184,18 @@ window.AM_MODULES = [
     doc: 'docs/modulos/faenas.md',
   },
   {
+    id: 'q100',
+    nombre: 'Plan de Acción Q100',
+    descripcion: 'Seguimiento de metas prioritarias de la VPAC por ciclos de 100 días: avance por meta y área, criticidad y cruces de gestión.',
+    icono: '🎯',
+    ruta: 'modules/q100/',
+    acceso: 'q100',
+    estado: 'activo',
+    visibleEnHome: true,
+    homeTier: 'medio',
+    doc: 'docs/modulos/q100.md',
+  },
+  {
     id: 'planer',
     nombre: 'Planer',
     descripcion: 'Pendientes y acciones por especialista de Proveedores, vista conjunta con filtro por autor.',
