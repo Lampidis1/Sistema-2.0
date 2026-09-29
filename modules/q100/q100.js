@@ -59,7 +59,12 @@ function hmColor(v){ return v<40?'var(--red)':v<55?'var(--gold-dk)':v<70?'var(--
 function hmFg(v){ return (v<55)?'#fff':(v>=85||(v>=70&&v<85))?'#fff':'#3a2c00'; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
+function q100AreaId(nombre){
+  const a=(Q_CTX&&Q_CTX.areas||[]).find(x=>x.nombre===nombre);
+  return a?a.area_id:null;
+}
 function q100Render(d){
+  window.Q_DASH=d; window.Q_CICLO=d.ciclo;
   const g=d.global||{};
   // KPIs
   const pctLista = g.n?Math.round(g.lista/g.n*100):0;
@@ -74,7 +79,8 @@ function q100Render(d){
 
   // Barras meta
   document.getElementById('metas').innerHTML=(d.metas||[]).map(m=>`
-    <div class="row ${m.avg<40?'flag':''}">
+    <div class="row clickable ${m.avg<40?'flag':''}" role="button" tabindex="0"
+         onclick="q100Detalle({meta:${m.numero}})" onkeydown="if(event.key==='Enter')q100Detalle({meta:${m.numero}})">
       <div class="tag">M${m.numero}</div>
       <div class="body"><div class="name" title="${esc(m.titulo)}">${esc(shortMeta(m.titulo))}</div>
         <div class="track"><i class="${barClass(m.avg)}" style="width:${m.avg}%"></i></div></div>
@@ -82,13 +88,15 @@ function q100Render(d){
     </div>`).join('');
 
   // Barras área
-  document.getElementById('areas').innerHTML=(d.areas||[]).map(a=>`
-    <div class="row ${a.avg<40?'flag':''}">
+  document.getElementById('areas').innerHTML=(d.areas||[]).map(a=>{
+    const aid=q100AreaId(a.area);
+    return `<div class="row clickable ${a.avg<40?'flag':''}" role="button" tabindex="0"
+         onclick='q100Detalle({area:${JSON.stringify(aid)}})' onkeydown="if(event.key==='Enter')this.click()">
       <div class="tag"></div>
       <div class="body"><div class="name" title="${esc(a.area)}">${esc(a.area)}</div>
         <div class="track"><i class="${barClass(a.avg)}" style="width:${a.avg}%"></i></div></div>
       <div class="val tnum">${a.avg}% <small>${a.n} acc·${a.riesgo} rg</small></div>
-    </div>`).join('');
+    </div>`;}).join('');
 
   // Heatmap
   const mx={}; (d.matriz||[]).forEach(c=>{ (mx[c.meta]=mx[c.meta]||{})[c.area]=c.avg; });
@@ -98,7 +106,10 @@ function q100Render(d){
   (d.metas||[]).forEach(m=>{
     h+=`<tr><th class="rowh" title="${esc(m.titulo)}">M${m.numero} · ${esc(shortMeta(m.titulo))}</th>`;
     cols.forEach(c=>{ const v=mx[m.numero]&&mx[m.numero][c];
-      h+=(v===undefined||v===null)?'<td class="empty">·</td>':`<td style="background:${hmColor(v)};color:${hmFg(v)}">${v}</td>`; });
+      h+=(v===undefined||v===null)?'<td class="empty">·</td>'
+        :`<td class="hm-cell" title="Meta ${m.numero} · ${esc(c)}"
+             onclick='q100Detalle({meta:${m.numero},area:${JSON.stringify(q100AreaId(c))}})'
+             style="background:${hmColor(v)};color:${hmFg(v)}">${v}</td>`; });
     h+='</tr>';
   });
   document.getElementById('hm').innerHTML=h;
@@ -146,3 +157,120 @@ function q100Render(d){
   const cn=(Q_CTX&&(Q_CTX.ciclos||[]).find(c=>c.ciclo_id===d.ciclo));
   document.getElementById('foot').innerHTML=`Ciclo: <strong>${cn?esc(cn.nombre):esc(d.ciclo)}</strong>. Los <strong>responsables se muestran por área</strong>; la asignación interna de cada gerencia se gestiona aguas abajo y no se expone en esta vista corporativa. Datos en vivo desde el sistema · Antofagasta Minerals.`;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Drill-down interactivo + edición por área
+// ─────────────────────────────────────────────────────────────────────────────
+let Q_FILTRO=null;   // filtro actual del modal (para refrescar tras guardar)
+const EST_OPC=['LISTA','EN RIESGO','ATRASADA','SIN INICIAR'];
+
+function estadoChip(e){
+  const k=(e||'').toUpperCase();
+  const cls = k==='LISTA'?'ok' : (k==='EN RIESGO'?'warn' : (k==='ATRASADA'?'bad':'mute'));
+  return `<span class="chip ${cls}">${esc(e||'sin estado')}</span>`;
+}
+function critChip(c){
+  return c==='critica' ? '<span class="chip crit">Crítica</span>' : '<span class="chip mute">No crítica</span>';
+}
+function barMini(v){ v=(v==null?0:v); return `<div class="mini"><i class="${barClass(v)}" style="width:${v}%"></i></div>`; }
+
+function q100TituloFiltro(f){
+  let t='Detalle', s='';
+  if(f.meta!=null){ const m=(Q_DASH&&Q_DASH.metas||[]).find(x=>x.numero===f.meta);
+    t='Meta '+f.meta; s=m?shortMeta(m.titulo):''; }
+  if(f.area!=null){ const a=(Q_CTX&&Q_CTX.areas||[]).find(x=>x.area_id===f.area);
+    const an=a?a.nombre:f.area;
+    if(f.meta!=null){ s=(s?s+' · ':'')+'Área: '+an; } else { t='Área: '+an; s='Acciones del área en este ciclo'; } }
+  return {t,s};
+}
+
+async function q100Detalle(filtro){
+  Q_FILTRO=filtro;
+  const mask=document.getElementById('detMask'), body=document.getElementById('detBody');
+  const tt=q100TituloFiltro(filtro);
+  document.getElementById('detTitle').textContent=tt.t;
+  document.getElementById('detSub').textContent=tt.s;
+  mask.classList.remove('hidden');
+  body.innerHTML='<div class="det-load">Cargando acciones…</div>';
+  try{
+    const {data,error}=await SB.rpc('q100_acciones',{
+      p_meta: filtro.meta!=null?filtro.meta:null,
+      p_area: filtro.area!=null?filtro.area:null,
+      p_ciclo: document.getElementById('selCiclo').value||null});
+    if(error) throw error;
+    if(!data||data.error) throw new Error((data&&data.error)||'sin datos');
+    q100RenderDetalle(data.acciones||[]);
+  }catch(e){ body.innerHTML='<div class="det-load">No se pudo cargar ('+esc(e.message||e)+').</div>'; }
+}
+
+function q100RenderDetalle(acc){
+  const body=document.getElementById('detBody');
+  if(!acc.length){ body.innerHTML='<div class="det-load">Sin acciones para este filtro.</div>'; return; }
+  body.innerHTML = acc.map((a,i)=>{
+    const resp = (a.ver_personas && Array.isArray(a.responsables) && a.responsables.length)
+      ? a.responsables.map(esc).join(', ')
+      : esc(a.area);
+    const fecha = a.fecha_termino ? ('Término '+esc(a.fecha_termino)) : '';
+    const actualiza = a.actualizado_por ? `· actualizó ${esc(a.actualizado_por)}` : '';
+    return `<div class="acc" id="acc-${i}">
+      <div class="acc-top">
+        <div class="acc-pct tnum ${barClass(a.pct||0)==='bad'?'bad':''}">${a.pct==null?'—':a.pct+'%'}</div>
+        <div class="acc-main">
+          <div class="acc-t">${esc(a.accion)}</div>
+          <div class="acc-meta">${critChip(a.criticidad)} ${estadoChip(a.estado)}
+            <span class="acc-dim">${esc(a.linea)} · ${resp} ${fecha?'· '+fecha:''}</span></div>
+          ${barMini(a.pct)}
+          <div class="acc-com ${a.comentario?'':'vacio'}">${a.comentario?('“'+esc(a.comentario)+'” '+actualiza):'Sin comentario registrado — el porqué del avance se explica al editar.'}</div>
+        </div>
+      </div>
+      ${a.puede_editar?`<div class="acc-actions"><button class="mini-btn" onclick="q100Editar(${i})">✎ Registrar avance</button></div>
+        <div class="acc-edit hidden" id="edit-${i}">
+          <div class="ef-row">
+            <label>% avance<input type="number" min="0" max="100" id="ef-pct-${i}" value="${a.pct==null?'':a.pct}"></label>
+            <label>Estado<select id="ef-est-${i}">${EST_OPC.map(o=>`<option ${o===(a.estado||'')?'selected':''}>${o}</option>`).join('')}${EST_OPC.includes(a.estado)?'':`<option selected>${esc(a.estado||'')}</option>`}</select></label>
+          </div>
+          <label class="ef-full">¿Qué se hizo / por qué está en este avance?
+            <textarea id="ef-com-${i}" rows="2" placeholder="Explica el avance del período…">${esc(a.comentario||'')}</textarea></label>
+          ${a.ver_personas?`<label class="ef-full">Responsables internos (separados por coma)
+            <input id="ef-resp-${i}" value="${a.ver_personas&&a.responsables?a.responsables.map(esc).join(', '):''}"></label>`:''}
+          <div class="ef-btns">
+            <button class="mini-btn ghost" onclick="q100CancelEdit(${i})">Cancelar</button>
+            <button class="mini-btn ok" onclick="q100GuardarAvance('${esc(a.accion_id)}',${i},${a.ver_personas?'true':'false'})">Guardar</button>
+          </div>
+        </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function q100Editar(i){ const e=document.getElementById('edit-'+i); if(e) e.classList.remove('hidden'); }
+function q100CancelEdit(i){ const e=document.getElementById('edit-'+i); if(e) e.classList.add('hidden'); }
+
+async function q100GuardarAvance(accionId, i, verPersonas){
+  const pctEl=document.getElementById('ef-pct-'+i);
+  const pct=pctEl.value===''?null:Number(pctEl.value);
+  if(pct!=null && (pct<0||pct>100)){ toast('El % debe estar entre 0 y 100','err'); return; }
+  const estado=document.getElementById('ef-est-'+i).value;
+  const comentario=document.getElementById('ef-com-'+i).value;
+  try{
+    const {data,error}=await SB.rpc('q100_guardar_avance',
+      {p_accion:accionId, p_pct:pct, p_estado:estado, p_comentario:comentario,
+       p_ciclo:document.getElementById('selCiclo').value||null});
+    if(error) throw error;
+    if(!data||data.error) throw new Error((data&&data.error)||'error');
+    if(verPersonas){
+      const raw=(document.getElementById('ef-resp-'+i)||{}).value||'';
+      const personas=raw.split(',').map(s=>s.trim()).filter(Boolean);
+      const r=await SB.rpc('q100_responsable_guardar',{p_accion:accionId, p_personas:personas});
+      if(r.error) throw r.error;
+    }
+    toast('Avance guardado','ok');
+    await q100Detalle(Q_FILTRO);        // refresca el detalle
+    q100CargarDashboard();              // refresca los números del tablero
+  }catch(e){ toast('No se pudo guardar: '+(e.message||e),'err'); }
+}
+
+function cerrarDetalle(){ document.getElementById('detMask').classList.add('hidden'); Q_FILTRO=null; }
+// Cerrar con Esc (NO al hacer clic fuera — convención del sistema).
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){ const m=document.getElementById('detMask'); if(m&&!m.classList.contains('hidden')) cerrarDetalle(); }
+});

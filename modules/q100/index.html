@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="q100.css?v=20260929">
+<link rel="stylesheet" href="q100.css?v=20260929b">
 <!-- Ajustes de tableta y teléfono comunes a todo el sistema. Va al final. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
 </head>
@@ -104,6 +104,20 @@
   </main>
 </div>
 
+<!-- Modal de detalle / edición (no se cierra al hacer clic fuera; solo con ✕ o Esc). -->
+<div id="detMask" class="det-mask hidden" role="dialog" aria-modal="true" aria-labelledby="detTitle">
+  <div class="det">
+    <div class="det-head">
+      <div>
+        <div class="det-t" id="detTitle">Detalle</div>
+        <div class="det-s" id="detSub"></div>
+      </div>
+      <button class="det-x" onclick="cerrarDetalle()" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="det-body" id="detBody"></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <!-- Config del guard de autenticación (antes de auth-guard.js). -->
@@ -120,6 +134,6 @@
   };
 </script>
 <script src="../../shared/js/auth-guard.js?v=20260929"></script>
-<script src="q100.js?v=20260929"></script>
+<script src="q100.js?v=20260929b"></script>
 </body>
 </html>
