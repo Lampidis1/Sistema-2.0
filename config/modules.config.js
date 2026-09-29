@@ -187,7 +187,7 @@ window.AM_MODULES = [
     id: 'q100',
     nombre: 'Plan de Acción Q100',
     descripcion: 'Seguimiento de metas prioritarias de la VPAC por ciclos de 100 días: avance por meta y área, criticidad y cruces de gestión.',
-    icono: '🎯',
+    icono: 'shared/assets/q100-logo.svg',
     ruta: 'modules/q100/',
     acceso: 'q100',
     estado: 'activo',
