@@ -120,6 +120,27 @@ td.c-estatus{padding:0}
 .placeholder h2{color:var(--teal-dk);margin:10px 0 6px}
 .placeholder p{color:var(--gray);font-size:.9rem;line-height:1.5;margin:0}
 
+/* ── Toggle Informe/Gráficas (segmented) ── */
+.seg{display:inline-flex;border:1px solid var(--gray-lt);border-radius:9px;overflow:hidden}
+.seg-b{background:#fff;border:0;padding:7px 14px;font-family:var(--f-body);font-size:.82rem;font-weight:600;color:var(--gray);cursor:pointer}
+.seg-b.on{background:var(--teal-dk);color:#fff}
+.g-sel{padding:7px 11px;border:1px solid var(--gray-lt);border-radius:8px;font-family:var(--f-body);font-size:.85rem;background:#fff}
+.g-lbl{font-size:.78rem;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+
+/* ── Dashboard de gráficas ── */
+.g-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.g-card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px;min-width:0}
+.g-card.g-wide{grid-column:span 3}
+.g-card.g-kpi{grid-column:span 1;display:flex;flex-direction:column}
+.g-kpi-n{font-family:var(--f-head);font-weight:800;font-size:2.6rem;line-height:1;color:var(--teal-dk)}
+.g-kpi-l{font-size:.74rem;color:var(--gray);text-transform:uppercase;letter-spacing:.04em;margin:4px 0 8px;line-height:1.3}
+.g-h{font-family:var(--f-head);font-weight:700;font-size:.9rem;color:var(--teal-dk);text-transform:uppercase;letter-spacing:.03em;margin-bottom:10px}
+.chart-box{position:relative;width:100%}
+.g-card canvas{max-width:100%}
+.g-nota{font-size:.74rem;color:var(--gray);margin-top:14px}
+@media(max-width:900px){ .g-grid{grid-template-columns:1fr 1fr} .g-card.g-wide{grid-column:span 2} .g-card.g-kpi{grid-column:span 2} }
+@media(max-width:599px){ .g-grid{grid-template-columns:1fr} .g-card.g-wide,.g-card.g-kpi{grid-column:span 1} }
+
 /* ── Modal ── */
 .modal-mask{position:fixed;inset:0;background:rgba(20,30,38,.5);display:flex;align-items:safe center;justify-content:center;padding:20px;z-index:2000;overflow:auto}
 .modal{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,40,50,.28);padding:22px 24px;width:100%;max-width:560px;margin:auto}

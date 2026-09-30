@@ -23,6 +23,8 @@ const CIAS=['Centinela','Antucoya','Zaldivar'];
 
 let REC={
   vista:'norte',
+  subvista:'informe',  // 'informe' | 'graficas'
+  gCia:'Todas',        // compañía seleccionada en gráficas
   rows:[], file:'', loaded:false,
   fCia:new Set(CIAS),
   fMacro:new Set(), fCat:new Set(), fAnio:new Set(),
@@ -98,6 +100,7 @@ function reclamosCargarExcel(file){
       REC.file=file.name; REC.loaded=true;
       REC.fMacro=new Set(); REC.fCat=new Set(); REC.fAnio=new Set();
       REC.estatus={}; REC.deleted=new Set(); REC.editMode=false;
+      REC.subvista='informe'; REC.gCia='Todas'; REC.gAnio=null;
       toast('Excel cargado: '+REC.rows.length+' reclamos (solo en memoria)','ok');
       render();
     }catch(err){ toast('No se pudo leer el Excel: '+err.message,'err'); }
@@ -112,7 +115,16 @@ function _aplicarDefaultsNorte(macros,cats,anios){
   if(!REC.fAnio.size && anios.length) REC.fAnio.add(anios[anios.length-1]); // año más reciente
 }
 
+function _toggleVistaHTML(){
+  return `<div class="seg">
+    <button class="seg-b ${REC.subvista==='informe'?'on':''}" onclick="recSubvista('informe')">📋 Informe</button>
+    <button class="seg-b ${REC.subvista==='graficas'?'on':''}" onclick="recSubvista('graficas')">📊 Gráficas</button>
+  </div>`;
+}
+function recSubvista(v){ REC.subvista=v; render(); }
+
 function renderInforme(cont){
+  if(REC.subvista==='graficas'){ renderGraficas(cont); return; }
   const macros=[...new Set(REC.rows.map(r=>_norm(r[REC_COL.macro])).filter(Boolean))].sort();
   const cats=[...new Set(REC.rows.map(r=>_norm(r[REC_COL.cat])).filter(c=>c&&!/tu voz/i.test(c)))].sort();
   const anios=[...new Set(REC.rows.map(r=>_norm(r[REC_COL.anio])).filter(Boolean))].sort();
@@ -132,6 +144,7 @@ function renderInforme(cont){
 
   let h=`<div class="info-bar">
     <div class="file">📄 <b>${esc(REC.file)}</b> · ${filtradas.length} de ${REC.rows.length} reclamos</div>
+    ${_toggleVistaHTML()}
     <div class="spacer"></div>
     <button class="btn" onclick="recHistorico()">🗂 Histórico</button>
     <button class="btn ${REC.editMode?'on':''}" onclick="recToggleEdit()">${REC.editMode?'✓ Listo':'🗑 Eliminar filas'}</button>
@@ -497,3 +510,118 @@ async function recReactivar(id){
 
 // La imagen PNG la genera reclamos-imagen.js (window.recImagenPNG), dibujando
 // la tabla a mano sobre un canvas — sin dependencias ni foreignObject.
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FASE 3 · Gráficas nativas por compañía (Chart.js) — reemplazan el PPT Power BI
+// ═══════════════════════════════════════════════════════════════════════════
+const G_TEAL='#00A399', G_TEALDK='#006973', G_GOLD='#F2A900', G_RED='#D0311B', G_GRAY='#5F6973';
+const MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+function recGCia(v){ REC.gCia=v; REC.gAnio=null; render(); }   // reinicia año al cambiar compañía
+function recGAnio(v){ REC.gAnio=v; render(); }
+
+// Calcula las métricas del dashboard para la compañía y año seleccionados.
+function recStatsGraficas(){
+  const cia=REC.gCia;
+  const yearOf=r=>{ const a=_norm(r[REC_COL.anio]); if(/^\d{4}$/.test(a))return a; const c=_norm(r[REC_COL.creacion]); return /^\d{4}/.test(c)?c.slice(0,4):''; };
+  const monthOf=r=>{ const c=_norm(r[REC_COL.creacion]); const m=parseInt(c.slice(5,7)); return (m>=1&&m<=12)?m:0; };
+  const catNorm=v=>{ const c=_norm(v); if(/tu voz/i.test(c))return 'Tu Voz - Compliance'; return c||'(sin categoría)'; };
+
+  const base=REC.rows.filter(r=> _norm(r[REC_COL.elim])==='' && (cia==='Todas' || _ciaNorm(r[REC_COL.cia])===cia));
+  const allYears=[...new Set(base.map(yearOf).filter(Boolean))].sort();
+  if(REC.gAnio==null || (REC.gAnio!=='Todos' && !allYears.includes(REC.gAnio)))
+    REC.gAnio = allYears.length ? allYears[allYears.length-1] : 'Todos';
+  const anio=REC.gAnio;
+  const rows = anio==='Todos' ? base : base.filter(r=>yearOf(r)===anio);
+
+  const monthYears = anio==='Todos' ? allYears : [anio];
+  const monthly={}; monthYears.forEach(y=>monthly[y]=Array(12).fill(0));
+  const porAnio={}; allYears.forEach(y=>porAnio[y]=0);
+  base.forEach(r=>{ const y=yearOf(r); if(y) porAnio[y]++; });
+
+  const macro={}, categoria={}; let apelado=0, atrasado=0, enCurso=0, enGestion=0;
+  rows.forEach(r=>{
+    const y=yearOf(r), m=monthOf(r);
+    if(monthly[y]&&m) monthly[y][m-1]++;
+    const mac=_norm(r[REC_COL.macro])||'(sin estado)'; macro[mac]=(macro[mac]||0)+1;
+    const cat=catNorm(r[REC_COL.cat]); categoria[cat]=(categoria[cat]||0)+1;
+    if(/en gesti/i.test(mac)){ enGestion++;
+      const est=_norm(r[REC_COL.estado]); const dias=parseInt(r[REC_COL.tgestion])||0;
+      if(/apel/i.test(est)) apelado++; else if(dias>30) atrasado++; else enCurso++;
+    }
+  });
+  return {cia, anio, allYears, monthYears, total:rows.length, monthly, porAnio, macro, categoria,
+          avance:{Apelado:apelado,'En Curso':enCurso,Atrasado:atrasado}, enGestion};
+}
+
+function renderGraficas(cont){
+  const s=recStatsGraficas();
+  const cias=['Todas'].concat(CIAS);
+  const anios=['Todos'].concat(s.allYears);
+  const mostrarDonut = s.anio==='Todos' && s.allYears.length>1;
+  let h=`<div class="info-bar">
+    <div class="file">📄 <b>${esc(REC.file)}</b></div>
+    ${_toggleVistaHTML()}
+    <div class="spacer"></div>
+    <span class="g-lbl">Compañía</span>
+    <select class="g-sel" onchange="recGCia(this.value)">${cias.map(c=>`<option ${REC.gCia===c?'selected':''}>${c}</option>`).join('')}</select>
+    <span class="g-lbl">Año</span>
+    <select class="g-sel" onchange="recGAnio(this.value)">${anios.map(a=>`<option ${s.anio===a?'selected':''}>${a}</option>`).join('')}</select>
+    <button class="btn" onclick="recReset()">↻ Cargar otro Excel</button>
+  </div>`;
+  h+=`<div class="g-grid">
+    <div class="g-card g-kpi">
+      <div class="g-kpi-n" id="gTotal">${s.total}</div>
+      <div class="g-kpi-l">Total reclamos · ${REC.gCia==='Todas'?'todas las compañías':esc(REC.gCia)} · ${esc(String(s.anio))}</div>
+      ${mostrarDonut?`<div class="chart-box" style="height:180px"><canvas id="gAnio"></canvas></div>`:''}
+    </div>
+    <div class="g-card g-wide"><div class="g-h">Cantidad de reclamos mensuales</div><div class="chart-box" style="height:230px"><canvas id="gMes"></canvas></div></div>
+    <div class="g-card"><div class="g-h">Por macro estado</div><div class="chart-box" style="height:190px"><canvas id="gMacro"></canvas></div></div>
+    <div class="g-card"><div class="g-h">Estado de avance (en gestión · ${s.enGestion})</div><div class="chart-box" style="height:190px"><canvas id="gAvance"></canvas></div></div>
+    <div class="g-card"><div class="g-h">Por categoría de operación</div><div class="chart-box" style="height:210px"><canvas id="gCat"></canvas></div></div>
+  </div>
+  <div class="g-nota">La gestión “Atrasado” es mayor estricto a 30 días. Se recalcula al cambiar compañía, año o cargar otro Excel.</div>`;
+  cont.innerHTML=h;
+  drawGraficas(s);
+}
+
+function _destroyCharts(){ (window._recCharts||[]).forEach(c=>{ try{c.destroy();}catch(e){} }); window._recCharts=[]; }
+function _reg(c){ (window._recCharts=window._recCharts||[]).push(c); return c; }
+
+function drawGraficas(s){
+  if(typeof Chart==='undefined'){ toast('No se pudo cargar Chart.js','err'); return; }
+  _destroyCharts();
+  s=s||recStatsGraficas();
+  Chart.defaults.font.family="'Barlow',sans-serif"; Chart.defaults.font.size=12; Chart.defaults.color='#475259';
+  const hBar={indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{grid:{display:false}}}};
+
+  // Donut por año (solo cuando Año = Todos)
+  const donutEl=document.getElementById('gAnio');
+  if(donutEl){ const ys=s.allYears, yc=ys.map(y=>s.porAnio[y]);
+    _reg(new Chart(donutEl,{type:'doughnut',
+      data:{labels:ys,datasets:[{data:yc,backgroundColor:[G_TEALDK,G_TEAL,G_GOLD,G_GRAY,'#9BB0B5','#C8D2D5']}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom'}}}})); }
+
+  // Mensual (una serie por año mostrado)
+  const mcolors=[G_TEALDK,G_TEAL,G_GOLD,G_GRAY,'#9BB0B5'];
+  _reg(new Chart(document.getElementById('gMes'),{type:'bar',
+    data:{labels:MESES,datasets:s.monthYears.map((y,i)=>({label:y,data:s.monthly[y],backgroundColor:mcolors[i%mcolors.length],borderRadius:3}))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:s.monthYears.length>1,position:'bottom'}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{precision:0}}}}}));
+
+  // Macro estado
+  const macL=Object.keys(s.macro).sort((a,b)=>s.macro[b]-s.macro[a]);
+  const macColor=l=>/en gesti/i.test(l)?G_TEAL:/detenid/i.test(l)?G_GOLD:/resoluci/i.test(l)?G_TEALDK:G_GRAY;
+  _reg(new Chart(document.getElementById('gMacro'),{type:'bar',
+    data:{labels:macL,datasets:[{data:macL.map(l=>s.macro[l]),backgroundColor:macL.map(macColor),borderRadius:3}]},options:hBar}));
+
+  // Estado de avance
+  const avL=['Apelado','En Curso','Atrasado'];
+  _reg(new Chart(document.getElementById('gAvance'),{type:'bar',
+    data:{labels:avL,datasets:[{data:avL.map(l=>s.avance[l]),backgroundColor:[G_TEALDK,G_TEAL,G_RED],borderRadius:3}]},options:hBar}));
+
+  // Categoría
+  const catL=Object.keys(s.categoria).sort((a,b)=>s.categoria[b]-s.categoria[a]);
+  _reg(new Chart(document.getElementById('gCat'),{type:'bar',
+    data:{labels:catL,datasets:[{data:catL.map(l=>s.categoria[l]),backgroundColor:catL.map(l=>/tu voz/i.test(l)?G_TEALDK:G_TEAL),borderRadius:3}]},options:hBar}));
+}

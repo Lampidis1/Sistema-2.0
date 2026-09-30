@@ -39,6 +39,12 @@ usuarios.
    de la tabla (dibujada a mano sobre canvas, sin dependencias).
 8. **Histórico:** lista los informes archivados; cada uno se puede **ver**
    (solo lectura), copiar, descargar imagen, y **revocar/reactivar** su enlace.
+9. **Gráficas** (toggle Informe/Gráficas): dashboard nativo (Chart.js) que
+   reemplaza el PPT de Power BI. Selectores de **compañía** (Todas/Centinela/
+   Antucoya/Zaldívar) y **año** (Todos o uno). Muestra: total, donut por año
+   (cuando Año=Todos), reclamos mensuales (barras por año), por macro estado,
+   estado de avance en gestión (Apelado/En Curso/Atrasado, Atrasado >30 días)
+   y por categoría (incluye Tu Voz - Compliance). Se calcula del Excel cargado.
 
 ## Base de datos (Fase 2)
 
@@ -62,16 +68,15 @@ descargar la imagen. Es el enlace que se adjunta al correo.
 creacion:23, elim:24, macro:25, denunciada:27, montoCorr:28, tgestion:29,
 provAfect:31, anio:33`
 
-## Pendiente (fases siguientes)
+## Pendiente
 
-- **Fase 3:** gráficas nativas (Chart.js) desplegables por compañía
-  (reemplazan las imágenes del PPT de Power BI: CEN/ANT/CMZ + GN).
-- **MLP:** definir su criterio de filtrado.
+- **MLP:** definir su criterio de filtrado (la pestaña ya existe con placeholder).
 
 ## Archivos
 
 - `modules/reclamos/index.html` · `reclamos.css` · `reclamos.js` ·
   `reclamos-imagen.js` (PNG de la tabla) · `ver.html` (página pública)
+- Librerías CDN: SheetJS (xlsx 0.18.5), Chart.js 4.4.0 (gráficas).
 - `database/migraciones/2026-09-30_reclamos_historico_y_links.sql`
 - Registrado en `config/modules.config.js` y en la lista de slugs de
   `modules/admin/admin.js`.
