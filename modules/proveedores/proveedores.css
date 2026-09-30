@@ -1,10 +1,10 @@
 
   :root {
     --primary: #00778A; --primary-dark: #005f6e; --primary-light: #e6f4f6; --primary-mid: #009eb5;
-    --text: #2d3748; --text-light: #5a6474; --text-muted: #9aa3af;
+    --text: #2d3748; --text-light: #5a6474; --text-muted: #5F6973; /* gris medio AMSA · AA (antes #9aa3af, 2.6:1) */
     --border: #e2e8f0; --bg: #ffffff; --bg2: #f7f9fa; --bg3: #eef2f5;
     --green: #1a7a38; --green-bg: #e6f6ec;
-    --orange: #b86000; --orange-bg: #fff4e0;
+    --orange: #9c5300; --orange-bg: #fff4e0;
     --red: #c0392b; --red-bg: #fdecea;
     --shadow: 0 4px 16px rgba(0,0,0,0.08);
     --shadow-lg: 0 12px 40px rgba(0,0,0,0.13);
@@ -23,7 +23,7 @@
   .btn-download-header{display:flex;align-items:center;gap:7px;padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:7px;font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .15s;box-shadow:0 2px 8px rgba(0,119,138,.3)}
   .btn-download-header:hover{background:var(--primary-dark);transform:translateY(-1px)}
   .btn-download-header:disabled{background:#ccc;cursor:not-allowed;transform:none;box-shadow:none}
-  .edited-badge{background:#fff4e0;color:#b86000;border:1px solid #f0c070;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:12px;display:none}
+  .edited-badge{background:#fff4e0;color:#9c5300;border:1px solid #f0c070;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:12px;display:none}
   .edited-badge.show{display:inline-block}
 
   /* UPLOAD */
@@ -181,7 +181,7 @@
   /* AM SERVICE BADGE */
   .am-badge { display:inline-flex;align-items:center;gap:4px;font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap }
   .am-si  { background:#e6f6ec;color:#1a7a38 }
-  .am-licit { background:#fff4e0;color:#b86000 }
+  .am-licit { background:#fff4e0;color:#9c5300 }
   .am-no  { background:#fdecea;color:#c0392b }
   .am-sin { background:#f3f4f6;color:#777 }
   .agrup-badge { display:inline-block;font-size:.7rem;font-weight:600;padding:3px 8px;border-radius:5px;background:#e8f4f8;color:#00778A;border:1px solid #b0d8e0 }
@@ -422,7 +422,7 @@
   .prog-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:12px;
     font-size:.74rem;font-weight:700;background:linear-gradient(135deg,#5b4fcf,#7c6fde);
     color:#fff;margin:3px;cursor:default;transition:all .18s}
-  .prog-chip.activo{background:linear-gradient(135deg,#1a7a38,#28a84e)}
+  .prog-chip.activo{background:linear-gradient(135deg,#1a7a38,#1a7a38)}
   .prog-chip.inactivo{background:#e8e8e8;color:#888}
   .prog-chip-del{background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;
     font-size:.85rem;padding:0 0 0 4px;line-height:1}
@@ -491,10 +491,10 @@
 
 
   /* Sheet load button */
-  .btn-sheet-load{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:linear-gradient(135deg,#1a7a38,#28a84e);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .18s;white-space:nowrap}
+  .btn-sheet-load{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:linear-gradient(135deg,#1a7a38,#1a7a38);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .18s;white-space:nowrap}
   .btn-sheet-load:hover{background:linear-gradient(135deg,#155f2c,#1f8a3e);transform:translateY(-1px)}
   .btn-sheet-load:disabled{background:#ccc;cursor:not-allowed;transform:none}
-  .btn-sheet-export{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:linear-gradient(135deg,#1557a0,#1e78d4);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .18s;white-space:nowrap}
+  .btn-sheet-export{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:linear-gradient(135deg,#1557a0,#1b6fc4);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .18s;white-space:nowrap}
   .btn-sheet-export:hover{background:linear-gradient(135deg,#0f3f78,#1560aa);transform:translateY(-1px)}
   .sheet-source-badge{display:inline-flex;align-items:center;gap:5px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:7px;padding:4px 10px;font-size:.76rem;font-weight:700;color:#1a7a38}
   .upload-divider{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:.78rem;font-weight:600;white-space:nowrap}
@@ -579,6 +579,7 @@
 .kb-nav{display:block;width:100%;text-align:left;background:none;border:none;border-radius:8px;padding:9px 11px;font-size:.86rem;color:var(--text);cursor:pointer;margin-bottom:2px;transition:background .12s}
 .kb-nav:hover{background:#e8f1f0}
 .kb-nav.active{background:linear-gradient(135deg,#00A399,#006973);color:#fff;font-weight:600}
+.kb-nav.active:hover{background:linear-gradient(135deg,#00A399,#006973)} /* al hover del activo, mantener el fondo (antes el texto blanco quedaba invisible) */
 .kanban-content{flex:1;padding:18px;overflow-x:auto;min-width:0}
 .kb-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
 .kb-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.4rem;color:var(--primary);text-transform:uppercase;letter-spacing:.03em}
@@ -1017,7 +1018,7 @@ body.is-user .solo-admin{ display:none !important; }
 .gi-pri{width:4px;border-radius:3px;flex-shrink:0;background:var(--text-muted)}
 .gi-pri.pri-alta{background:#c0311b}
 .gi-pri.pri-media{background:#b8780a}
-.gi-pri.pri-baja{background:#9aa3af}
+.gi-pri.pri-baja{background:#5F6973}
 .gi-t{font-weight:700;font-size:.95rem}
 .gi-m{font-size:.77rem;color:var(--text-muted);margin-top:3px}
 .gi-venc{color:#c0311b}

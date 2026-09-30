@@ -4285,7 +4285,7 @@ function renderRCA(){
   cont.innerHTML=`<div class="kb-head"><div class="kb-title">Cumplimiento RCA</div>
     <div style="display:flex;gap:8px">
       <button class="kb-add" onclick="rcaOpenEmpresa()">➕ Empresa contratista</button>
-      <button class="kb-add" onclick="rcaOpenCompra()" style="background:linear-gradient(135deg,#5F6973,#7a858f)">➕ Compra</button>
+      <button class="kb-add" onclick="rcaOpenCompra()" style="background:linear-gradient(135deg,#5F6973,#5F6973)">➕ Compra</button>
     </div></div>
     <div class="rca-tabs">
       <button class="rca-tab ${RCA_VIEW==='empresas'?'active':''}" onclick="rcaTab('empresas')">🏢 Empresas y contactos</button>
@@ -4346,7 +4346,7 @@ function renderRCACompras(){
       <select onchange="RCA_F.anio=this.value;renderRCACompras()" style="border:1.5px solid var(--border);border-radius:7px;padding:6px 10px"><option value="">Todos los años</option>${anios.map(a=>`<option ${fa===a?'selected':''}>${a}</option>`).join('')}</select>
       <select onchange="RCA_F.comuna=this.value;renderRCACompras()" style="border:1.5px solid var(--border);border-radius:7px;padding:6px 10px"><option value="">Todas las comunas</option>${comunas.map(a=>`<option ${fc===a?'selected':''}>${esc(a)}</option>`).join('')}</select>
       <span style="margin-left:auto;font-weight:700;color:var(--primary)">Total neto: ${fmt(total)} · ${rows.length} compras</span>
-      <button class="kb-add" onclick="rcaImportCompras()" style="background:linear-gradient(135deg,#5F6973,#7a858f)">⇪ Importar Excel</button>
+      <button class="kb-add" onclick="rcaImportCompras()" style="background:linear-gradient(135deg,#5F6973,#5F6973)">⇪ Importar Excel</button>
     </div>
     <div style="overflow-x:auto"><table class="rca-table">
       <thead><tr><th>Año</th><th>Fecha</th><th>Empresa contratista</th><th>Empresa (compra)</th><th>RUT</th><th>Comuna</th><th>N° Factura</th><th>Bien/Servicio</th><th style="text-align:right">Monto neto</th><th></th></tr></thead>

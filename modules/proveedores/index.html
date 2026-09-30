@@ -17,7 +17,7 @@
 <!-- La ficha emergente es comun con MGI: vive en shared/ (CLAUDE.md Regla 8).
      Va ANTES de proveedores.css para que el modulo pueda ajustar detalles. -->
 <link rel="stylesheet" href="../../shared/css/ficha-modal.css?v=20260808c">
-<link rel="stylesheet" href="proveedores.css?v=20260814a">
+<link rel="stylesheet" href="proveedores.css?v=20260930a">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -50,10 +50,10 @@
     </div>
     <input id="regEmail" type="email" placeholder="correo@aminerals.cl" style="width:100%;border:1.5px solid #D7DEE4;border-radius:8px;padding:10px 12px;font-size:.9rem;outline:none;margin-bottom:10px;box-sizing:border-box">
     <input id="regPass" type="password" placeholder="Contraseña (mín. 6)" style="width:100%;border:1.5px solid #D7DEE4;border-radius:8px;padding:10px 12px;font-size:.9rem;outline:none;margin-bottom:16px;box-sizing:border-box">
-    <button id="regBtn" onclick="registrarseAdmin()" style="width:100%;padding:12px;background:linear-gradient(135deg,#F2A900,#d89400);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;cursor:pointer">Solicitar acceso</button>
+    <button id="regBtn" onclick="registrarseAdmin()" style="width:100%;padding:12px;background:linear-gradient(135deg,#F2A900,#d89400);color:#1C2632;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;cursor:pointer">Solicitar acceso</button>
     <div style="margin-top:14px;font-size:.8rem;color:#5F6973"><a onclick="mostrarLoginStep()" style="color:#00A399;font-weight:700;cursor:pointer">← Volver a iniciar sesión</a></div>
   </div>
-  <div id="loginHint" style="font-size:.72rem;color:#9aa3af;margin-top:16px;line-height:1.5">El acceso a la plataforma principal es solo para correos @aminerals.cl y requiere aprobación del administrador.</div>
+  <div id="loginHint" style="font-size:.72rem;color:#5F6973;margin-top:16px;line-height:1.5">El acceso a la plataforma principal es solo para correos @aminerals.cl y requiere aprobación del administrador.</div>
   </div>
 </div>
 
@@ -159,7 +159,7 @@
   </div>
   <div id="fileChips" class="file-chips" style="display:none"></div>
   <button class="btn-load" id="btnLoad" onclick="processFiles()" disabled>⚡ Cargar Excel</button>
-  <button class="btn-sheet-load" onclick="descargarPlantilla()" style="background:linear-gradient(135deg,#5F6973,#7a858f)" title="Descarga la plantilla Excel vacía">&#11015; Plantilla</button>
+  <button class="btn-sheet-load" onclick="descargarPlantilla()" style="background:linear-gradient(135deg,#5F6973,#5F6973)" title="Descarga la plantilla Excel vacía">&#11015; Plantilla</button>
   <button class="btn-sheet-export" id="btnUploadSupa" onclick="cargaMasivaSupabase()" title="Sube los proveedores cargados a Supabase">&#9729;&#65039; Carga masiva a Supabase</button>
   <div id="uploadStatus" class="upload-status" style="display:none"></div>
 </div>
@@ -857,7 +857,7 @@
     </div>
     <div style="display:flex;gap:10px;margin-top:18px">
       <button onclick="cerrarVisitaV3()" style="flex:1;padding:11px;background:#eef2f3;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:var(--text-muted)">Cancelar</button>
-      <button onclick="finalizarVisita()" style="flex:2;padding:11px;background:linear-gradient(135deg,#F2A900,#d89400);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;cursor:pointer">Finalizar visita →</button>
+      <button onclick="finalizarVisita()" style="flex:2;padding:11px;background:linear-gradient(135deg,#F2A900,#d89400);color:#1C2632;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;cursor:pointer">Finalizar visita →</button>
     </div>
   </div>
 </div>
