@@ -82,6 +82,7 @@ function renderDropzone(cont){
     <input type="file" accept=".xlsx,.xls" onchange="reclamosCargarExcel(this.files[0])">
     <div class="dz-warn">🔒 El Excel <b>no se guarda</b> en el sistema (contiene datos personales del reclamante).
       Solo el informe revisado —sin esos datos— podrá archivarse al cerrar con el candado.</div>
+    <div style="margin-top:16px"><button class="btn" onclick="recHistorico()">🗂 Ver histórico de informes</button></div>
   </div>`;
 }
 
@@ -132,8 +133,10 @@ function renderInforme(cont){
   let h=`<div class="info-bar">
     <div class="file">📄 <b>${esc(REC.file)}</b> · ${filtradas.length} de ${REC.rows.length} reclamos</div>
     <div class="spacer"></div>
+    <button class="btn" onclick="recHistorico()">🗂 Histórico</button>
     <button class="btn ${REC.editMode?'on':''}" onclick="recToggleEdit()">${REC.editMode?'✓ Listo':'🗑 Eliminar filas'}</button>
     <button class="btn primary" onclick="recCopiar()">⧉ Copiar tabla</button>
+    <button class="btn gold" onclick="recArchivar()">🔒 Cerrar y archivar</button>
     <button class="btn" onclick="recReset()">↻ Cargar otro Excel</button>
   </div>`;
 
@@ -296,3 +299,201 @@ function _copiarFallback(html){
   catch(e){ toast('No se pudo copiar automáticamente','err'); }
   sel.removeAllRanges(); document.body.removeChild(d);
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FASE 2 · Candado → histórico + link con clave + imagen
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Devuelve el informe actual como datos estructurados (11 columnas, sin PII).
+function recFilasInforme(){
+  const orden={Centinela:0,Antucoya:1,Zaldivar:2};
+  const f=REC.rows.filter(r=>{
+    if(_norm(r[REC_COL.elim])!=='') return false;
+    if(!REC.fCia.has(_ciaNorm(r[REC_COL.cia]))) return false;
+    const cat=_norm(r[REC_COL.cat]); if(/tu voz/i.test(cat)) return false; if(!REC.fCat.has(cat)) return false;
+    if(!REC.fMacro.has(_norm(r[REC_COL.macro]))) return false;
+    if(!REC.fAnio.has(_norm(r[REC_COL.anio]))) return false;
+    if(REC.deleted.has(_norm(r[REC_COL.cod]))) return false;
+    return true;
+  });
+  f.sort((a,b)=>(orden[_ciaNorm(a[REC_COL.cia])]-orden[_ciaNorm(b[REC_COL.cia])])
+    ||_norm(a[REC_COL.denunciada]).localeCompare(_norm(b[REC_COL.denunciada]))
+    ||_norm(a[REC_COL.creacion]).localeCompare(_norm(b[REC_COL.creacion])));
+  return f.map(r=>{
+    const cod=_norm(r[REC_COL.cod]);
+    const montoRaw=r[REC_COL.montoCorr]!=null&&r[REC_COL.montoCorr]!==''?r[REC_COL.montoCorr]:r[REC_COL.monto];
+    return {
+      cod, fecha:_norm(r[REC_COL.creacion]).slice(0,10).split('-').reverse().join('-'),
+      estado:_norm(r[REC_COL.macro]), dias:parseInt(r[REC_COL.tgestion])||0,
+      cia:_ciaNorm(r[REC_COL.cia]), cat:_norm(r[REC_COL.cat]),
+      monto:(montoRaw!==''&&!isNaN(Number(montoRaw)))?('$ '+Number(montoRaw).toLocaleString('es-CL')):'-',
+      denunciada:_norm(r[REC_COL.denunciada])||'-', provAfect:_norm(r[REC_COL.provAfect])||'-',
+      loc:_norm(r[REC_COL.loc])||'-', estatus:(REC.estatus[cod]!=null?REC.estatus[cod]:'')
+    };
+  });
+}
+
+// Tabla con estilos en línea (para copiar a Outlook, imagen y vista pública).
+function recTablaInline(filas, forImage){
+  const br=forImage?'<br/>':'<br>';
+  const thS='padding:6px 9px;border:1px solid #9fb3b5;background:#006973;color:#fff;font-family:Calibri,Arial,sans-serif;font-size:12px;text-align:center';
+  const tdS='padding:5px 8px;border:1px solid #cdd7d8;font-family:Calibri,Arial,sans-serif;font-size:12px;vertical-align:middle';
+  let t=`<table style="border-collapse:collapse;border:1px solid #9fb3b5">`;
+  t+=`<thead><tr>${REP_COLS.map(c=>`<th style="${thS}">${c}</th>`).join('')}</tr></thead><tbody>`;
+  const spanStart={};
+  filas.forEach((r,i)=>{ const key=r.cia+'|'+r.denunciada;
+    if(i===0||key!==(filas[i-1].cia+'|'+filas[i-1].denunciada)){
+      let n=1; for(let j=i+1;j<filas.length&&(filas[j].cia+'|'+filas[j].denunciada)===key;j++)n++; spanStart[i]=n; } });
+  filas.forEach((r,i)=>{
+    const diasS=tdS+';text-align:center;font-weight:700;color:#fff;background:'+(r.dias>30?'#D0311B':'#1a7a38');
+    t+='<tr>'
+      +`<td style="${tdS};white-space:nowrap">${esc(r.cod)}</td>`
+      +`<td style="${tdS};white-space:nowrap">${esc(r.fecha)}</td>`
+      +`<td style="${tdS}">${esc(r.estado)}</td>`
+      +`<td style="${diasS}">${r.dias}</td>`
+      +`<td style="${tdS}">${esc(r.cia)}</td>`
+      +`<td style="${tdS}">${esc(r.cat)}</td>`
+      +`<td style="${tdS};white-space:nowrap;text-align:right">${esc(r.monto)}</td>`
+      +(spanStart[i]?`<td style="${tdS};text-align:center;font-weight:600" rowspan="${spanStart[i]}">${esc(r.denunciada)}</td>`:'')
+      +`<td style="${tdS}">${esc(r.provAfect)}</td>`
+      +`<td style="${tdS}">${esc(r.loc)}</td>`
+      +`<td style="${tdS};text-align:center">${esc(r.estatus).replace(/\n/g,br)}</td>`
+      +'</tr>';
+  });
+  return t+'</tbody></table>';
+}
+
+// ── Modal genérico ──
+function openModal(html,ancho){
+  let m=document.getElementById('modalMask');
+  m.querySelector('#modalBox').style.maxWidth=(ancho||'560px');
+  m.querySelector('#modalBox').innerHTML=html;
+  m.classList.remove('hidden');
+}
+function cerrarModal(){ document.getElementById('modalMask').classList.add('hidden'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape')cerrarModal(); });
+
+function _randClave(){
+  const abc='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s='';
+  const a=new Uint32Array(8); (crypto||window.crypto).getRandomValues(a);
+  for(let i=0;i<8;i++) s+=abc[a[i]%abc.length];
+  return s.slice(0,4)+'-'+s.slice(4);
+}
+
+// ── Candado: cerrar y archivar ──
+function recArchivar(){
+  const filas=recFilasInforme();
+  if(!filas.length){ toast('No hay filas para archivar','err'); return; }
+  window._recArcFilas=filas;
+  const hoy=new Date(), dd=String(hoy.getDate()).padStart(2,'0'), mm=String(hoy.getMonth()+1).padStart(2,'0');
+  const titDef=`Reclamos ${REC.vista==='norte'?'AAPP Norte':'MLP'} al ${dd}/${mm}`;
+  openModal(`
+    <div class="m-head"><h3>🔒 Cerrar y archivar informe</h3><button class="m-x" onclick="cerrarModal()">✕</button></div>
+    <p class="m-p">Se guarda una copia <b>congelada</b> de <b>${filas.length} reclamos</b> (sin datos personales del reclamante) en el histórico, y se genera un enlace para adjuntar al correo.</p>
+    <label class="m-l">Título del informe</label>
+    <input class="m-in" id="arcTit" value="${esc(titDef)}">
+    <label class="m-chk"><input type="checkbox" id="arcClave" checked> Proteger el enlace con una clave (recomendado)</label>
+    <label class="m-l">Vigencia del enlace</label>
+    <select class="m-in" id="arcDias"><option value="7" selected>7 días</option><option value="30">30 días</option><option value="0">Sin expiración</option></select>
+    <div class="m-acts"><button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn gold" id="arcGo" onclick="recArchivarConfirmar()">Archivar y generar enlace</button></div>
+  `);
+}
+async function recArchivarConfirmar(){
+  const filas=window._recArcFilas||[];
+  const titulo=(document.getElementById('arcTit').value||'').trim()||'Informe de reclamos';
+  const usarClave=document.getElementById('arcClave').checked;
+  const dias=parseInt(document.getElementById('arcDias').value)||0;
+  const clave=usarClave?_randClave():null;
+  const btn=document.getElementById('arcGo'); btn.disabled=true; btn.textContent='Guardando…';
+  const meta={file:REC.file, filtros:{cia:[...REC.fCia],macro:[...REC.fMacro],cat:[...REC.fCat],anio:[...REC.fAnio]}, n:filas.length};
+  try{
+    const {data,error}=await SB.rpc('reclamos_guardar',{p_vista:REC.vista,p_titulo:titulo,p_fecha:new Date().toISOString().slice(0,10),p_filas:filas,p_meta:meta,p_clave:clave,p_dias:dias});
+    if(error) throw error;
+    if(data&&data.error) throw new Error(data.error);
+    const url=_verUrl(data.token);
+    recModalResultado(url,clave,titulo,filas);
+    toast('Informe archivado en el histórico','ok');
+  }catch(e){ toast('No se pudo archivar: '+(e.message||e),'err'); btn.disabled=false; btn.textContent='Archivar y generar enlace'; }
+}
+function _verUrl(token){ return location.origin+location.pathname.replace(/index\.html$/,'')+'ver.html?t='+token; }
+
+function recModalResultado(url,clave,titulo,filas){
+  window._recUltFilas=filas; window._recUltTit=titulo;
+  openModal(`
+    <div class="m-head"><h3>✅ Informe archivado</h3><button class="m-x" onclick="cerrarModal()">✕</button></div>
+    <p class="m-p"><b>${esc(titulo)}</b> · ${filas.length} reclamos. Adjunta al correo el enlace${clave?' y la clave':''}, más la imagen de la tabla.</p>
+    <label class="m-l">Enlace</label>
+    <input class="m-in" id="resUrl" readonly value="${esc(url)}" onclick="this.select()">
+    ${clave?`<label class="m-l">Clave</label><input class="m-in m-clave" id="resClave" readonly value="${esc(clave)}" onclick="this.select()">`:''}
+    <div class="m-acts" style="flex-wrap:wrap">
+      <button class="btn primary" onclick="recCopiarAcceso('${esc(url)}','${clave?esc(clave):''}')">⧉ Copiar enlace${clave?' y clave':''}</button>
+      <button class="btn" onclick="recCopiarFilas(window._recUltFilas)">⧉ Copiar tabla</button>
+      <button class="btn gold" onclick="recImagenPNG(window._recUltFilas,'${esc(titulo).replace(/[^\w\-]+/g,'_')}.png')">🖼 Descargar imagen</button>
+      <a class="btn" href="${esc(url)}" target="_blank" rel="noopener">↗ Abrir enlace</a>
+    </div>
+    <p class="m-note">La clave no se vuelve a mostrar. Si la pierdes, archiva de nuevo o revoca el enlace desde el histórico.</p>
+  `,'600px');
+}
+function recCopiarAcceso(url,clave){
+  const txt=clave?`Enlace: ${url}\nClave: ${clave}`:`Enlace: ${url}`;
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(()=>toast('Enlace copiado','ok'),()=>toast('No se pudo copiar','err')); }
+  else toast('No se pudo copiar','err');
+}
+function recCopiarFilas(filas){ _copiarHTML(recTablaInline(filas,false), filas.map(r=>[r.cod,r.fecha,r.estado,r.dias,r.cia,r.cat,r.monto,r.denunciada,r.provAfect,r.loc,r.estatus].join('\t')).join('\n')); }
+
+// ── Histórico ──
+async function recHistorico(){
+  openModal(`<div class="m-head"><h3>🗂 Histórico de informes</h3><button class="m-x" onclick="cerrarModal()">✕</button></div><div id="histBody" class="m-p">Cargando…</div>`,'760px');
+  try{
+    const {data,error}=await SB.rpc('reclamos_historico',{p_vista:null});
+    if(error) throw error;
+    const arr=Array.isArray(data)?data:[];
+    if(!arr.length){ document.getElementById('histBody').innerHTML='<p class="m-p">Aún no hay informes archivados.</p>'; return; }
+    let h=`<div class="hist-list">`;
+    arr.forEach(x=>{
+      const estado = !x.activo?'<span class="badge rev">revocado</span>' : (x.vencido?'<span class="badge venc">vencido</span>':'<span class="badge ok">activo</span>');
+      h+=`<div class="hist-row">
+        <div class="hist-main">
+          <div class="hist-t">${esc(x.titulo)}</div>
+          <div class="hist-s">${esc(x.vista==='norte'?'AAPP Norte':'MLP')} · ${x.n_filas} reclamos · ${esc(x.fecha_informe)} · ${esc(x.creado_por||'')} ${x.tiene_clave?'· 🔑':''} ${estado}</div>
+        </div>
+        <div class="hist-acts">
+          <button class="btn" onclick="recVerGuardado('${x.id}')">Ver</button>
+          ${x.activo?`<button class="btn ghost-danger" onclick="recRevocar('${x.id}')">Revocar</button>`:`<button class="btn" onclick="recReactivar('${x.id}')">Reactivar 7d</button>`}
+        </div>
+      </div>`;
+    });
+    h+='</div>';
+    document.getElementById('histBody').innerHTML=h;
+  }catch(e){ document.getElementById('histBody').innerHTML='<p class="m-p">Error: '+esc(e.message||e)+'</p>'; }
+}
+async function recVerGuardado(id){
+  try{
+    const {data,error}=await SB.rpc('reclamos_ver',{p_id:id});
+    if(error) throw error; if(data&&data.error) throw new Error(data.error);
+    const filas=data.filas||[]; window._recUltFilas=filas; window._recUltTit=data.titulo;
+    const url=_verUrl(data.token);
+    const venc = data.expira && new Date(data.expira)<new Date();
+    openModal(`
+      <div class="m-head"><h3>${esc(data.titulo)}</h3><button class="m-x" onclick="cerrarModal()">✕</button></div>
+      <p class="m-p">${esc(data.vista==='norte'?'AAPP Norte':'MLP')} · ${filas.length} reclamos · ${esc(data.fecha_informe)} ${data.activo?(venc?'· <b>vencido</b>':'· activo'):'· <b>revocado</b>'}</p>
+      <div class="m-acts" style="flex-wrap:wrap">
+        <input class="m-in" style="flex:1;min-width:220px" readonly value="${esc(url)}" onclick="this.select()">
+        <button class="btn" onclick="recCopiarFilas(window._recUltFilas)">⧉ Copiar tabla</button>
+        <button class="btn gold" onclick="recImagenPNG(window._recUltFilas,'${esc(data.titulo).replace(/[^\w\-]+/g,'_')}.png')">🖼 Imagen</button>
+      </div>
+      <div class="ro-tabla">${recTablaInline(filas,false)}</div>
+    `,'900px');
+  }catch(e){ toast('No se pudo abrir: '+(e.message||e),'err'); }
+}
+async function recRevocar(id){
+  try{ const {data,error}=await SB.rpc('reclamos_link_estado',{p_id:id,p_activo:false,p_dias:null}); if(error)throw error; toast('Enlace revocado','ok'); recHistorico(); }
+  catch(e){ toast('Error: '+(e.message||e),'err'); }
+}
+async function recReactivar(id){
+  try{ const {data,error}=await SB.rpc('reclamos_link_estado',{p_id:id,p_activo:true,p_dias:7}); if(error)throw error; toast('Enlace reactivado (7 días)','ok'); recHistorico(); }
+  catch(e){ toast('Error: '+(e.message||e),'err'); }
+}
+
+// La imagen PNG la genera reclamos-imagen.js (window.recImagenPNG), dibujando
+// la tabla a mano sobre un canvas — sin dependencias ni foreignObject.

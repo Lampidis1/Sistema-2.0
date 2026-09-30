@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="reclamos.css?v=20260930a">
+<link rel="stylesheet" href="reclamos.css?v=20260930b">
 <!-- Ajustes de tableta y teléfono comunes a todo el sistema. Va al final. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
 </head>
@@ -72,6 +72,11 @@
   </main>
 </div>
 
+<!-- Modal genérico (candado, histórico, ver informe) -->
+<div id="modalMask" class="modal-mask hidden" onclick="if(event.target===this)cerrarModal()">
+  <div class="modal" id="modalBox"></div>
+</div>
+
 <div id="toast"></div>
 
 <!-- Config del guard de autenticación (antes de auth-guard.js). -->
@@ -88,6 +93,7 @@
   };
 </script>
 <script src="../../shared/js/auth-guard.js?v=20260929"></script>
-<script src="reclamos.js?v=20260930a"></script>
+<script src="reclamos-imagen.js?v=20260930b"></script>
+<script src="reclamos.js?v=20260930b"></script>
 </body>
 </html>

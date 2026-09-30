@@ -32,6 +32,29 @@ usuarios.
    el borde del encabezado).
 6. **Copiar tabla:** genera la tabla con estilos en línea lista para pegar en
    Outlook (mismo formato del correo semanal).
+7. **Candado (Cerrar y archivar):** congela el informe y lo guarda en el
+   histórico (Supabase, solo las 11 columnas, sin PII), genera un **enlace
+   público** con **clave aleatoria** y **vigencia** (7/30 días o sin
+   expiración) para adjuntar al correo, y permite **descargar la imagen PNG**
+   de la tabla (dibujada a mano sobre canvas, sin dependencias).
+8. **Histórico:** lista los informes archivados; cada uno se puede **ver**
+   (solo lectura), copiar, descargar imagen, y **revocar/reactivar** su enlace.
+
+## Base de datos (Fase 2)
+
+Tabla `public.reclamos_informes` (RLS habilitado, **sin políticas** → todo
+acceso por RPCs `SECURITY DEFINER`; patrón de vacante_links/q100/lavanderías).
+RPCs: `reclamos_guardar`, `reclamos_historico`, `reclamos_ver`,
+`reclamos_link_estado` (authenticated con acceso) y `reclamos_ver_publico`
+(anon, exige clave si el informe la tiene). La clave viaja solo en la
+verificación server-side; se guarda su **hash bcrypt** (`extensions.crypt`).
+Migración: `database/migraciones/2026-09-30_reclamos_historico_y_links.sql`.
+
+## Página pública
+
+`modules/reclamos/ver.html?t=<token>` — sin login; pide la clave y muestra el
+informe congelado (llama a `reclamos_ver_publico`). Permite copiar la tabla y
+descargar la imagen. Es el enlace que se adjunta al correo.
 
 ## Mapa de columnas del Excel (0-based)
 
@@ -41,16 +64,14 @@ provAfect:31, anio:33`
 
 ## Pendiente (fases siguientes)
 
-- **Fase 2:** candado → congela el informe y lo guarda como **histórico** en
-  Supabase (solo las 11 columnas, sin PII), genera **link público con clave
-  aleatoria y expiración de 7 días** (patrón SECURITY DEFINER como
-  lavanderías/q100) y la **imagen** de la tabla para adjuntar al correo.
 - **Fase 3:** gráficas nativas (Chart.js) desplegables por compañía
   (reemplazan las imágenes del PPT de Power BI: CEN/ANT/CMZ + GN).
 - **MLP:** definir su criterio de filtrado.
 
 ## Archivos
 
-- `modules/reclamos/index.html` · `reclamos.css` · `reclamos.js`
+- `modules/reclamos/index.html` · `reclamos.css` · `reclamos.js` ·
+  `reclamos-imagen.js` (PNG de la tabla) · `ver.html` (página pública)
+- `database/migraciones/2026-09-30_reclamos_historico_y_links.sql`
 - Registrado en `config/modules.config.js` y en la lista de slugs de
   `modules/admin/admin.js`.

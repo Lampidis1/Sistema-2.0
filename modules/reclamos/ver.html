@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe de Reclamos · Antofagasta Minerals</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
+<script src="../../config/supabase.config.js"></script>
+<script src="reclamos-imagen.js?v=20260930b"></script>
+<style>
+  :root{--teal:#00A399;--teal-dk:#006973;--gold:#F2A900;--red:#D0311B;--green:#1a7a38;--dark:#1C2632;--gray:#5F6973;--line:#E1E7EA;--bg:#F4F7F8;
+    --f-head:"Barlow Condensed",system-ui,sans-serif;--f-body:"Barlow",system-ui,sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--dark);font-family:var(--f-body);font-size:15px}
+  header{background:var(--teal-dk);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:12px}
+  header img{height:30px} header .t{font-family:var(--f-head);font-weight:800;font-size:1.25rem}
+  .ribbon{height:4px;background:var(--gold)}
+  .wrap{max-width:1100px;margin:0 auto;padding:22px 16px 60px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 3px rgba(28,38,50,.08);padding:26px;max-width:420px;margin:40px auto}
+  .card h1{font-family:var(--f-head);color:var(--teal-dk);font-size:1.4rem;margin:0 0 4px}
+  .card p{color:var(--gray);font-size:.88rem;margin:0 0 16px}
+  label{display:block;font-size:.76rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+  input{width:100%;padding:11px 12px;border:1px solid #D7DEE4;border-radius:9px;font-size:16px;font-family:var(--f-body);text-align:center;letter-spacing:.1em}
+  input:focus{outline:2px solid var(--teal);border-color:var(--teal)}
+  button{border:0;border-radius:9px;background:var(--teal);color:#fff;font-family:var(--f-head);font-weight:700;font-size:1rem;padding:11px 16px;cursor:pointer}
+  button:hover{background:var(--teal-dk)} button.sec{background:#eef2f3;color:var(--dark)} button.gold{background:var(--gold);color:var(--dark)}
+  .err{background:#fdecea;color:#a3271a;border-radius:8px;padding:9px;font-size:.83rem;margin:10px 0;display:none}
+  .info-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .info-h h1{font-family:var(--f-head);color:var(--teal-dk);font-size:1.5rem;margin:0}
+  .info-h .meta{color:var(--gray);font-size:.85rem}
+  .toolbar{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0}
+  .tabla-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+  .conf{font-size:.72rem;color:var(--gray);margin-top:18px;border-top:1px solid var(--line);padding-top:12px;line-height:1.5}
+  .hidden{display:none!important}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--dark);color:#fff;padding:10px 18px;border-radius:10px;font-size:.86rem;opacity:0;transition:.25s;z-index:99}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<header><img src="../../shared/assets/logo-amsa-873.png" alt="AMSA"><div class="t">Informe de Reclamos Comunitarios</div></header>
+<div class="ribbon"></div>
+
+<div class="wrap">
+  <!-- Paso clave -->
+  <div id="gate" class="card hidden">
+    <h1>🔒 Informe protegido</h1>
+    <p>Ingresa la clave que viene en el correo para ver el informe.</p>
+    <div id="err" class="err"></div>
+    <label>Clave</label>
+    <input id="clave" type="text" autocomplete="off" placeholder="XXXX-XXXX" onkeydown="if(event.key==='Enter')abrir()">
+    <button style="width:100%;margin-top:14px" id="btn" onclick="abrir()">Ver informe</button>
+  </div>
+
+  <!-- Estado / error general -->
+  <div id="estado" class="card"><h1>Cargando…</h1><p>Un momento.</p></div>
+
+  <!-- Informe -->
+  <div id="informe" class="hidden">
+    <div class="info-h"><h1 id="infTit"></h1><span class="meta" id="infMeta"></span></div>
+    <div class="toolbar">
+      <button class="gold" onclick="descargarImg()">🖼 Descargar imagen</button>
+      <button class="sec" onclick="copiarTabla()">⧉ Copiar tabla</button>
+    </div>
+    <div class="tabla-wrap" id="tabla"></div>
+    <div class="conf">Información de propiedad de Antofagasta Minerals S.A. — confidencial. Enlace de acceso restringido.</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const REP_COLS=['RECLAMO','FECHA INGRESO','ESTADO RECLAMO','DÍAS EN GESTIÓN','COMPAÑÍA','CATEGORÍA','MONTO','EMPRESA DENUNCIADA','PROVEEDOR AFECTADO','LOCALIDAD AFECTADO','ESTATUS'];
+let SB=null, TOKEN=null, FILAS=[], TITULO='informe';
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function show(id){ ['gate','estado','informe'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id)); }
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.className='show'; setTimeout(()=>t.className='',2400); }
+function err(m){ const e=document.getElementById('err'); if(!m){e.style.display='none';return;} e.textContent=m; e.style.display='block'; }
+
+function tablaInline(filas, forImage){
+  const br=forImage?'<br/>':'<br>';
+  const thS='padding:6px 9px;border:1px solid #9fb3b5;background:#006973;color:#fff;font-family:Calibri,Arial,sans-serif;font-size:12px;text-align:center';
+  const tdS='padding:5px 8px;border:1px solid #cdd7d8;font-family:Calibri,Arial,sans-serif;font-size:12px;vertical-align:middle';
+  let t=`<table style="border-collapse:collapse;border:1px solid #9fb3b5;width:100%">`;
+  t+=`<thead><tr>${REP_COLS.map(c=>`<th style="${thS}">${c}</th>`).join('')}</tr></thead><tbody>`;
+  const spanStart={};
+  filas.forEach((r,i)=>{ const key=(r.cia||'')+'|'+(r.denunciada||'');
+    if(i===0||key!==((filas[i-1].cia||'')+'|'+(filas[i-1].denunciada||''))){
+      let n=1; for(let j=i+1;j<filas.length&&((filas[j].cia||'')+'|'+(filas[j].denunciada||''))===key;j++)n++; spanStart[i]=n; } });
+  filas.forEach((r,i)=>{
+    const diasS=tdS+';text-align:center;font-weight:700;color:#fff;background:'+((r.dias>30)?'#D0311B':'#1a7a38');
+    t+='<tr>'
+      +`<td style="${tdS};white-space:nowrap">${esc(r.cod)}</td>`
+      +`<td style="${tdS};white-space:nowrap">${esc(r.fecha)}</td>`
+      +`<td style="${tdS}">${esc(r.estado)}</td>`
+      +`<td style="${diasS}">${esc(r.dias)}</td>`
+      +`<td style="${tdS}">${esc(r.cia)}</td>`
+      +`<td style="${tdS}">${esc(r.cat)}</td>`
+      +`<td style="${tdS};white-space:nowrap;text-align:right">${esc(r.monto)}</td>`
+      +(spanStart[i]?`<td style="${tdS};text-align:center;font-weight:600" rowspan="${spanStart[i]}">${esc(r.denunciada)}</td>`:'')
+      +`<td style="${tdS}">${esc(r.provAfect)}</td>`
+      +`<td style="${tdS}">${esc(r.loc)}</td>`
+      +`<td style="${tdS};text-align:center">${esc(r.estatus).replace(/\n/g,br)}</td>`
+      +'</tr>';
+  });
+  return t+'</tbody></table>';
+}
+
+function pintar(d){
+  TITULO=d.titulo||'informe'; FILAS=d.filas||[];
+  document.getElementById('infTit').textContent=TITULO;
+  document.getElementById('infMeta').textContent=(d.vista==='norte'?'AAPP Norte':'MLP')+' · '+FILAS.length+' reclamos · '+(d.fecha_informe||'');
+  document.getElementById('tabla').innerHTML=tablaInline(FILAS,false);
+  show('informe');
+}
+
+async function cargar(clave){
+  err('');
+  try{
+    const {data,error}=await SB.rpc('reclamos_ver_publico',{p_token:TOKEN,p_clave:clave||null});
+    if(error) throw error;
+    if(data&&data.error){
+      if(data.error==='clave_requerida'){ show('gate'); return; }
+      if(data.error==='clave_incorrecta'){ show('gate'); err('Clave incorrecta.'); return; }
+      document.getElementById('estado').innerHTML='<h1>Enlace no disponible</h1><p>El informe no existe, fue revocado o el enlace venció.</p>'; show('estado'); return;
+    }
+    pintar(data);
+  }catch(e){ document.getElementById('estado').innerHTML='<h1>Error</h1><p>'+esc(e.message||e)+'</p>'; show('estado'); }
+}
+function abrir(){ const b=document.getElementById('btn'); b.disabled=true; b.textContent='Verificando…'; cargar(document.getElementById('clave').value.trim()).finally(()=>{ b.disabled=false; b.textContent='Ver informe'; }); }
+
+function copiarTabla(){
+  const html=tablaInline(FILAS,false);
+  const plano=FILAS.map(r=>[r.cod,r.fecha,r.estado,r.dias,r.cia,r.cat,r.monto,r.denunciada,r.provAfect,r.loc,r.estatus].join('\t')).join('\n');
+  if(navigator.clipboard&&window.ClipboardItem){
+    navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([plano],{type:'text/plain'})})]).then(()=>toast('Tabla copiada'),()=>toast('No se pudo copiar'));
+  } else toast('No se pudo copiar');
+}
+function descargarImg(){ recImagenPNG(FILAS,(TITULO.replace(/[^\w\-]+/g,'_')||'informe')+'.png'); }
+
+(function init(){
+  const cfg=window.SUPA_CFG||{};
+  if(!cfg.url||!cfg.key){ document.getElementById('estado').innerHTML='<h1>Error de configuración</h1>'; return; }
+  SB=supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:false}});
+  TOKEN=new URLSearchParams(location.search).get('t');
+  if(!TOKEN){ document.getElementById('estado').innerHTML='<h1>Enlace inválido</h1><p>Falta el identificador del informe.</p>'; return; }
+  cargar(null); // intenta sin clave; si la requiere, muestra el gate
+})();
+</script>
+</body>
+</html>
