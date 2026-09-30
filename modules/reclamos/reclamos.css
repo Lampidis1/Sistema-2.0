@@ -138,6 +138,16 @@ td.c-estatus{padding:0}
 .chart-box{position:relative;width:100%}
 .g-card canvas{max-width:100%}
 .g-nota{font-size:.74rem;color:var(--gray);margin-top:14px}
+
+/* ── Acordeón por compañía ── */
+.acc{border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
+.acc-h{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:none;border:0;cursor:pointer;padding:14px 16px;font-family:var(--f-body)}
+.acc.open .acc-h{border-bottom:1px solid var(--line)}
+.acc-chev{color:var(--teal-dk);font-size:.9rem;width:14px;flex-shrink:0}
+.acc-t{font-family:var(--f-head);font-weight:800;font-size:1.15rem;color:var(--teal-dk);text-transform:uppercase;letter-spacing:.02em}
+.acc-badge{margin-left:auto;font-size:.78rem;color:var(--gray);font-weight:600;background:var(--teal-lt);border-radius:16px;padding:3px 12px;white-space:nowrap}
+.acc-h:hover .acc-t{color:var(--teal)}
+.acc-body{padding:16px}
 @media(max-width:900px){ .g-grid{grid-template-columns:1fr 1fr} .g-card.g-wide{grid-column:span 2} .g-card.g-kpi{grid-column:span 2} }
 @media(max-width:599px){ .g-grid{grid-template-columns:1fr} .g-card.g-wide,.g-card.g-kpi{grid-column:span 1} }
 
