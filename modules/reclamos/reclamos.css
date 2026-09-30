@@ -1,0 +1,132 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   reclamos.css — Reclamos Comunitarios · Antofagasta Minerals (AAPP)
+   Estética AMSA: blanco/limpio, teal #00A399 dominante, dorado de acento,
+   tipografía Barlow / Barlow Condensed. Ver skill amsa-brand.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --teal:#00A399; --teal-dk:#006973; --teal-lt:#E4F6F5; --gold:#F2A900; --gold-dk:#c98a00;
+  --red:#D0311B; --green:#1a7a38; --dark:#1C2632; --gray:#5F6973; --gray-lt:#D7DEE4; --white:#fff;
+  --bg:#F4F7F8; --surface:#fff; --line:#E1E7EA; --shadow:0 1px 3px rgba(28,38,50,.08);
+  --f-head:"Barlow Condensed",-apple-system,system-ui,sans-serif;
+  --f-body:"Barlow",-apple-system,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--dark);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.hidden{display:none!important}
+h1,h2,h3{font-family:var(--f-head);margin:0;letter-spacing:.01em}
+
+/* ── Gate de login ── */
+#gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg,#eef4f5,#dcebe9)}
+.gate-card{background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,60,60,.14);padding:30px;width:100%;max-width:380px;text-align:center}
+.gate-card img{height:38px;margin-bottom:14px}
+.gate-t{font-family:var(--f-head);font-weight:800;font-size:1.5rem;color:var(--teal-dk)}
+.gate-s{font-size:.85rem;color:var(--gray);margin-bottom:16px}
+.gate-card label{display:block;text-align:left;font-size:.78rem;font-weight:600;color:var(--gray);margin:10px 0 3px}
+.gate-card input{width:100%;padding:11px 12px;border:1px solid var(--gray-lt);border-radius:9px;font-size:16px;font-family:var(--f-body)}
+.gate-card input:focus{outline:2px solid var(--teal);border-color:var(--teal)}
+.gate-btn{width:100%;margin-top:16px;padding:12px;border:0;border-radius:9px;background:var(--teal);color:#fff;font-family:var(--f-head);font-weight:700;font-size:1.02rem;cursor:pointer}
+.gate-btn:hover{background:var(--teal-dk)}
+.gate-btn:disabled{opacity:.6;cursor:default}
+.gate-link{color:var(--teal-dk);font-weight:600;cursor:pointer}
+.gate-err{background:#fdecea;color:#a3271a;border-radius:8px;padding:9px;font-size:.83rem;margin-bottom:6px;display:none}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ── Cabecera app ── */
+header.top{background:var(--teal-dk);color:#fff}
+.top-in{max-width:80rem;margin:0 auto;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.top h1{font-size:1.55rem;font-weight:800;line-height:1.05}
+.top .sub{font-family:var(--f-body);font-size:.85rem;opacity:.9;margin-top:2px}
+.top .sp{display:flex;align-items:center;gap:12px}
+.top .sp a,.top .sp button{color:#fff;text-decoration:none;background:rgba(255,255,255,.12);border:0;border-radius:8px;padding:7px 12px;font-family:var(--f-body);font-size:.85rem;cursor:pointer}
+.top .sp button:hover,.top .sp a:hover{background:rgba(255,255,255,.22)}
+#hUser{font-size:.74rem;opacity:.9}
+.ribbon{height:4px;background:var(--gold)}
+
+/* ── Pestañas de vista (AAPP Norte / MLP) ── */
+.vistas{background:#fff;border-bottom:1px solid var(--line)}
+.vista-tab{background:none;border:0;border-bottom:3px solid transparent;padding:13px 22px;font-family:var(--f-head);font-weight:700;font-size:1rem;text-transform:uppercase;letter-spacing:.04em;color:var(--gray);cursor:pointer}
+.vista-tab.active{color:var(--teal-dk);border-bottom-color:var(--teal)}
+.vista-tab:hover{color:var(--teal-dk)}
+
+.wrap{max-width:80rem;margin:0 auto;padding-inline:16px}
+main{padding-block:20px 46px}
+
+/* ── Dropzone de carga de Excel ── */
+.dropzone{background:#fff;border:2px dashed var(--gray-lt);border-radius:16px;padding:36px 24px;text-align:center;max-width:580px;margin:26px auto}
+.dropzone .emoji{font-size:2.2rem}
+.dropzone .dz-t{font-family:var(--f-head);font-weight:800;font-size:1.25rem;color:var(--teal-dk);margin:10px 0 4px}
+.dropzone .dz-s{font-size:.85rem;color:var(--gray);margin-bottom:16px;line-height:1.45}
+.dropzone input[type=file]{font-size:.9rem}
+.dz-warn{background:#FFF7E6;border:1px solid #F2D79A;color:#9c5300;border-radius:9px;padding:9px 12px;font-size:.78rem;margin-top:14px;text-align:left}
+
+/* ── Barra de contexto del informe ── */
+.info-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.info-bar .file{font-size:.8rem;color:var(--gray)}
+.info-bar .file b{color:var(--dark)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--gray-lt);background:#fff;border-radius:8px;padding:7px 13px;font-family:var(--f-body);font-size:.82rem;font-weight:600;color:var(--dark);cursor:pointer;transition:.12s}
+.btn:hover{border-color:var(--teal);color:var(--teal-dk)}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn.primary:hover{background:var(--teal-dk)}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:var(--dark)}
+.btn.gold:hover{background:var(--gold-dk);color:#fff}
+.btn.ghost-danger:hover{border-color:var(--red);color:var(--red)}
+.btn.on{background:var(--red);border-color:var(--red);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.spacer{margin-left:auto}
+
+/* ── Panel de filtros ── */
+.filtros{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow)}
+.filtros .grp-t{font-family:var(--f-head);font-size:.72rem;font-weight:700;color:var(--teal-dk);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 4px}
+.filtros .grp-t:first-child{margin-top:0}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:16px;padding:4px 12px;font-size:.8rem;cursor:pointer;margin:2px;border:1px solid var(--gray-lt);background:#f4f6f7;color:var(--gray);user-select:none}
+.chip.on{background:var(--teal-lt);border-color:var(--teal);color:var(--teal-dk);font-weight:600}
+.chip input{width:auto;margin:0;accent-color:var(--teal)}
+.filtros .nota{font-size:.72rem;color:var(--gray);margin-top:10px}
+.pill-red{background:var(--red);color:#fff;padding:1px 7px;border-radius:4px;font-weight:700}
+
+/* ── Tabla del informe ── */
+.cia-h{font-family:var(--f-head);font-weight:800;font-size:1.1rem;color:var(--teal-dk);text-transform:uppercase;letter-spacing:.02em;margin:20px 0 7px}
+.cia-h small{font-weight:400;font-size:.8rem;color:var(--gray)}
+.tabla-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table.rep{width:100%;border-collapse:collapse;font-size:.8rem;background:#fff;table-layout:fixed}
+table.rep th{position:relative;background:var(--teal-dk);color:#fff;font-family:var(--f-head);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.02em;padding:8px 9px;text-align:left;vertical-align:middle}
+table.rep td{padding:7px 9px;border-bottom:1px solid #eef1f2;vertical-align:middle;word-wrap:break-word;overflow-wrap:anywhere}
+table.rep tr:last-child td{border-bottom:0}
+table.rep .c-cod{white-space:nowrap;font-weight:600}
+table.rep .c-num{text-align:center}
+table.rep .c-monto{white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+table.rep .c-den{text-align:center;font-weight:600;border-left:1px solid #e4e9ea;background:#fafbfb}
+.dias{display:inline-block;min-width:1.9rem;text-align:center;color:#fff;padding:2px 8px;border-radius:4px;font-weight:700;font-family:var(--f-head)}
+.dias.ok{background:var(--green)} .dias.late{background:var(--red)}
+
+/* Celda ESTATUS editable: auto-alto, texto centrado */
+td.c-estatus{padding:0}
+.estatus-edit{min-height:2.2rem;padding:7px 9px;text-align:center;outline:none;white-space:pre-wrap;line-height:1.35;cursor:text}
+.estatus-edit:focus{background:var(--teal-lt);box-shadow:inset 0 0 0 2px var(--teal)}
+.estatus-edit:empty::before{content:attr(data-ph);color:#aab3b8;font-style:italic}
+
+/* Botón eliminar fila (modo edición) */
+.del-col{width:34px}
+.btn-del{border:0;background:#fdecea;color:var(--red);border-radius:6px;width:24px;height:24px;font-size:.9rem;line-height:1;cursor:pointer}
+.btn-del:hover{background:var(--red);color:#fff}
+
+/* Resizer de columnas (agarradera en el borde del <th>) */
+.col-resizer{position:absolute;top:0;right:0;width:7px;height:100%;cursor:col-resize;user-select:none}
+.col-resizer:hover,.col-resizer.drag{background:rgba(255,255,255,.35)}
+
+/* MLP placeholder */
+.placeholder{background:#fff;border:1px solid var(--line);border-radius:14px;padding:40px 26px;text-align:center;max-width:620px;margin:30px auto;box-shadow:var(--shadow)}
+.placeholder .emoji{font-size:2.2rem}
+.placeholder h2{color:var(--teal-dk);margin:10px 0 6px}
+.placeholder p{color:var(--gray);font-size:.9rem;line-height:1.5;margin:0}
+
+/* Toast */
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--dark);color:#fff;padding:11px 20px;border-radius:10px;font-size:.88rem;opacity:0;pointer-events:none;transition:.25s;z-index:9999;max-width:90vw}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.err{background:var(--red)} #toast.ok{background:var(--green)}
+
+@media(max-width:599px){
+  .top h1{font-size:1.3rem}
+  .vista-tab{padding:11px 16px;font-size:.9rem}
+  table.rep{font-size:.74rem}
+}

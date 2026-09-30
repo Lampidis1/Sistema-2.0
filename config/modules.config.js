@@ -221,6 +221,19 @@ window.AM_MODULES = [
     // sin 'homeTier': va en el bloque chico de abajo, junto a Planer y Gestión de usuarios
   },
   {
+    id: 'reclamos',
+    nombre: 'Reclamos',
+    descripcion: 'Informe semanal de reclamos comunitarios (TMRC): filtro por compañía, edición de estatus y armado de la tabla para el correo.',
+    icono: '📣',
+    ruta: 'modules/reclamos/',
+    acceso: 'reclamos',
+    accesoAlterno: 'principal',   // el equipo de Proveedores también lo opera
+    estado: 'activo',
+    visibleEnHome: true,
+    doc: 'docs/modulos/reclamos.md',
+    // sin 'homeTier': va en el bloque chico de abajo, entre RCA y Gestión de usuarios
+  },
+  {
     id: 'admin',
     nombre: 'Gestión de usuarios',
     descripcion: 'Aprobar o rechazar solicitudes de acceso al sistema.',
