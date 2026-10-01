@@ -41,15 +41,26 @@ auditoría marca como **propuestas** (no existían en el original).
   `2026-09-30_q100_avances_historial.sql`. *(Falta mostrarlo en la UI del
   drill-down — pendiente de front.)*
 
+## Ítem 3 · Visibilidad cruzada por grants (hecho el 30/09/2026)
+
+Tabla `q100.grants(user_id, ambito ['area'|'meta'|'linea'|'accion'], ref_id,
+nivel ['ver'|'editar'])`. La regla pasa de `usuario.area = tarea.area` a **área
+propia + grants**. Helpers `puede_ver_accion` (nuevo) y `puede_editar_accion`
+(extendido); `q100_dashboard` y `q100_acciones` se scopean por `puede_ver`.
+RPCs de administración (solo corporativo): `q100_grant_asignar/quitar/listar`,
+`q100_admin_datos`, `q100_buscar_accion`. UI: botón **🔐 Permisos** en Q100
+(visible solo a corporativo) para asignar ver/editar por área/meta/línea/acción.
+Migración: `2026-09-30_q100_grants_visibilidad_cruzada.sql`.
+
+> ⚠️ **Cambio de comportamiento:** antes TODOS los usuarios q100 veían TODAS las
+> tareas (solo se restringía editar). Ahora cada **no-corporativo ve solo su
+> área** hasta que se le asignen grants. Corporativo/admin ven todo. Los casos
+> cruzados concretos (Marisol 32, Agustín 32, Pablo/Daniela 28, Héctor 7,
+> Christian 12) se **cargan desde la UI de Permisos con validación** — los IDs
+> exactos de la auditoría se perdieron y no se adivinan.
+
 ## Gaps pendientes (modelo)
 
-- **Visibilidad por área vs. por tarea (el más de fondo).** La auditoría muestra
-  gerentes que ven tareas **cruzando áreas** (Agustín/Marisol comparten 32 en C3;
-  Pablo/Daniela ven Com+AACC; Héctor ve PCG+FMLP; Christian FMLP+PCG). El modelo
-  actual da 1 área por usuario y 1 por tarea, así que p.ej. **Marisol ve 11 y
-  debería ver 32**. ⚠️ Los IDs exactos de esas excepciones **se perdieron** en la
-  auditoría y no deben adivinarse: el arreglo correcto es una tabla de **grants
-  por tarea/ámbito** + asignación validada por el usuario (ítem 3, pendiente).
 - **Roles:** hoy 2 (corporativo/área); la auditoría propone 5 (admin,
   corporativo, responsable de área, ejecutor, lector).
 - **Comentarios con historial + evidencia** (archivo opcional 50 MB): hoy un solo
@@ -71,7 +82,7 @@ auditoría marca como **propuestas** (no existían en el original).
 |---|---|---|---|
 | 1 | Completar datos del Ciclo 2 | Bajo | ✅ hecho |
 | 2 | Historial de avances append-only | Bajo | ✅ hecho (falta UI) |
-| 3 | Grants por tarea/ámbito (visibilidad cruzada) | Medio | pendiente (necesita validación del usuario) |
+| 3 | Grants por tarea/ámbito (visibilidad cruzada) | Medio | ✅ hecho (falta cargar los casos) |
 | 4 | Roles ejecutor/lector + comentarios con historial + evidencia | Medio | pendiente |
 | 5 | Subacciones como entidad | Medio | pendiente |
 | 6 | Crear acción/hito + importador Excel con preview | Alto | pendiente (diseño aparte) |

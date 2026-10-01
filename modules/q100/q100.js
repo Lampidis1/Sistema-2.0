@@ -33,6 +33,7 @@ async function q100Acceso(user){
     if(abierto) sel.value=abierto.ciclo_id;
     const rol=Q_CTX.es_corporativo?'vista corporativa':(Q_CTX.mi_rol?('vista '+Q_CTX.mi_rol):'vista corporativa');
     document.getElementById('subCtx').textContent='VPAC · '+rol;
+    const bp=document.getElementById('btnPermisos'); if(bp) bp.classList.toggle('hidden', !Q_CTX.es_corporativo);
     await q100CargarDashboard();
   }catch(e){ toast('Error cargando: '+(e.message||e),'err'); document.getElementById('loader').textContent='No se pudo cargar.'; }
 }
@@ -301,5 +302,130 @@ async function q100GuardarAvance(accionId, i, verPersonas){
 function cerrarDetalle(){ document.getElementById('detMask').classList.add('hidden'); Q_FILTRO=null; }
 // Cerrar con Esc (NO al hacer clic fuera — convención del sistema).
 document.addEventListener('keydown', e=>{
-  if(e.key==='Escape'){ const m=document.getElementById('detMask'); if(m&&!m.classList.contains('hidden')) cerrarDetalle(); }
+  if(e.key==='Escape'){
+    const m=document.getElementById('detMask'); if(m&&!m.classList.contains('hidden')){ cerrarDetalle(); return; }
+    const p=document.getElementById('permMask'); if(p&&!p.classList.contains('hidden')) q100CerrarPermisos();
+  }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Permisos / grants cruzados (solo corporativo). Da ver/editar fuera del área.
+// ═══════════════════════════════════════════════════════════════════════════
+let Q_ADMIN=null, Q_PERM_ACC=null;
+
+async function q100AbrirPermisos(){
+  document.getElementById('permMask').classList.remove('hidden');
+  const body=document.getElementById('permBody'); body.innerHTML='<div class="det-load">Cargando…</div>';
+  try{
+    const [d,g]=await Promise.all([SB.rpc('q100_admin_datos'), SB.rpc('q100_grants_listar')]);
+    if(d.error) throw d.error; if(g.error) throw g.error;
+    if(d.data&&d.data.error) throw new Error(d.data.error);
+    Q_ADMIN=d.data; Q_PERM_ACC=null;
+    q100RenderPermisos(Q_ADMIN, Array.isArray(g.data)?g.data:[]);
+  }catch(e){ body.innerHTML='<div class="acc-com vacio">No se pudo cargar: '+esc(e.message||e)+'</div>'; }
+}
+function q100CerrarPermisos(){ document.getElementById('permMask').classList.add('hidden'); }
+
+function q100RenderPermisos(d, grants){
+  const uOpts=(d.usuarios||[]).map(u=>`<option value="${u.user_id}">${esc(u.nombre)}${u.rol==='corporativo'?' · corporativo':(u.area?' · '+esc(u.area):'')}</option>`).join('');
+  const aOpts=(d.areas||[]).map(a=>`<option value="${a.area_id}">${esc(a.nombre)}</option>`).join('');
+  const mOpts=(d.metas||[]).map(m=>`<option value="${m.meta_id}">Meta ${String(m.numero).padStart(2,'0')} — ${esc((m.titulo||'').slice(0,50))}</option>`).join('');
+  const lOpts=(d.lineas||[]).map(l=>`<option value="${l.linea_id}">${esc((l.titulo||'').slice(0,70))}</option>`).join('');
+  document.getElementById('permBody').innerHTML=`
+    <div class="perm-form">
+      <div class="pf-row">
+        <label class="pf-fld">Persona<select id="pf-user">${uOpts}</select></label>
+        <label class="pf-fld">Nivel<select id="pf-nivel"><option value="editar">Ver y editar</option><option value="ver">Solo ver</option></select></label>
+      </div>
+      <div class="pf-row">
+        <label class="pf-fld">Ámbito<select id="pf-ambito" onchange="q100PermAmbito()">
+          <option value="accion">Acción (tarea específica)</option>
+          <option value="area">Área completa</option>
+          <option value="meta">Meta completa</option>
+          <option value="linea">Línea completa</option>
+        </select></label>
+        <label class="pf-fld hidden" id="pf-ref-area">Área<select id="pf-area">${aOpts}</select></label>
+        <label class="pf-fld hidden" id="pf-ref-meta">Meta<select id="pf-meta">${mOpts}</select></label>
+        <label class="pf-fld hidden" id="pf-ref-linea">Línea<select id="pf-linea">${lOpts}</select></label>
+      </div>
+      <div id="pf-ref-accion" class="pf-fld">
+        <label>Buscar acción<input id="pf-accion-q" placeholder="escribe parte del título…" oninput="q100BuscarAccion()" autocomplete="off"></label>
+        <div id="pf-accion-res" class="pf-res"></div>
+        <div id="pf-accion-sel" class="pf-sel"></div>
+      </div>
+      <div><button class="mini-btn ok" onclick="q100GrantAsignar()">➕ Asignar acceso</button></div>
+    </div>
+    <div class="perm-h">Accesos asignados</div>
+    <div class="perm-list" id="perm-list">${q100GrantsHTML(grants)}</div>`;
+  q100PermAmbito();
+}
+
+function q100PermAmbito(){
+  const amb=document.getElementById('pf-ambito').value;
+  document.getElementById('pf-ref-area').classList.toggle('hidden', amb!=='area');
+  document.getElementById('pf-ref-meta').classList.toggle('hidden', amb!=='meta');
+  document.getElementById('pf-ref-linea').classList.toggle('hidden', amb!=='linea');
+  document.getElementById('pf-ref-accion').classList.toggle('hidden', amb!=='accion');
+}
+
+let _q100BuscTO=null;
+function q100BuscarAccion(){
+  clearTimeout(_q100BuscTO);
+  const q=document.getElementById('pf-accion-q').value.trim();
+  const res=document.getElementById('pf-accion-res');
+  if(q.length<3){ res.innerHTML=''; return; }
+  _q100BuscTO=setTimeout(async()=>{
+    try{
+      const {data,error}=await SB.rpc('q100_buscar_accion',{p_texto:q});
+      if(error) throw error;
+      const arr=Array.isArray(data)?data:[];
+      res.innerHTML=arr.length? arr.map(a=>`<div class="pf-res-it" onclick="q100SelAccion('${esc(a.accion_id)}','${esc((a.accion||'').replace(/'/g,"\\'").slice(0,60))}')">${esc(a.accion)} <span class="pf-dim">· M${a.meta} · ${esc(a.area||'')}</span></div>`).join('')
+        : '<div class="pf-dim" style="padding:6px">Sin coincidencias.</div>';
+    }catch(e){ res.innerHTML='<div class="pf-dim" style="padding:6px">Error: '+esc(e.message||e)+'</div>'; }
+  },280);
+}
+function q100SelAccion(id,txt){ Q_PERM_ACC=id;
+  document.getElementById('pf-accion-sel').innerHTML='✓ '+esc(txt);
+  document.getElementById('pf-accion-res').innerHTML=''; document.getElementById('pf-accion-q').value='';
+}
+
+function q100GrantsHTML(grants){
+  if(!grants||!grants.length) return '<div class="acc-com vacio">Aún no hay accesos cruzados asignados. Cada gerente ve solo su área.</div>';
+  const nivelTxt=n=>n==='editar'?'ver y editar':'solo ver';
+  const ambTxt={area:'Área',meta:'Meta',linea:'Línea',accion:'Acción'};
+  return grants.map(g=>`<div class="perm-it">
+    <div class="perm-it-main"><b>${esc(g.usuario)}</b> — ${ambTxt[g.ambito]||g.ambito}: ${esc(g.etiqueta||g.ref_id)}
+      <span class="pf-dim">· ${nivelTxt(g.nivel)}</span></div>
+    <button class="mini-btn ghost" onclick="q100GrantQuitar(${g.grant_id})">Quitar</button>
+  </div>`).join('');
+}
+
+async function q100GrantAsignar(){
+  const user=document.getElementById('pf-user').value;
+  const amb=document.getElementById('pf-ambito').value;
+  const nivel=document.getElementById('pf-nivel').value;
+  let ref=null;
+  if(amb==='area') ref=document.getElementById('pf-area').value;
+  else if(amb==='meta') ref=document.getElementById('pf-meta').value;
+  else if(amb==='linea') ref=document.getElementById('pf-linea').value;
+  else if(amb==='accion') ref=Q_PERM_ACC;
+  if(!user){ toast('Elige una persona','err'); return; }
+  if(!ref){ toast(amb==='accion'?'Busca y elige una acción':'Elige el ámbito','err'); return; }
+  try{
+    const {data,error}=await SB.rpc('q100_grant_asignar',{p_user:user, p_ambito:amb, p_ref:ref, p_nivel:nivel});
+    if(error) throw error; if(data&&data.error) throw new Error(data.error);
+    toast('Acceso asignado','ok');
+    const g=await SB.rpc('q100_grants_listar');
+    document.getElementById('perm-list').innerHTML=q100GrantsHTML(Array.isArray(g.data)?g.data:[]);
+    Q_PERM_ACC=null; document.getElementById('pf-accion-sel').innerHTML='';
+  }catch(e){ toast('No se pudo asignar: '+(e.message||e),'err'); }
+}
+async function q100GrantQuitar(id){
+  try{
+    const {data,error}=await SB.rpc('q100_grant_quitar',{p_grant_id:id});
+    if(error) throw error; if(data&&data.error) throw new Error(data.error);
+    toast('Acceso quitado','ok');
+    const g=await SB.rpc('q100_grants_listar');
+    document.getElementById('perm-list').innerHTML=q100GrantsHTML(Array.isArray(g.data)?g.data:[]);
+  }catch(e){ toast('No se pudo quitar: '+(e.message||e),'err'); }
+}

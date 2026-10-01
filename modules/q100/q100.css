@@ -165,6 +165,24 @@ td.hm-cell:hover{outline:2px solid var(--dark);outline-offset:-2px}
 .hist-pct{font-family:var(--f-head);font-weight:700;color:var(--teal-dk);margin-right:8px}
 .hist-dim{font-size:.76rem;color:var(--gray)}
 .hist-com{font-size:.82rem;color:var(--dark);background:var(--bg);border-radius:7px;padding:5px 9px;margin-top:3px}
+
+/* Permisos / grants */
+.perm-form{display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.pf-row{display:flex;gap:12px;flex-wrap:wrap}
+.pf-fld{display:flex;flex-direction:column;gap:4px;font-size:.78rem;font-weight:600;color:var(--gray);flex:1;min-width:180px}
+.pf-fld select,.pf-fld input{font-family:var(--f-body);font-size:.9rem;padding:8px 10px;border:1px solid var(--gray-lt);border-radius:8px;background:#fff;color:var(--dark)}
+.pf-fld select:focus,.pf-fld input:focus{outline:2px solid var(--teal);border-color:var(--teal)}
+.pf-res{border:1px solid var(--line);border-radius:8px;margin-top:4px;max-height:180px;overflow:auto;display:none}
+.pf-res:not(:empty){display:block}
+.pf-res-it{padding:7px 10px;font-size:.84rem;cursor:pointer;border-bottom:1px solid var(--line)}
+.pf-res-it:last-child{border-bottom:0}
+.pf-res-it:hover{background:var(--teal-lt)}
+.pf-sel{font-size:.84rem;color:var(--teal-dk);font-weight:600;margin-top:6px}
+.pf-dim{color:var(--gray);font-weight:400;font-size:.78rem}
+.perm-h{font-family:var(--f-head);font-weight:700;font-size:1rem;color:var(--teal-dk);margin:6px 0 10px;text-transform:uppercase;letter-spacing:.04em}
+.perm-list{display:flex;flex-direction:column;gap:8px}
+.perm-it{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:9px;padding:9px 12px}
+.perm-it-main{flex:1;min-width:0;font-size:.86rem}
 .mini-btn{font-family:var(--f-body);font-size:.82rem;font-weight:600;border:1px solid var(--gray-lt);background:#fff;color:var(--teal-dk);border-radius:8px;padding:6px 11px;cursor:pointer}
 .mini-btn:hover{background:var(--teal-lt)}
 .mini-btn.ok{background:var(--teal);color:#fff;border-color:var(--teal)}

@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="q100.css?v=20260930a">
+<link rel="stylesheet" href="q100.css?v=20260930b">
 <!-- Ajustes de tableta y teléfono comunes a todo el sistema. Va al final. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
 </head>
@@ -53,6 +53,7 @@
         <div class="sub" id="subCtx">VPAC · vista corporativa</div>
       </div>
       <div class="sp">
+        <button id="btnPermisos" class="hidden" onclick="q100AbrirPermisos()">🔐 Permisos</button>
         <span id="hUser"></span>
         <a href="../../index.html" title="Inicio">⌂</a>
         <button onclick="salir()">Salir</button>
@@ -118,6 +119,20 @@
   </div>
 </div>
 
+<!-- Modal de permisos (solo corporativo/admin). -->
+<div id="permMask" class="det-mask hidden" role="dialog" aria-modal="true">
+  <div class="det">
+    <div class="det-head">
+      <div>
+        <div class="det-t">Permisos de acceso</div>
+        <div class="det-s">Dar visibilidad/edición cruzada por tarea o ámbito (fuera del área propia)</div>
+      </div>
+      <button class="det-x" onclick="q100CerrarPermisos()" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="det-body" id="permBody"></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <!-- Config del guard de autenticación (antes de auth-guard.js). -->
@@ -134,6 +149,6 @@
   };
 </script>
 <script src="../../shared/js/auth-guard.js?v=20260929"></script>
-<script src="q100.js?v=20260930a"></script>
+<script src="q100.js?v=20260930b"></script>
 </body>
 </html>
