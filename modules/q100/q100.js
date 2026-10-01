@@ -33,7 +33,7 @@ async function q100Acceso(user){
     if(abierto) sel.value=abierto.ciclo_id;
     const rol=Q_CTX.es_corporativo?'vista corporativa':(Q_CTX.mi_rol?('vista '+Q_CTX.mi_rol):'vista corporativa');
     document.getElementById('subCtx').textContent='VPAC · '+rol;
-    const bp=document.getElementById('btnPermisos'); if(bp) bp.classList.toggle('hidden', !Q_CTX.es_corporativo);
+    ['btnPermisos','btnNuevaAccion','btnImportar'].forEach(id=>{ const b=document.getElementById(id); if(b) b.classList.toggle('hidden', !Q_CTX.es_corporativo); });
     await q100CargarDashboard();
   }catch(e){ toast('Error cargando: '+(e.message||e),'err'); document.getElementById('loader').textContent='No se pudo cargar.'; }
 }
@@ -213,11 +213,11 @@ function q100RenderDetalle(acc){
       : esc(a.area);
     const fecha = a.fecha_termino ? ('Término '+esc(a.fecha_termino)) : '';
     const actualiza = a.actualizado_por ? `· actualizó ${esc(a.actualizado_por)}` : '';
-    return `<div class="acc" id="acc-${i}">
+    return `<div class="acc ${a.es_sub?'acc-sub':''}" id="acc-${i}">
       <div class="acc-top">
         <div class="acc-pct tnum ${barClass(a.pct||0)==='bad'?'bad':''}">${a.pct==null?'—':a.pct+'%'}</div>
         <div class="acc-main">
-          <div class="acc-t">${esc(a.accion)}</div>
+          <div class="acc-t">${a.es_sub?'<span class="sub-tag">subacción</span> ':''}${esc(a.accion)}</div>
           <div class="acc-meta">${critChip(a.criticidad)} ${estadoChip(a.estado)}
             <span class="acc-dim">${esc(a.linea)} · ${resp} ${fecha?'· '+fecha:''}</span></div>
           ${barMini(a.pct)}
@@ -229,7 +229,9 @@ function q100RenderDetalle(acc){
         <button class="mini-btn ghost" onclick="q100VerComentarios('${esc(a.accion_id)}',${i})">💬 Comentarios</button>
         <button class="mini-btn ghost" onclick="q100VerHitos('${esc(a.accion_id)}',${i},${a.puede_editar?'true':'false'})">🎯 Hitos</button>
         ${a.puede_editar?`<button class="mini-btn" onclick="q100Editar(${i})">✎ Registrar avance</button>`:''}
+        ${a.puede_editar&&!a.es_sub?`<button class="mini-btn ghost" onclick="q100SubForm(${i},'${esc(a.accion_id)}')">➕ Subacción</button>`:''}
       </div>
+      <div class="acc-subform hidden" id="subform-${i}"></div>
       ${a.puede_editar?`<div class="acc-edit hidden" id="edit-${i}">
           <div class="ef-row">
             <label>% avance<input type="number" min="0" max="100" id="ef-pct-${i}" value="${a.pct==null?'':a.pct}"></label>
@@ -441,7 +443,8 @@ function cerrarDetalle(){ document.getElementById('detMask').classList.add('hidd
 document.addEventListener('keydown', e=>{
   if(e.key==='Escape'){
     const m=document.getElementById('detMask'); if(m&&!m.classList.contains('hidden')){ cerrarDetalle(); return; }
-    const p=document.getElementById('permMask'); if(p&&!p.classList.contains('hidden')) q100CerrarPermisos();
+    const p=document.getElementById('permMask'); if(p&&!p.classList.contains('hidden')){ q100CerrarPermisos(); return; }
+    const am=document.getElementById('admMask'); if(am&&!am.classList.contains('hidden')) q100CerrarAdm();
   }
 });
 
@@ -516,6 +519,147 @@ async function q100CambiarRol(userId, rol){
     toast('Rol actualizado','ok');
     if(Q_ADMIN&&Q_ADMIN.usuarios){ const u=Q_ADMIN.usuarios.find(x=>x.user_id===userId); if(u) u.rol=rol; }
   }catch(e){ toast('No se pudo cambiar el rol: '+(e.message||e),'err'); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Administración: crear acción / subacción + importador Excel (solo corporativo).
+// ═══════════════════════════════════════════════════════════════════════════
+const Q_AREA_MAP={'AACC':'aacc','Norte':'norte','PCG':'pcg','AAPP MLP - LP':'mlp_lp','MLP LP':'mlp_lp','AAPP MLP':'mlp','MLP':'mlp','Comunicaciones':'comunicaciones','FMLP':'fmlp','1 Resp.':'proteccion'};
+function q100CerrarAdm(){ document.getElementById('admMask').classList.add('hidden'); }
+
+async function q100NuevaAccion(){
+  document.getElementById('admTitle').textContent='Nueva acción';
+  document.getElementById('admSub').textContent='Agregar una acción a una meta y línea';
+  document.getElementById('admMask').classList.remove('hidden');
+  const body=document.getElementById('admBody'); body.innerHTML='<div class="det-load">Cargando…</div>';
+  try{
+    if(!Q_ADMIN){ const d=await SB.rpc('q100_admin_datos'); if(d.error)throw d.error; if(d.data&&d.data.error)throw new Error(d.data.error); Q_ADMIN=d.data; }
+    const d=Q_ADMIN;
+    const aOpts=(d.areas||[]).map(a=>`<option value="${a.area_id}">${esc(a.nombre)}</option>`).join('');
+    const mOpts=(d.metas||[]).map(m=>`<option value="${m.numero}">Meta ${String(m.numero).padStart(2,'0')} — ${esc((m.titulo||'').slice(0,45))}</option>`).join('');
+    body.innerHTML=`<div class="perm-form">
+      <label class="pf-fld">Meta<select id="na-meta" onchange="q100NAmeta()">${mOpts}</select></label>
+      <label class="pf-fld">Línea<select id="na-linea"></select></label>
+      <label class="pf-fld">Título de la acción<input id="na-tit" placeholder="Describe la acción…"></label>
+      <div class="pf-row">
+        <label class="pf-fld">Área<select id="na-area">${aOpts}</select></label>
+        <label class="pf-fld">Criticidad<select id="na-crit"><option value="no_critica">No crítica</option><option value="critica">Crítica</option></select></label>
+        <label class="pf-fld">Fecha término<input id="na-fecha" type="date"></label>
+      </div>
+      <div><button class="mini-btn ok" onclick="q100CrearAccion()">➕ Crear acción</button></div>
+      <div class="pf-dim">Se crea con 0% en el ciclo seleccionado (${esc(document.getElementById('selCiclo').selectedOptions[0]?.textContent||'')}).</div>
+    </div>`;
+    q100NAmeta();
+  }catch(e){ body.innerHTML='<div class="acc-com vacio">No se pudo cargar: '+esc(e.message||e)+'</div>'; }
+}
+function q100NAmeta(){
+  const m=parseInt(document.getElementById('na-meta').value);
+  const metaId='m'+String(m).padStart(2,'0');
+  const sel=document.getElementById('na-linea');
+  const ls=(Q_ADMIN.lineas||[]).filter(l=>l.meta_id===metaId);
+  sel.innerHTML=ls.map(l=>`<option value="${l.linea_id}">${esc((l.titulo||'').slice(0,70))}</option>`).join('')||'<option value="">(sin líneas)</option>';
+}
+async function q100CrearAccion(){
+  const meta=parseInt(document.getElementById('na-meta').value);
+  const linea=document.getElementById('na-linea').value;
+  const tit=(document.getElementById('na-tit').value||'').trim();
+  const area=document.getElementById('na-area').value;
+  const crit=document.getElementById('na-crit').value;
+  const fecha=document.getElementById('na-fecha').value||null;
+  if(!tit){ toast('Escribe el título','err'); return; }
+  if(!linea){ toast('Elige una línea','err'); return; }
+  try{
+    const {data,error}=await SB.rpc('q100_accion_crear',
+      {p_meta:meta, p_linea_id:linea, p_titulo:tit, p_area:area, p_criticidad:crit, p_termino:fecha,
+       p_ciclo:document.getElementById('selCiclo').value||null});
+    if(error) throw error; if(data&&data.error) throw new Error(data.error);
+    toast('Acción creada','ok'); q100CerrarAdm(); q100CargarDashboard();
+  }catch(e){ toast('No se pudo crear: '+(e.message||e),'err'); }
+}
+
+// ── Importador Excel ──
+function q100Importar(){
+  document.getElementById('admTitle').textContent='Importar Excel';
+  document.getElementById('admSub').textContent='Carga un export (catálogo de acciones) para el ciclo seleccionado';
+  document.getElementById('admMask').classList.remove('hidden');
+  document.getElementById('admBody').innerHTML=`<div class="perm-form">
+    <div class="pf-dim">Formato esperado: columnas <b>ciclo, id, meta, linea, titulo_original, avance_pct, criticidad, estado_visible, termino, responsable_visible</b> (como el export del catálogo). Se carga en el ciclo <b>${esc(document.getElementById('selCiclo').selectedOptions[0]?.textContent||'')}</b>.</div>
+    <label class="pf-fld">Archivo .xlsx<input type="file" accept=".xlsx,.xls" onchange="q100ImportarArchivo(this.files[0])"></label>
+    <div id="imp-prev"></div>
+  </div>`;
+}
+let Q_IMP_FILAS=null;
+async function q100ImportarArchivo(file){
+  if(!file) return;
+  const prev=document.getElementById('imp-prev'); prev.innerHTML='<div class="det-load">Leyendo archivo…</div>';
+  try{
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:false});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+    const norm=k=>String(k||'').toLowerCase().replace(/[^a-z]/g,'');
+    const get=(r,names)=>{ for(const k in r){ if(names.includes(norm(k))) return r[k]; } return ''; };
+    const toMeta=v=>{ const m=String(v).match(/\d+/); return m?parseInt(m[0]):null; };
+    const toArea=v=>{ const s=String(v).trim(); return Q_AREA_MAP[s]|| (s? s.toLowerCase().replace(/[^a-z_]/g,''):null); };
+    const fecha=v=>{ if(!v)return null; const s=String(v); let m=s.match(/(\d{2})\/(\d{2})\/(\d{4})/); if(m)return m[3]+'-'+m[2]+'-'+m[1]; m=s.match(/(\d{4})-(\d{2})-(\d{2})/); return m?m[0]:null; };
+    const filas=rows.map(r=>({
+      accion_id: String(get(r,['id','accionid'])||'').trim(),
+      meta: toMeta(get(r,['meta'])),
+      linea: String(get(r,['linea','línea'])||'').trim(),
+      titulo: String(get(r,['titulooriginal','titulo','título','accion','acción'])||'').trim(),
+      area_id: toArea(get(r,['responsablevisible','area','área','responsable'])),
+      criticidad: /crí?tico|critica/i.test(String(get(r,['criticidad'])))&&!/no/i.test(String(get(r,['criticidad'])))?'critica':'no_critica',
+      pct: parseFloat(String(get(r,['avancepct','avance','pct','porcentaje'])).replace('%',''))||0,
+      estado: String(get(r,['estadovisible','estado'])||'').trim().toUpperCase(),
+      termino: fecha(get(r,['termino','término','fechatermino']))
+    })).filter(f=>f.meta && f.titulo);
+    if(!filas.length){ prev.innerHTML='<div class="acc-com vacio">No se reconocieron filas con meta y título.</div>'; return; }
+    Q_IMP_FILAS=filas;
+    const {data,error}=await SB.rpc('q100_importar',{p_ciclo:document.getElementById('selCiclo').value, p_filas:filas, p_dry:true});
+    if(error) throw error; if(data&&data.error) throw new Error(data.error);
+    prev.innerHTML=`<div class="imp-prev-box">
+      <div class="imp-h">Vista previa</div>
+      <div class="imp-r"><b>${data.filas}</b> filas válidas · <b>${data.acciones_nuevas}</b> acciones nuevas · <b>${data.acciones_actualizadas}</b> a actualizar · <b>${data.lineas_nuevas}</b> líneas nuevas</div>
+      <div class="pf-dim">Se cargará en el ciclo seleccionado, conservando los % exactos. Las acciones existentes se actualizan por su <i>id</i>.</div>
+      <button class="mini-btn ok" onclick="q100ImportarConfirmar()">✓ Confirmar importación</button>
+    </div>`;
+  }catch(e){ prev.innerHTML='<div class="acc-com vacio">No se pudo leer: '+esc(e.message||e)+'</div>'; }
+}
+async function q100ImportarConfirmar(){
+  if(!Q_IMP_FILAS){ toast('Carga un archivo primero','err'); return; }
+  try{
+    const {data,error}=await SB.rpc('q100_importar',{p_ciclo:document.getElementById('selCiclo').value, p_filas:Q_IMP_FILAS, p_dry:false});
+    if(error) throw error; if(data&&data.error) throw new Error(data.error);
+    toast(`Importado: ${data.acciones_nuevas} nuevas, ${data.acciones_actualizadas} actualizadas`,'ok');
+    Q_IMP_FILAS=null; q100CerrarAdm(); q100CargarDashboard();
+  }catch(e){ toast('No se pudo importar: '+(e.message||e),'err'); }
+}
+
+// ── Crear subacción bajo una acción (inline) ──
+function q100SubForm(i, accionId){
+  const box=document.getElementById('subform-'+i); if(!box) return;
+  if(!box.classList.contains('hidden')){ box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  box.innerHTML=`<div class="sf-row">
+    <input id="sf-tit-${i}" placeholder="Título de la subacción">
+    <select id="sf-crit-${i}"><option value="no_critica">No crítica</option><option value="critica">Crítica</option></select>
+    <input id="sf-fecha-${i}" type="date">
+    <button class="mini-btn ok" onclick="q100CrearSubaccion(${i},'${esc(accionId)}')">Crear</button>
+  </div>`;
+}
+async function q100CrearSubaccion(i, parentId){
+  const tit=(document.getElementById('sf-tit-'+i).value||'').trim();
+  if(!tit){ toast('Escribe el título','err'); return; }
+  const crit=document.getElementById('sf-crit-'+i).value;
+  const fecha=document.getElementById('sf-fecha-'+i).value||null;
+  try{
+    const {data,error}=await SB.rpc('q100_subaccion_crear',
+      {p_parent:parentId, p_titulo:tit, p_criticidad:crit, p_termino:fecha,
+       p_ciclo:document.getElementById('selCiclo').value||null});
+    if(error) throw error; if(data&&data.error) throw new Error(data.error);
+    toast('Subacción creada','ok');
+    await q100Detalle(Q_FILTRO); q100CargarDashboard();
+  }catch(e){ toast('No se pudo crear: '+(e.message||e),'err'); }
 }
 
 function q100PermAmbito(){

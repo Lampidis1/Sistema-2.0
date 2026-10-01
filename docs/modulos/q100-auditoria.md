@@ -86,10 +86,24 @@ evidencia/vencido) y formulario para agregar (editores). El avance de la acción
 sigue siendo manual; no se mezcla con promedio de hitos. Migración:
 `2026-09-30_q100_hitos.sql`. *(Falta del ítem 6: crear acción + importador Excel.)*
 
-## Gaps pendientes (modelo)
+## Ítems 5 y 6 · Subacciones + crear acción/subacción + importador (hecho el 01/10/2026)
 
-- **Subacciones** (6 C3, 8 C2): aplanadas dentro de las tareas finales (no afecta
-  el promedio; sí la estructura jerárquica fina).
+- **Subacciones (ítem 5):** columna `q100.acciones.parent_accion_id`. El promedio
+  cuenta **solo hojas** (`q100_dashboard` excluye acciones con subacciones), así
+  que los promedios verificados no cambian (las 316 históricas no tienen padre).
+  Drill-down: subacciones anidadas (indentadas, tag "subacción"). Las 14
+  históricas quedan planas (sus padres no estaban en la fuente de tareas finales).
+- **Crear acción/subacción (ítem 6):** `q100_accion_crear` (corporativo o usuario
+  de su área) y `q100_subaccion_crear` (quien edita la acción padre). UI: botón
+  **➕ Nueva acción** en la toolbar y **➕ Subacción** por acción en el drill-down.
+- **Importador Excel (ítem 6):** `q100_importar(p_ciclo, p_filas, p_dry)` con
+  dry-run de preview + confirmar (corporativo). UI: botón **📥 Importar Excel**
+  con lectura del .xlsx (SheetJS), mapeo de columnas (incl. `responsable_visible`
+  → área, "1 Resp." → Protección, fechas DD/MM/AAAA e ISO, % exacto), vista previa
+  (nuevas/actualizar/líneas) y confirmación. Migración:
+  `2026-10-01_q100_subacciones_crear_importar.sql`.
+
+El plan de la auditoría queda **completo**.
 
 ## Funciones propuestas (no existían en el original observado)
 
@@ -107,8 +121,8 @@ sigue siendo manual; no se mezcla con promedio de hitos. Migración:
 | 2 | Historial de avances append-only | Bajo | ✅ hecho (falta UI) |
 | 3 | Grants por tarea/ámbito (visibilidad cruzada) | Medio | ✅ hecho (falta cargar los casos) |
 | 4 | Roles ejecutor/lector + comentarios con historial + evidencia | Medio | ✅ hecho (roles + comentarios + evidencia/Storage) |
-| 5 | Subacciones como entidad | Medio | pendiente |
-| 6 | Crear acción/hito + importador Excel con preview | Alto | ✅ hitos · ⏳ crear acción + importador |
+| 5 | Subacciones como entidad | Medio | ✅ hecho |
+| 6 | Crear acción/hito + importador Excel con preview | Alto | ✅ hecho |
 
 ## Nota sobre la auditoría
 

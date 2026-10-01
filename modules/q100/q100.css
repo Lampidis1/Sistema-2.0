@@ -183,6 +183,20 @@ td.hm-cell:hover{outline:2px solid var(--dark);outline-offset:-2px}
 .perm-list{display:flex;flex-direction:column;gap:8px}
 .perm-it{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:9px;padding:9px 12px}
 .perm-it-main{flex:1;min-width:0;font-size:.86rem}
+
+/* Toolbar admin + crear/importar */
+.tb-btn{font-family:var(--f-body);font-size:.84rem;font-weight:600;border:1px solid var(--gray-lt);background:#fff;color:var(--teal-dk);border-radius:8px;padding:7px 12px;cursor:pointer}
+.tb-btn:hover{background:var(--teal-lt)}
+.acc-subform{margin-top:8px}
+.sf-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:9px}
+.sf-row input[type=text],.sf-row>input:not([type]){flex:1;min-width:160px}
+.sf-row input,.sf-row select{font-family:var(--f-body);font-size:.86rem;padding:7px 9px;border:1px solid var(--gray-lt);border-radius:8px}
+.sf-row input:focus,.sf-row select:focus{outline:2px solid var(--teal);border-color:var(--teal)}
+.acc-sub{margin-left:26px;border-left:3px solid var(--teal-lt)}
+.sub-tag{font-size:.64rem;font-weight:700;background:var(--gray-lt);color:var(--gray);border-radius:5px;padding:1px 6px;text-transform:uppercase;letter-spacing:.03em;vertical-align:middle}
+.imp-prev-box{background:var(--teal-lt);border-radius:10px;padding:14px;margin-top:12px;display:flex;flex-direction:column;gap:9px}
+.imp-h{font-family:var(--f-head);font-weight:700;color:var(--teal-dk);text-transform:uppercase;letter-spacing:.04em;font-size:.85rem}
+.imp-r{font-size:.9rem;color:var(--dark)}
 .pf-rol{font-family:var(--f-body);font-size:.82rem;padding:6px 9px;border:1px solid var(--gray-lt);border-radius:8px;background:#fff;color:var(--dark)}
 
 /* Comentarios */

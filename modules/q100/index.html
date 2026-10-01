@@ -6,8 +6,9 @@
 <title>Plan de Acción Q100 · Antofagasta Minerals</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="q100.css?v=20260930e">
+<link rel="stylesheet" href="q100.css?v=20261001a">
 <!-- Ajustes de tableta y teléfono comunes a todo el sistema. Va al final. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
 </head>
@@ -66,6 +67,8 @@
     <div class="toolbar">
       <span class="eyebrow">Estado del ciclo</span>
       <select id="selCiclo" onchange="q100CargarDashboard()"></select>
+      <button id="btnNuevaAccion" class="tb-btn hidden" onclick="q100NuevaAccion()">➕ Nueva acción</button>
+      <button id="btnImportar" class="tb-btn hidden" onclick="q100Importar()">📥 Importar Excel</button>
     </div>
     <div id="loader">Cargando…</div>
     <div id="dash" class="hidden">
@@ -133,6 +136,17 @@
   </div>
 </div>
 
+<!-- Modal de administración: crear acción / importar (solo corporativo). -->
+<div id="admMask" class="det-mask hidden" role="dialog" aria-modal="true">
+  <div class="det">
+    <div class="det-head">
+      <div><div class="det-t" id="admTitle">Administración</div><div class="det-s" id="admSub"></div></div>
+      <button class="det-x" onclick="q100CerrarAdm()" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="det-body" id="admBody"></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <!-- Config del guard de autenticación (antes de auth-guard.js). -->
@@ -149,6 +163,6 @@
   };
 </script>
 <script src="../../shared/js/auth-guard.js?v=20260929"></script>
-<script src="q100.js?v=20260930e"></script>
+<script src="q100.js?v=20261001a"></script>
 </body>
 </html>
