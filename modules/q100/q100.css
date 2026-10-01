@@ -156,7 +156,15 @@ td.hm-cell:hover{outline:2px solid var(--dark);outline-offset:-2px}
 .chip.mute{background:var(--gray-lt);color:var(--gray)}
 .chip.crit{background:#fbdcd6;color:#a3271a}
 
-.acc-actions{margin-top:8px}
+.acc-actions{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+
+/* Historial append-only de la acción */
+.acc-hist{margin-top:8px}
+.hist-wrap{border-left:2px solid var(--teal-lt);padding-left:12px;display:flex;flex-direction:column;gap:9px}
+.hist-it{font-size:.82rem}
+.hist-pct{font-family:var(--f-head);font-weight:700;color:var(--teal-dk);margin-right:8px}
+.hist-dim{font-size:.76rem;color:var(--gray)}
+.hist-com{font-size:.82rem;color:var(--dark);background:var(--bg);border-radius:7px;padding:5px 9px;margin-top:3px}
 .mini-btn{font-family:var(--f-body);font-size:.82rem;font-weight:600;border:1px solid var(--gray-lt);background:#fff;color:var(--teal-dk);border-radius:8px;padding:6px 11px;cursor:pointer}
 .mini-btn:hover{background:var(--teal-lt)}
 .mini-btn.ok{background:var(--teal);color:#fff;border-color:var(--teal)}

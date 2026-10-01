@@ -223,8 +223,11 @@ function q100RenderDetalle(acc){
           <div class="acc-com ${a.comentario?'':'vacio'}">${a.comentario?('“'+esc(a.comentario)+'” '+actualiza):'Sin comentario registrado — el porqué del avance se explica al editar.'}</div>
         </div>
       </div>
-      ${a.puede_editar?`<div class="acc-actions"><button class="mini-btn" onclick="q100Editar(${i})">✎ Registrar avance</button></div>
-        <div class="acc-edit hidden" id="edit-${i}">
+      <div class="acc-actions">
+        <button class="mini-btn ghost" onclick="q100VerHistorial('${esc(a.accion_id)}',${i})">🕑 Historial</button>
+        ${a.puede_editar?`<button class="mini-btn" onclick="q100Editar(${i})">✎ Registrar avance</button>`:''}
+      </div>
+      ${a.puede_editar?`<div class="acc-edit hidden" id="edit-${i}">
           <div class="ef-row">
             <label>% avance<input type="number" min="0" max="100" id="ef-pct-${i}" value="${a.pct==null?'':a.pct}"></label>
             <label>Estado<select id="ef-est-${i}">${EST_OPC.map(o=>`<option ${o===(a.estado||'')?'selected':''}>${o}</option>`).join('')}${EST_OPC.includes(a.estado)?'':`<option selected>${esc(a.estado||'')}</option>`}</select></label>
@@ -238,12 +241,38 @@ function q100RenderDetalle(acc){
             <button class="mini-btn ok" onclick="q100GuardarAvance('${esc(a.accion_id)}',${i},${a.ver_personas?'true':'false'})">Guardar</button>
           </div>
         </div>`:''}
+      <div class="acc-hist hidden" id="hist-${i}"></div>
     </div>`;
   }).join('');
 }
 
 function q100Editar(i){ const e=document.getElementById('edit-'+i); if(e) e.classList.remove('hidden'); }
 function q100CancelEdit(i){ const e=document.getElementById('edit-'+i); if(e) e.classList.add('hidden'); }
+
+// Historial append-only de una acción (quién cambió el % y cuándo).
+async function q100VerHistorial(accionId, i){
+  const box=document.getElementById('hist-'+i); if(!box) return;
+  if(!box.classList.contains('hidden')){ box.classList.add('hidden'); return; }  // toggle
+  box.classList.remove('hidden'); box.innerHTML='<div class="det-load">Cargando historial…</div>';
+  try{
+    const {data,error}=await SB.rpc('q100_avance_historial',
+      {p_accion:accionId, p_ciclo:document.getElementById('selCiclo').value||null});
+    if(error) throw error;
+    if(data && data.error) throw new Error(data.error);
+    const arr=Array.isArray(data)?data:[];
+    if(!arr.length){ box.innerHTML='<div class="acc-com vacio">Sin historial.</div>'; return; }
+    box.innerHTML='<div class="hist-wrap">'+arr.map(h=>{
+      const de=h.pct_anterior==null?'—':h.pct_anterior+'%';
+      const a =h.pct_nuevo==null?'—':h.pct_nuevo+'%';
+      const proc=h.procedencia==='Carga inicial'?' · carga inicial':'';
+      return `<div class="hist-it">
+        <span class="hist-pct tnum">${de} → <b>${a}</b></span>
+        <span class="hist-dim">${esc(h.estado_nuevo||'')} · ${esc(h.actor||'')} · ${esc(h.fecha||'')}${proc}</span>
+        ${h.comentario?`<div class="hist-com">“${esc(h.comentario)}”</div>`:''}
+      </div>`;
+    }).join('')+'</div>';
+  }catch(e){ box.innerHTML='<div class="acc-com vacio">No se pudo cargar: '+esc(e.message||e)+'</div>'; }
+}
 
 async function q100GuardarAvance(accionId, i, verPersonas){
   const pctEl=document.getElementById('ef-pct-'+i);
