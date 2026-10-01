@@ -194,6 +194,13 @@ td.hm-cell:hover{outline:2px solid var(--dark);outline-offset:-2px}
 .cm-add{display:flex;gap:8px;align-items:flex-end}
 .cm-add textarea{flex:1;font-family:var(--f-body);font-size:.88rem;padding:8px 10px;border:1px solid var(--gray-lt);border-radius:8px;resize:vertical}
 .cm-add textarea:focus{outline:2px solid var(--teal);border-color:var(--teal)}
+.cm-add{flex-direction:column;align-items:stretch;gap:7px}
+.cm-add-r{display:flex;align-items:center;gap:10px}
+.cm-file{font-size:.8rem;font-weight:600;color:var(--teal-dk);border:1px solid var(--gray-lt);border-radius:8px;padding:6px 11px;cursor:pointer;white-space:nowrap}
+.cm-file:hover{background:var(--teal-lt)}
+.cm-file input{display:none}
+.cm-file-name{font-size:.78rem;color:var(--gray);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cm-add-r .mini-btn{margin-left:auto}
 .mini-btn{font-family:var(--f-body);font-size:.82rem;font-weight:600;border:1px solid var(--gray-lt);background:#fff;color:var(--teal-dk);border-radius:8px;padding:6px 11px;cursor:pointer}
 .mini-btn:hover{background:var(--teal-lt)}
 .mini-btn.ok{background:var(--teal);color:#fff;border-color:var(--teal)}

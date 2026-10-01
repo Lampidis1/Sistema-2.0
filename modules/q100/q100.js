@@ -292,27 +292,53 @@ async function q100CargarComentarios(accionId, i){
     if(error) throw error; if(data && data.error) throw new Error(data.error);
     const arr=Array.isArray(data)?data:[];
     const lista = arr.length ? arr.map(c=>`<div class="cm-it">
-        <div class="cm-txt">${esc(c.texto)}</div>
-        <div class="cm-dim">${esc(c.autor||'')} · ${esc(c.fecha||'')}${c.evidencia_url?` · <a href="${esc(c.evidencia_url)}" target="_blank" rel="noopener">${esc(c.evidencia_nombre||'evidencia')}</a>`:''}</div>
+        ${c.texto?`<div class="cm-txt">${esc(c.texto)}</div>`:''}
+        <div class="cm-dim">${esc(c.autor||'')} · ${esc(c.fecha||'')}${c.evidencia_url?` · <a href="#" onclick="q100DescargarEvidencia('${esc(c.evidencia_url).replace(/'/g,"\\'")}','${esc(c.evidencia_nombre||'evidencia').replace(/'/g,"\\'")}');return false">📎 ${esc(c.evidencia_nombre||'evidencia')}</a>`:''}</div>
       </div>`).join('') : '<div class="acc-com vacio">Sin comentarios aún.</div>';
     box.innerHTML=`<div class="cm-wrap">${lista}</div>
       <div class="cm-add">
         <textarea id="cm-new-${i}" rows="2" placeholder="Escribe un comentario…"></textarea>
-        <button class="mini-btn ok" onclick="q100ComentAgregar('${esc(accionId)}',${i})">Comentar</button>
+        <div class="cm-add-r">
+          <label class="cm-file">📎 Adjuntar<input type="file" id="cm-file-${i}" onchange="q100FileLabel(${i})"></label>
+          <span class="cm-file-name" id="cm-file-name-${i}"></span>
+          <button class="mini-btn ok" onclick="q100ComentAgregar('${esc(accionId)}',${i})">Comentar</button>
+        </div>
       </div>`;
   }catch(e){ box.innerHTML='<div class="acc-com vacio">No se pudo cargar: '+esc(e.message||e)+'</div>'; }
 }
+function q100FileLabel(i){
+  const f=document.getElementById('cm-file-'+i), n=document.getElementById('cm-file-name-'+i);
+  const file=f&&f.files&&f.files[0]; if(n) n.textContent=file?file.name:'';
+}
 async function q100ComentAgregar(accionId, i){
   const ta=document.getElementById('cm-new-'+i); const texto=(ta.value||'').trim();
-  if(!texto){ toast('Escribe un comentario','err'); return; }
+  const fileEl=document.getElementById('cm-file-'+i); const file=fileEl&&fileEl.files&&fileEl.files[0];
+  if(!texto && !file){ toast('Escribe un comentario o adjunta un archivo','err'); return; }
+  let path=null, nombre=null;
   try{
+    if(file){
+      if(file.size>52428800){ toast('El archivo supera 50 MB','err'); return; }
+      const safe=file.name.replace(/[^\w.\-]+/g,'_');
+      path=accionId.replace(/[^\w\-]+/g,'_')+'/'+Date.now()+'_'+safe;
+      const up=await SB.storage.from('q100-evidencias').upload(path, file, {upsert:false});
+      if(up.error) throw up.error;
+      nombre=file.name;
+    }
     const {data,error}=await SB.rpc('q100_comentario_agregar',
-      {p_accion:accionId, p_texto:texto, p_ciclo:document.getElementById('selCiclo').value||null});
+      {p_accion:accionId, p_texto:texto, p_ciclo:document.getElementById('selCiclo').value||null,
+       p_evidencia_path:path, p_evidencia_nombre:nombre});
     if(error) throw error;
     if(data && data.error){ toast(data.error==='solo_lectura'?'Tu rol es de solo lectura':('No se pudo: '+data.error),'err'); return; }
     toast('Comentario agregado','ok');
     await q100CargarComentarios(accionId, i);
   }catch(e){ toast('No se pudo comentar: '+(e.message||e),'err'); }
+}
+async function q100DescargarEvidencia(path, nombre){
+  try{
+    const {data,error}=await SB.storage.from('q100-evidencias').createSignedUrl(path, 120);
+    if(error||!data||!data.signedUrl) throw (error||new Error('sin url'));
+    window.open(data.signedUrl, '_blank', 'noopener');
+  }catch(e){ toast('No se pudo abrir la evidencia: '+(e.message||e),'err'); }
 }
 
 async function q100GuardarAvance(accionId, i, verPersonas){

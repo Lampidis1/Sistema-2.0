@@ -68,13 +68,16 @@ Migración: `2026-09-30_q100_grants_visibilidad_cruzada.sql`.
 - **Comentarios con historial:** tabla `q100.comentarios` (hilo por acción, RLS,
   acceso por RPC) con `q100_comentarios_listar` / `q100_comentario_agregar`
   (fecha America/Santiago; `lector` no comenta). UI: botón **💬 Comentarios** en
-  el drill-down. Columnas `evidencia_url`/`evidencia_nombre` listas para la
-  parte 2. Migración: `2026-09-30_q100_roles_y_comentarios.sql`.
+  el drill-down. Migración: `2026-09-30_q100_roles_y_comentarios.sql`.
+- **Evidencia (parte 2):** bucket privado `q100-evidencias` en Supabase Storage
+  (50 MB, tipos MIME permitidos, RLS por acceso q100; borrar solo corporativo).
+  El comentario guarda la ruta; la descarga usa URL firmada temporal. Subida
+  desde la caja de comentario (botón 📎 Adjuntar). Migración:
+  `2026-09-30_q100_evidencias_storage.sql`. Usa `supabase-js` ya cargado (sin
+  librería nueva).
 
 ## Gaps pendientes (modelo)
 
-- **Evidencia** (archivo opcional 50 MB por comentario): parte 2 del ítem 4,
-  requiere bucket de Supabase Storage + RLS + flujo de subida/descarga.
 - **Subacciones** (6 C3, 8 C2): aplanadas dentro de las tareas finales (no afecta
   el promedio; sí la estructura jerárquica fina).
 
@@ -93,7 +96,7 @@ Migración: `2026-09-30_q100_grants_visibilidad_cruzada.sql`.
 | 1 | Completar datos del Ciclo 2 | Bajo | ✅ hecho |
 | 2 | Historial de avances append-only | Bajo | ✅ hecho (falta UI) |
 | 3 | Grants por tarea/ámbito (visibilidad cruzada) | Medio | ✅ hecho (falta cargar los casos) |
-| 4 | Roles ejecutor/lector + comentarios con historial + evidencia | Medio | ✅ roles+comentarios; evidencia (parte 2) pendiente |
+| 4 | Roles ejecutor/lector + comentarios con historial + evidencia | Medio | ✅ hecho (roles + comentarios + evidencia/Storage) |
 | 5 | Subacciones como entidad | Medio | pendiente |
 | 6 | Crear acción/hito + importador Excel con preview | Alto | pendiente (diseño aparte) |
 
