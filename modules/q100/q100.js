@@ -226,6 +226,7 @@ function q100RenderDetalle(acc){
       </div>
       <div class="acc-actions">
         <button class="mini-btn ghost" onclick="q100VerHistorial('${esc(a.accion_id)}',${i})">🕑 Historial</button>
+        <button class="mini-btn ghost" onclick="q100VerComentarios('${esc(a.accion_id)}',${i})">💬 Comentarios</button>
         ${a.puede_editar?`<button class="mini-btn" onclick="q100Editar(${i})">✎ Registrar avance</button>`:''}
       </div>
       ${a.puede_editar?`<div class="acc-edit hidden" id="edit-${i}">
@@ -243,6 +244,7 @@ function q100RenderDetalle(acc){
           </div>
         </div>`:''}
       <div class="acc-hist hidden" id="hist-${i}"></div>
+      <div class="acc-coment hidden" id="coment-${i}"></div>
     </div>`;
   }).join('');
 }
@@ -273,6 +275,44 @@ async function q100VerHistorial(accionId, i){
       </div>`;
     }).join('')+'</div>';
   }catch(e){ box.innerHTML='<div class="acc-com vacio">No se pudo cargar: '+esc(e.message||e)+'</div>'; }
+}
+
+// Hilo de comentarios de una acción (texto; evidencia en la parte 2).
+async function q100VerComentarios(accionId, i){
+  const box=document.getElementById('coment-'+i); if(!box) return;
+  if(!box.classList.contains('hidden')){ box.classList.add('hidden'); return; }  // toggle
+  box.classList.remove('hidden'); box.innerHTML='<div class="det-load">Cargando comentarios…</div>';
+  await q100CargarComentarios(accionId, i);
+}
+async function q100CargarComentarios(accionId, i){
+  const box=document.getElementById('coment-'+i); if(!box) return;
+  try{
+    const {data,error}=await SB.rpc('q100_comentarios_listar',
+      {p_accion:accionId, p_ciclo:document.getElementById('selCiclo').value||null});
+    if(error) throw error; if(data && data.error) throw new Error(data.error);
+    const arr=Array.isArray(data)?data:[];
+    const lista = arr.length ? arr.map(c=>`<div class="cm-it">
+        <div class="cm-txt">${esc(c.texto)}</div>
+        <div class="cm-dim">${esc(c.autor||'')} · ${esc(c.fecha||'')}${c.evidencia_url?` · <a href="${esc(c.evidencia_url)}" target="_blank" rel="noopener">${esc(c.evidencia_nombre||'evidencia')}</a>`:''}</div>
+      </div>`).join('') : '<div class="acc-com vacio">Sin comentarios aún.</div>';
+    box.innerHTML=`<div class="cm-wrap">${lista}</div>
+      <div class="cm-add">
+        <textarea id="cm-new-${i}" rows="2" placeholder="Escribe un comentario…"></textarea>
+        <button class="mini-btn ok" onclick="q100ComentAgregar('${esc(accionId)}',${i})">Comentar</button>
+      </div>`;
+  }catch(e){ box.innerHTML='<div class="acc-com vacio">No se pudo cargar: '+esc(e.message||e)+'</div>'; }
+}
+async function q100ComentAgregar(accionId, i){
+  const ta=document.getElementById('cm-new-'+i); const texto=(ta.value||'').trim();
+  if(!texto){ toast('Escribe un comentario','err'); return; }
+  try{
+    const {data,error}=await SB.rpc('q100_comentario_agregar',
+      {p_accion:accionId, p_texto:texto, p_ciclo:document.getElementById('selCiclo').value||null});
+    if(error) throw error;
+    if(data && data.error){ toast(data.error==='solo_lectura'?'Tu rol es de solo lectura':('No se pudo: '+data.error),'err'); return; }
+    toast('Comentario agregado','ok');
+    await q100CargarComentarios(accionId, i);
+  }catch(e){ toast('No se pudo comentar: '+(e.message||e),'err'); }
 }
 
 async function q100GuardarAvance(accionId, i, verPersonas){
@@ -356,8 +396,29 @@ function q100RenderPermisos(d, grants){
       <div><button class="mini-btn ok" onclick="q100GrantAsignar()">➕ Asignar acceso</button></div>
     </div>
     <div class="perm-h">Accesos asignados</div>
-    <div class="perm-list" id="perm-list">${q100GrantsHTML(grants)}</div>`;
+    <div class="perm-list" id="perm-list">${q100GrantsHTML(grants)}</div>
+    <div class="perm-h" style="margin-top:20px">Roles de usuarios</div>
+    <div class="perm-list">${q100RolesHTML(d.usuarios||[])}</div>`;
   q100PermAmbito();
+}
+
+const Q_ROLES=[['corporativo','Corporativo (ve todo)'],['area','Responsable de área (edita su área)'],['ejecutor','Ejecutor (solo tareas asignadas)'],['lector','Lector (solo ver)']];
+function q100RolesHTML(usuarios){
+  if(!usuarios.length) return '<div class="acc-com vacio">Sin usuarios.</div>';
+  return usuarios.map(u=>`<div class="perm-it">
+    <div class="perm-it-main"><b>${esc(u.nombre)}</b> <span class="pf-dim">· ${esc(u.area||'')}</span></div>
+    <select class="pf-rol" onchange="q100CambiarRol('${u.user_id}', this.value)">
+      ${Q_ROLES.map(r=>`<option value="${r[0]}" ${u.rol===r[0]?'selected':''}>${r[1]}</option>`).join('')}
+    </select>
+  </div>`).join('');
+}
+async function q100CambiarRol(userId, rol){
+  try{
+    const {data,error}=await SB.rpc('q100_usuario_rol',{p_user:userId, p_rol:rol});
+    if(error) throw error; if(data&&data.error) throw new Error(data.error);
+    toast('Rol actualizado','ok');
+    if(Q_ADMIN&&Q_ADMIN.usuarios){ const u=Q_ADMIN.usuarios.find(x=>x.user_id===userId); if(u) u.rol=rol; }
+  }catch(e){ toast('No se pudo cambiar el rol: '+(e.message||e),'err'); }
 }
 
 function q100PermAmbito(){

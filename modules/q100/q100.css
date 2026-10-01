@@ -183,6 +183,17 @@ td.hm-cell:hover{outline:2px solid var(--dark);outline-offset:-2px}
 .perm-list{display:flex;flex-direction:column;gap:8px}
 .perm-it{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:9px;padding:9px 12px}
 .perm-it-main{flex:1;min-width:0;font-size:.86rem}
+.pf-rol{font-family:var(--f-body);font-size:.82rem;padding:6px 9px;border:1px solid var(--gray-lt);border-radius:8px;background:#fff;color:var(--dark)}
+
+/* Comentarios */
+.acc-coment{margin-top:8px}
+.cm-wrap{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.cm-it{border-left:2px solid var(--gold);padding-left:12px}
+.cm-txt{font-size:.86rem;color:var(--dark)}
+.cm-dim{font-size:.74rem;color:var(--gray);margin-top:2px}
+.cm-add{display:flex;gap:8px;align-items:flex-end}
+.cm-add textarea{flex:1;font-family:var(--f-body);font-size:.88rem;padding:8px 10px;border:1px solid var(--gray-lt);border-radius:8px;resize:vertical}
+.cm-add textarea:focus{outline:2px solid var(--teal);border-color:var(--teal)}
 .mini-btn{font-family:var(--f-body);font-size:.82rem;font-weight:600;border:1px solid var(--gray-lt);background:#fff;color:var(--teal-dk);border-radius:8px;padding:6px 11px;cursor:pointer}
 .mini-btn:hover{background:var(--teal-lt)}
 .mini-btn.ok{background:var(--teal);color:#fff;border-color:var(--teal)}

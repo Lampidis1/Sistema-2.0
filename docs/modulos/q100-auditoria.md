@@ -59,12 +59,22 @@ Migración: `2026-09-30_q100_grants_visibilidad_cruzada.sql`.
 > Christian 12) se **cargan desde la UI de Permisos con validación** — los IDs
 > exactos de la auditoría se perdieron y no se adivinan.
 
+## Ítem 4 · Roles + comentarios (parte 1 hecha el 30/09/2026)
+
+- **Roles:** `q100.usuarios.rol` admite ahora `corporativo | area | ejecutor |
+  lector`. `lector` nunca edita; `ejecutor` edita solo tareas con grant 'editar'
+  (no toda su área); `area` edita su área + grants. `puede_editar_accion`
+  actualizado. UI: selector de rol por usuario en 🔐 Permisos (corporativo).
+- **Comentarios con historial:** tabla `q100.comentarios` (hilo por acción, RLS,
+  acceso por RPC) con `q100_comentarios_listar` / `q100_comentario_agregar`
+  (fecha America/Santiago; `lector` no comenta). UI: botón **💬 Comentarios** en
+  el drill-down. Columnas `evidencia_url`/`evidencia_nombre` listas para la
+  parte 2. Migración: `2026-09-30_q100_roles_y_comentarios.sql`.
+
 ## Gaps pendientes (modelo)
 
-- **Roles:** hoy 2 (corporativo/área); la auditoría propone 5 (admin,
-  corporativo, responsable de área, ejecutor, lector).
-- **Comentarios con historial + evidencia** (archivo opcional 50 MB): hoy un solo
-  campo de comentario, sin evidencia.
+- **Evidencia** (archivo opcional 50 MB por comentario): parte 2 del ítem 4,
+  requiere bucket de Supabase Storage + RLS + flujo de subida/descarga.
 - **Subacciones** (6 C3, 8 C2): aplanadas dentro de las tareas finales (no afecta
   el promedio; sí la estructura jerárquica fina).
 
@@ -83,7 +93,7 @@ Migración: `2026-09-30_q100_grants_visibilidad_cruzada.sql`.
 | 1 | Completar datos del Ciclo 2 | Bajo | ✅ hecho |
 | 2 | Historial de avances append-only | Bajo | ✅ hecho (falta UI) |
 | 3 | Grants por tarea/ámbito (visibilidad cruzada) | Medio | ✅ hecho (falta cargar los casos) |
-| 4 | Roles ejecutor/lector + comentarios con historial + evidencia | Medio | pendiente |
+| 4 | Roles ejecutor/lector + comentarios con historial + evidencia | Medio | ✅ roles+comentarios; evidencia (parte 2) pendiente |
 | 5 | Subacciones como entidad | Medio | pendiente |
 | 6 | Crear acción/hito + importador Excel con preview | Alto | pendiente (diseño aparte) |
 
