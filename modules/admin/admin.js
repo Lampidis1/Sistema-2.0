@@ -27,6 +27,16 @@ async function registrarLog(entidad, entidadId, accion, detalle){
   }catch(e){ /* el log no debe romper la operación */ }
 }
 
+// Plataformas asignables (slug + etiqueta). Fuente única: se usa en la tabla
+// de Gestión de usuarios y al aprobar. (q100 queda fuera: tiene su propio
+// criterio en la UI de Permisos del módulo.)
+const Q_PLATS=[
+  ['principal','🏠 Plataforma'],['mgi','🏨 MGI'],['empleabilidad','👥 Empleabilidad'],['movil','📱 Móvil'],
+  ['centinela','⛏ Centinela'],['antucoya','⛏ Antucoya'],['zaldivar','⛏ Zaldívar'],
+  ['lavanderias','🧺 Lavanderías'],['reclamos','📣 Reclamos'],['rca','📄 RCA'],['planer','📋 Planer'],
+  ['feria','🎪 Feria admin'],['feria_empresa','🎪 Feria empresa']
+];
+
 async function renderUsuarios(){
   const cont=document.getElementById('usuariosContent');
   if(!cont) return;
@@ -38,64 +48,66 @@ async function renderUsuarios(){
     const pend=sols.filter(s=>s.estado==='pendiente');
     actualizarBadgeUsuarios(pend.length);
     if(!sols.length){ cont.innerHTML='<div class="kb-empty">No hay solicitudes todavía.</div>'; return; }
-    cont.innerHTML=sols.map(s=>{
-      const badge = s.estado==='pendiente'?'<span style="background:#FFF3DF;color:#b8780a;border-radius:5px;padding:2px 9px;font-size:.72rem;font-weight:700">PENDIENTE</span>'
-        : s.estado==='aprobado'?'<span style="background:#E4F6EF;color:#0f7a3d;border-radius:5px;padding:2px 9px;font-size:.72rem;font-weight:700">APROBADO</span>'
-        : '<span style="background:#fdecea;color:#c0311b;border-radius:5px;padding:2px 9px;font-size:.72rem;font-weight:700">RECHAZADO</span>';
+
+    const thead=`<thead><tr>
+      <th class="ua-uh">Usuario · acción</th>
+      ${Q_PLATS.map(p=>{ const parts=p[1].split(' '); const emo=parts.shift(); const nm=parts.join(' ');
+        return `<th class="ua-ph"><span class="ua-emo">${emo}</span><span class="ua-pn">${esc(nm)}</span></th>`; }).join('')}
+    </tr></thead>`;
+
+    const rows=sols.map(s=>{
+      const estadoCls = s.estado==='pendiente'?'pend':s.estado==='aprobado'?'aprob':'rech';
+      const estadoTxt = s.estado==='pendiente'?'PENDIENTE':s.estado==='aprobado'?'APROBADO':'RECHAZADO';
       const origen = s.origen||'principal';
       const nombre = ((s.nombre||'')+' '+(s.apellido||'')).trim()||'(sin nombre)';
-      return `<div style="border:1px solid var(--border);border-radius:11px;padding:14px;margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
-          <div>
-            <div style="font-weight:700;font-size:.98rem">${esc(nombre)} ${badge}</div>
-            <div style="font-size:.8rem;color:var(--text-muted)">✉ ${esc(s.email||'')} · 📄 solicitó desde: <b>${esc(origen)}</b>${s.faena_solicitada?' · faena '+esc(s.faena_solicitada):''}</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px;align-items:center">
-          <select id="urol_${s.id}" onchange="urolChange('${s.id}')" style="border:1.5px solid var(--border);border-radius:7px;padding:6px 10px;font-size:.84rem">
-            <option value="lector" ${(s.rol_solicitado==='lector')?'selected':''}>Solo ver (no crea ni elimina)</option>
-            <option value="usuario" ${(s.rol_solicitado!=='admin'&&s.rol_solicitado!=='lector')?'selected':''}>Usuario (ve, crea y edita, no elimina)</option>
-            <option value="admin" ${s.rol_solicitado==='admin'?'selected':''}>Administrador (acceso full)</option>
+      const accesosActuales = (s.faena_solicitada||'').toLowerCase().split(',').map(x=>x.trim());
+      const yaAprobado = s.estado==='aprobado';
+      const chks = Q_PLATS.map(p=>{ const pl=p[0];
+        const pre = yaAprobado ? accesosActuales.includes(pl)
+          : ((origen===pl) || (pl==='centinela'&&/centinela/i.test(s.faena_solicitada||'')) || (pl==='antucoya'&&/antucoya/i.test(s.faena_solicitada||'')) || (pl==='zaldivar'&&/zaldivar/i.test(s.faena_solicitada||'')) || (pl==='principal'&&origen==='principal') || (pl==='mgi'&&origen==='mgi'));
+        return `<td class="ua-chk"><input type="checkbox" id="uacc_${s.id}_${pl}" ${pre?'checked':''}></td>`;
+      }).join('');
+      return `<tr id="row_${s.id}" class="ua-row">
+        <td class="ua-user">
+          <div class="ua-name">${esc(nombre)} <span class="ua-badge ${estadoCls}">${estadoTxt}</span></div>
+          <div class="ua-info">✉ ${esc(s.email||'')}<br>solicitó desde <b>${esc(origen)}</b>${s.faena_solicitada?' · faena '+esc(s.faena_solicitada):''}</div>
+          <select id="urol_${s.id}" class="ua-rol" onchange="urolChange('${s.id}')">
+            <option value="lector" ${(s.rol_solicitado==='lector')?'selected':''}>Solo ver</option>
+            <option value="usuario" ${(s.rol_solicitado!=='admin'&&s.rol_solicitado!=='lector')?'selected':''}>Usuario (ve, crea, edita)</option>
+            <option value="admin" ${s.rol_solicitado==='admin'?'selected':''}>Administrador (full)</option>
           </select>
-        </div>
-        <div id="uaccesos_${s.id}" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;padding:10px;background:#f4f7f7;border-radius:9px">
-          <span style="font-size:.78rem;font-weight:700;color:var(--text-muted);align-self:center">Acceso a:</span>
-          ${['principal','mgi','empleabilidad','movil','centinela','antucoya','zaldivar','lavanderias','reclamos','rca','planer','feria','feria_empresa'].map(pl=>{
-            const label={principal:'🏠 Plataforma',mgi:'🏨 MGI',empleabilidad:'👥 Empleabilidad',movil:'📱 Móvil',centinela:'⛏ Centinela',antucoya:'⛏ Antucoya',zaldivar:'⛏ Zaldívar',lavanderias:'🧺 Lavanderías',reclamos:'📣 Reclamos',rca:'📄 RCA',planer:'📋 Planer',feria:'🎪 Feria (admin)',feria_empresa:'🎪 Feria (empresa)'}[pl];
-            const accesosActuales = (s.faena_solicitada||'').toLowerCase().split(',').map(x=>x.trim());
-            const yaAprobado = s.estado==='aprobado';
-            const pre = yaAprobado ? accesosActuales.includes(pl)
-                        : ((origen===pl) || (pl==='centinela'&&/centinela/i.test(s.faena_solicitada||'')) || (pl==='antucoya'&&/antucoya/i.test(s.faena_solicitada||'')) || (pl==='zaldivar'&&/zaldivar/i.test(s.faena_solicitada||'')) || (pl==='principal'&&origen==='principal') || (pl==='mgi'&&origen==='mgi'));
-            return `<label style="display:flex;align-items:center;gap:5px;font-size:.82rem;cursor:pointer"><input type="checkbox" id="uacc_${s.id}_${pl}" ${pre?'checked':''} style="width:auto">${label}</label>`;
-          }).join('')}
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px;align-items:center">
-          <button class="kb-add" style="background:linear-gradient(135deg,#16834a,#0f7a3d)" onclick="aprobarUsuario('${s.id}')">✓ Aprobar</button>
-          <button class="mini-btn" style="width:auto;padding:6px 12px;color:#c0311b;border-color:#f1b0a5" onclick="rechazarUsuario('${s.id}')">✕ Rechazar</button>
-          <button class="mini-btn" style="width:auto;padding:6px 12px;color:#fff;background:#c0311b;border-color:#c0311b" onclick="eliminarUsuario('${s.id}','${esc((s.email||s.nombre||'').replace(/'/g,''))}')">🗑 Eliminar</button>
-        </div>
-      </div>`;
+          <div class="ua-btns">
+            <button class="ua-b ok" onclick="aprobarUsuario('${s.id}')">✓ Aprobar</button>
+            <button class="ua-b warn" onclick="rechazarUsuario('${s.id}')">✕ Rechazar</button>
+            <button class="ua-b del" onclick="eliminarUsuario('${s.id}','${esc((s.email||s.nombre||'').replace(/'/g,''))}')">🗑</button>
+          </div>
+        </td>
+        ${chks}
+      </tr>`;
     }).join('');
+
+    cont.innerHTML=`<div class="ua-wrap"><table class="ua-table">${thead}<tbody>${rows}</tbody></table></div>
+      <div class="ua-nota">Marca las plataformas y pulsa <b>✓ Aprobar</b>. “Administrador (full)” da acceso a todo (las casillas se ignoran). Q100 se gestiona desde su propia ventana de Permisos.</div>`;
     _initUrolVis();
   }catch(e){ cont.innerHTML='<div class="kb-empty">Error: '+esc(e.message)+'</div>'; }
 }
 
+// rol=admin → las casillas de plataforma se atenúan (el acceso es total).
 function urolChange(uid){
-  const rol=document.getElementById('urol_'+uid).value;
-  const acc=document.getElementById('uaccesos_'+uid);
-  if(acc) acc.style.display = rol==='admin' ? 'none' : 'flex';
+  const row=document.getElementById('row_'+uid);
+  const rol=(document.getElementById('urol_'+uid)||{}).value;
+  if(row) row.classList.toggle('is-admin', rol==='admin');
 }
-// aplicar visibilidad inicial de accesos según rol premarcado
-function _initUrolVis(){ document.querySelectorAll('[id^="urol_"]').forEach(sel=>{ const uid=sel.id.replace('urol_',''); urolChange(uid); }); }
+function _initUrolVis(){ document.querySelectorAll('[id^="urol_"]').forEach(sel=>{ urolChange(sel.id.replace('urol_','')); }); }
 
 async function aprobarUsuario(uid){
   const rolSel=document.getElementById('urol_'+uid).value;
   let accesos=[];
   let rol = rolSel==='admin' ? 'admin' : 'usuario';   // en la base solo hay admin/usuario
   if(rolSel==='admin'){
-    accesos=['principal','mgi','empleabilidad','movil','centinela','antucoya','zaldivar','lavanderias','reclamos','rca','planer','feria','feria_empresa'];
+    accesos=Q_PLATS.map(p=>p[0]);
   } else {
-    ['principal','mgi','empleabilidad','movil','centinela','antucoya','zaldivar','lavanderias','reclamos','rca','planer','feria','feria_empresa'].forEach(pl=>{
+    Q_PLATS.map(p=>p[0]).forEach(pl=>{
       if(document.getElementById('uacc_'+uid+'_'+pl)?.checked) accesos.push(pl);
     });
     if(!accesos.length){ showToast('Marca al menos una plataforma de acceso','err'); return; }

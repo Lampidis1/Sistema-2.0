@@ -34,3 +34,36 @@
   .toast.show{opacity:1;transform:none}
   .toast.success{background:var(--green)}
   .toast.warning{background:var(--orange)}
+
+/* ── Gestión de usuarios · tabla usuarios × plataformas ── */
+.ua-wrap{overflow:auto;max-height:72vh;border:1px solid var(--border);border-radius:12px;background:#fff}
+table.ua-table{border-collapse:separate;border-spacing:0;width:100%;font-family:'Inter',sans-serif}
+.ua-table th,.ua-table td{border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
+.ua-table thead th{position:sticky;top:0;z-index:2;background:#006973;color:#fff;padding:8px 6px;vertical-align:middle}
+.ua-uh{position:sticky;left:0;z-index:3;text-align:left;min-width:272px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;text-transform:uppercase;letter-spacing:.03em}
+.ua-ph{min-width:72px;text-align:center}
+.ua-emo{display:block;font-size:1.05rem;line-height:1}
+.ua-pn{display:block;font-size:.6rem;font-weight:600;margin-top:2px;line-height:1.1;opacity:.95}
+.ua-user{position:sticky;left:0;z-index:1;background:#fff;min-width:272px;max-width:320px;padding:12px;vertical-align:top}
+.ua-row:hover .ua-user{background:#f7fafb}
+.ua-row:hover td.ua-chk{background:#f7fafb}
+.ua-name{font-weight:700;font-size:.95rem;color:var(--text)}
+.ua-badge{font-size:.62rem;font-weight:800;border-radius:5px;padding:2px 7px;letter-spacing:.03em;vertical-align:middle}
+.ua-badge.pend{background:#FFF3DF;color:#9c5300}
+.ua-badge.aprob{background:#E4F6EF;color:#0f7a3d}
+.ua-badge.rech{background:#fdecea;color:#c0311b}
+.ua-info{font-size:.76rem;color:#5F6973;margin:4px 0 8px;line-height:1.4}
+.ua-rol{width:100%;border:1.5px solid var(--border);border-radius:7px;padding:6px 9px;font-size:.82rem;background:#fff;color:var(--text)}
+.ua-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.ua-b{border:1px solid var(--border);background:#fff;border-radius:7px;padding:6px 10px;font-size:.8rem;font-weight:700;cursor:pointer}
+.ua-b.ok{background:linear-gradient(135deg,#16834a,#0f7a3d);color:#fff;border-color:#0f7a3d}
+.ua-b.ok:hover{filter:brightness(1.07)}
+.ua-b.warn{color:#9c5300;border-color:#f0c070}
+.ua-b.warn:hover{background:#FFF3DF}
+.ua-b.del{color:#c0311b;border-color:#f1b0a5}
+.ua-b.del:hover{background:#c0311b;color:#fff}
+td.ua-chk{text-align:center;vertical-align:middle;background:#fff}
+td.ua-chk input{width:19px;height:19px;accent-color:#00A399;cursor:pointer}
+.ua-row.is-admin td.ua-chk{opacity:.28;pointer-events:none}
+.ua-nota{font-size:.78rem;color:#5F6973;margin-top:12px;line-height:1.5}
+@media(max-width:599px){ .ua-uh,.ua-user{min-width:220px} }
