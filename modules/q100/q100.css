@@ -201,6 +201,30 @@ td.hm-cell:hover{outline:2px solid var(--dark);outline-offset:-2px}
 .cm-file input{display:none}
 .cm-file-name{font-size:.78rem;color:var(--gray);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cm-add-r .mini-btn{margin-left:auto}
+
+/* Hitos */
+.acc-hitos{margin-top:8px}
+.ht-wrap{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.ht-it{display:flex;align-items:flex-start;gap:10px;border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+.ht-it.done{background:#f3faf8;border-color:#bfe6df}
+.ht-chk{flex-shrink:0;width:22px;height:22px;border:1.5px solid var(--gray-lt);border-radius:6px;background:#fff;color:#fff;cursor:pointer;font-size:.8rem;font-weight:800;line-height:1}
+.ht-chk.on{background:var(--teal);border-color:var(--teal)}
+.ht-chk:disabled{cursor:default;opacity:.6}
+.ht-main{flex:1;min-width:0}
+.ht-n{font-size:.88rem;font-weight:600;color:var(--dark)}
+.ht-cri{font-size:.8rem;color:var(--dark);margin-top:2px}
+.ht-dim{font-size:.74rem;color:var(--gray);margin-top:2px}
+.ht-ev{font-size:.66rem;font-weight:700;background:var(--gold);color:#fff;border-radius:6px;padding:0 6px;text-transform:uppercase;letter-spacing:.03em}
+.ht-venc{font-size:.66rem;font-weight:700;background:var(--red);color:#fff;border-radius:6px;padding:0 6px;text-transform:uppercase}
+.ht-del{flex-shrink:0;border:0;background:none;color:var(--gray);cursor:pointer;font-size:.9rem}
+.ht-del:hover{color:var(--red)}
+.ht-add{display:flex;flex-direction:column;gap:7px;border-top:1px dashed var(--line);padding-top:10px}
+.ht-add input[type=text],.ht-add>input{font-family:var(--f-body);font-size:.86rem;padding:7px 10px;border:1px solid var(--gray-lt);border-radius:8px}
+.ht-add input:focus{outline:2px solid var(--teal);border-color:var(--teal)}
+.ht-add-r{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ht-add-r input[type=date]{font-family:var(--f-body);font-size:.84rem;padding:6px 8px;border:1px solid var(--gray-lt);border-radius:8px}
+.ht-ev-l{font-size:.78rem;color:var(--gray);display:flex;align-items:center;gap:4px}
+.ht-add-r .mini-btn{margin-left:auto}
 .mini-btn{font-family:var(--f-body);font-size:.82rem;font-weight:600;border:1px solid var(--gray-lt);background:#fff;color:var(--teal-dk);border-radius:8px;padding:6px 11px;cursor:pointer}
 .mini-btn:hover{background:var(--teal-lt)}
 .mini-btn.ok{background:var(--teal);color:#fff;border-color:var(--teal)}

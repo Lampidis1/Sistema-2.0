@@ -76,6 +76,16 @@ Migración: `2026-09-30_q100_grants_visibilidad_cruzada.sql`.
   `2026-09-30_q100_evidencias_storage.sql`. Usa `supabase-js` ya cargado (sin
   librería nueva).
 
+## Ítem 6 · Hitos (hecho el 30/09/2026)
+
+Entidad nueva `q100.hitos` (bajo cada acción): nombre, criterio de cumplimiento,
+responsable, fecha objetivo, estado (pendiente/cumplido), evidencia requerida.
+RPCs `q100_hitos_listar/agregar/estado/quitar` (ver=puede_ver, editar=puede_editar).
+UI: botón **🎯 Hitos** en el drill-down con lista (check de cumplido, badges
+evidencia/vencido) y formulario para agregar (editores). El avance de la acción
+sigue siendo manual; no se mezcla con promedio de hitos. Migración:
+`2026-09-30_q100_hitos.sql`. *(Falta del ítem 6: crear acción + importador Excel.)*
+
 ## Gaps pendientes (modelo)
 
 - **Subacciones** (6 C3, 8 C2): aplanadas dentro de las tareas finales (no afecta
@@ -98,7 +108,7 @@ Migración: `2026-09-30_q100_grants_visibilidad_cruzada.sql`.
 | 3 | Grants por tarea/ámbito (visibilidad cruzada) | Medio | ✅ hecho (falta cargar los casos) |
 | 4 | Roles ejecutor/lector + comentarios con historial + evidencia | Medio | ✅ hecho (roles + comentarios + evidencia/Storage) |
 | 5 | Subacciones como entidad | Medio | pendiente |
-| 6 | Crear acción/hito + importador Excel con preview | Alto | pendiente (diseño aparte) |
+| 6 | Crear acción/hito + importador Excel con preview | Alto | ✅ hitos · ⏳ crear acción + importador |
 
 ## Nota sobre la auditoría
 

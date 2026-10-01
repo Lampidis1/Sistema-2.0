@@ -227,6 +227,7 @@ function q100RenderDetalle(acc){
       <div class="acc-actions">
         <button class="mini-btn ghost" onclick="q100VerHistorial('${esc(a.accion_id)}',${i})">🕑 Historial</button>
         <button class="mini-btn ghost" onclick="q100VerComentarios('${esc(a.accion_id)}',${i})">💬 Comentarios</button>
+        <button class="mini-btn ghost" onclick="q100VerHitos('${esc(a.accion_id)}',${i},${a.puede_editar?'true':'false'})">🎯 Hitos</button>
         ${a.puede_editar?`<button class="mini-btn" onclick="q100Editar(${i})">✎ Registrar avance</button>`:''}
       </div>
       ${a.puede_editar?`<div class="acc-edit hidden" id="edit-${i}">
@@ -245,6 +246,7 @@ function q100RenderDetalle(acc){
         </div>`:''}
       <div class="acc-hist hidden" id="hist-${i}"></div>
       <div class="acc-coment hidden" id="coment-${i}"></div>
+      <div class="acc-hitos hidden" id="hitos-${i}"></div>
     </div>`;
   }).join('');
 }
@@ -339,6 +341,75 @@ async function q100DescargarEvidencia(path, nombre){
     if(error||!data||!data.signedUrl) throw (error||new Error('sin url'));
     window.open(data.signedUrl, '_blank', 'noopener');
   }catch(e){ toast('No se pudo abrir la evidencia: '+(e.message||e),'err'); }
+}
+
+// Hitos (control de entregas por acción).
+async function q100VerHitos(accionId, i, puedeEditar){
+  const box=document.getElementById('hitos-'+i); if(!box) return;
+  if(!box.classList.contains('hidden')){ box.classList.add('hidden'); return; }  // toggle
+  box.classList.remove('hidden');
+  await q100CargarHitos(accionId, i, puedeEditar);
+}
+async function q100CargarHitos(accionId, i, puedeEditar){
+  const box=document.getElementById('hitos-'+i); if(!box) return;
+  box.innerHTML='<div class="det-load">Cargando hitos…</div>';
+  try{
+    const {data,error}=await SB.rpc('q100_hitos_listar',{p_accion:accionId});
+    if(error) throw error; if(data && data.error) throw new Error(data.error);
+    const arr=Array.isArray(data)?data:[];
+    const lista = arr.length ? arr.map(h=>{
+      const done=h.estado==='cumplido';
+      return `<div class="ht-it ${done?'done':''}">
+        <button class="ht-chk ${done?'on':''}" title="${done?'Marcar pendiente':'Marcar cumplido'}" ${puedeEditar?`onclick="q100HitoEstado(${h.hito_id},'${done?'pendiente':'cumplido'}','${esc(accionId)}',${i},${puedeEditar})"`:'disabled'}>${done?'✓':''}</button>
+        <div class="ht-main">
+          <div class="ht-n">${esc(h.nombre)}${h.evidencia_requerida?' <span class="ht-ev">evidencia</span>':''}${h.vencido?' <span class="ht-venc">vencido</span>':''}</div>
+          ${h.criterio?`<div class="ht-cri">${esc(h.criterio)}</div>`:''}
+          <div class="ht-dim">${h.responsable?esc(h.responsable)+' · ':''}${h.fecha?'📅 '+esc(h.fecha):'sin fecha'} · ${done?'cumplido':'pendiente'}</div>
+        </div>
+        ${puedeEditar?`<button class="ht-del" title="Quitar" onclick="q100HitoQuitar(${h.hito_id},'${esc(accionId)}',${i},${puedeEditar})">✕</button>`:''}
+      </div>`;}).join('') : '<div class="acc-com vacio">Sin hitos aún.</div>';
+    const form = puedeEditar ? `<div class="ht-add">
+        <input id="ht-n-${i}" placeholder="Nombre del hito">
+        <input id="ht-c-${i}" placeholder="Criterio de cumplimiento (opcional)">
+        <div class="ht-add-r">
+          <input id="ht-r-${i}" placeholder="Responsable" style="flex:1">
+          <input id="ht-f-${i}" type="date" title="Fecha objetivo">
+          <label class="ht-ev-l"><input type="checkbox" id="ht-e-${i}"> evidencia</label>
+          <button class="mini-btn ok" onclick="q100HitoAgregar('${esc(accionId)}',${i})">Agregar hito</button>
+        </div>
+      </div>` : '';
+    box.innerHTML=`<div class="ht-wrap">${lista}</div>${form}`;
+  }catch(e){ box.innerHTML='<div class="acc-com vacio">No se pudo cargar: '+esc(e.message||e)+'</div>'; }
+}
+async function q100HitoAgregar(accionId, i){
+  const nombre=(document.getElementById('ht-n-'+i).value||'').trim();
+  if(!nombre){ toast('Escribe el nombre del hito','err'); return; }
+  const criterio=(document.getElementById('ht-c-'+i).value||'').trim();
+  const resp=(document.getElementById('ht-r-'+i).value||'').trim();
+  const fecha=document.getElementById('ht-f-'+i).value||null;
+  const evi=document.getElementById('ht-e-'+i).checked;
+  try{
+    const {data,error}=await SB.rpc('q100_hito_agregar',
+      {p_accion:accionId, p_nombre:nombre, p_criterio:criterio, p_responsable:resp, p_fecha:fecha, p_evidencia_req:evi});
+    if(error) throw error; if(data&&data.error) throw new Error(data.error);
+    toast('Hito agregado','ok');
+    await q100CargarHitos(accionId, i, true);
+  }catch(e){ toast('No se pudo agregar: '+(e.message||e),'err'); }
+}
+async function q100HitoEstado(hitoId, estado, accionId, i, puedeEditar){
+  try{
+    const {data,error}=await SB.rpc('q100_hito_estado',{p_hito:hitoId, p_estado:estado});
+    if(error) throw error; if(data&&data.error) throw new Error(data.error);
+    await q100CargarHitos(accionId, i, puedeEditar);
+  }catch(e){ toast('No se pudo actualizar: '+(e.message||e),'err'); }
+}
+async function q100HitoQuitar(hitoId, accionId, i, puedeEditar){
+  try{
+    const {data,error}=await SB.rpc('q100_hito_quitar',{p_hito:hitoId});
+    if(error) throw error; if(data&&data.error) throw new Error(data.error);
+    toast('Hito quitado','ok');
+    await q100CargarHitos(accionId, i, puedeEditar);
+  }catch(e){ toast('No se pudo quitar: '+(e.message||e),'err'); }
 }
 
 async function q100GuardarAvance(accionId, i, verPersonas){
