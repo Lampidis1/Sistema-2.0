@@ -192,7 +192,25 @@ function showPage(p,btn){
   if(p==='becados') renderBecados();
   if(p==='mapa' && typeof mapRender==='function') mapRender();
   if(p==='reportes' && typeof repRender==='function') repRender();
+  if(p==='operativos' && typeof opcRender==='function') opcRender();
 }
+// Grupo "Futuro" del menú (Ofertas / Becados), colapsado por defecto (#20).
+// El menú se posiciona fijo bajo el botón para no quedar recortado por el
+// overflow horizontal de la barra de pestañas.
+function empFuturoToggle(ev){
+  if(ev&&ev.stopPropagation) ev.stopPropagation();
+  const m=document.getElementById('futuroMenu'); if(!m) return;
+  const open=!m.classList.contains('open');
+  m.classList.toggle('open',open);
+  if(open){
+    const btn=(ev&&ev.currentTarget&&ev.currentTarget.classList&&ev.currentTarget.classList.contains('tab-futuro-btn'))?ev.currentTarget:document.querySelector('.tab-futuro-btn');
+    if(btn){ const r=btn.getBoundingClientRect(); m.style.left=Math.max(8,r.left)+'px'; m.style.top=r.bottom+'px'; }
+  }
+}
+document.addEventListener('click',function(e){
+  const m=document.getElementById('futuroMenu'); if(!m||!m.classList.contains('open')) return;
+  if(!e.target.closest('.tab-futuro')) m.classList.remove('open');
+});
 // ═══════════════════════ KANBAN (compartido con Proveedores · tabla kanban_cards) ═══════════════════════
 // Tableros propios de empleabilidad + los compartidos con Proveedores (misma base de datos).
 const KB_BOARDS={

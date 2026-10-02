@@ -11,7 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="empleabilidad.css?v=20260928m">
+<link rel="stylesheet" href="empleabilidad.css?v=20261002a">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -73,14 +73,19 @@
   </header>
 
   <nav class="tabs">
-    <button class="tab active" data-page="directorio" onclick="showPage('directorio',this)">👥 Directorio CV</button>
-    <button class="tab" data-page="ofertas" onclick="showPage('ofertas',this)">💼 Ofertas</button>
+    <button class="tab active" data-page="directorio" onclick="showPage('directorio',this)">👥 Directorio</button>
     <button class="tab" data-page="intermediacion" onclick="showPage('intermediacion',this)">🔗 Intermediación</button>
     <button class="tab" data-page="formacion" onclick="showPage('formacion',this)">🎓 Formación</button>
-    <button class="tab" data-page="becados" onclick="showPage('becados',this)">🎓 Becados</button>
-    <button class="tab" data-page="kanban" onclick="showPage('kanban',this)">📋 Kanban</button>
     <button class="tab" data-page="mapa" onclick="showPage('mapa',this)">🗺 Mapa</button>
     <button class="tab" data-page="reportes" onclick="showPage('reportes',this)">📋 Reportes Móvil</button>
+    <button class="tab" data-page="operativos" onclick="showPage('operativos',this)">📍 Operativos</button>
+    <div class="tab-futuro">
+      <button class="tab tab-futuro-btn" onclick="empFuturoToggle(event)">⋯ Futuro ▾</button>
+      <div class="tab-futuro-menu" id="futuroMenu">
+        <button class="tab" data-page="ofertas" onclick="showPage('ofertas',this);empFuturoToggle()">💼 Ofertas</button>
+        <button class="tab" data-page="becados" onclick="showPage('becados',this);empFuturoToggle()">🎓 Becados</button>
+      </div>
+    </div>
   </nav>
 
   <!-- ══ PÁGINA DIRECTORIO ══ -->
@@ -162,6 +167,9 @@
 
   <!-- ══ PÁGINA REPORTES MÓVIL ══ -->
   <div class="page" id="page-reportes"></div>
+
+  <!-- ══ PÁGINA OPERATIVOS (configuración/programación — #17) ══ -->
+  <div class="page" id="page-operativos"></div>
 </div>
 
 <!-- ░░ MODAL BECADO ░░ -->
@@ -267,7 +275,7 @@
 };</script>
 <script src="../../shared/js/validaciones.js?v=20260928k"></script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="empleabilidad.js?v=20260928n"></script>
+<script src="empleabilidad.js?v=20261002a"></script>
 <script src="empleabilidad-lectura.js?v=20260816a"></script>
 <script src="empleabilidad-match.js?v=20260816a"></script>
 <script src="empleabilidad-harvard.js?v=20260913a"></script>
@@ -276,6 +284,7 @@
 <script src="../../shared/js/mapa.js?v=20260928d"></script>
 <script src="empleabilidad-mapa.js?v=20260928f"></script>
 <script src="empleabilidad-reportes.js?v=20261002a"></script>
+<script src="empleabilidad-operativos.js?v=20261002a"></script>
 
 </body>
 </html>

@@ -308,3 +308,29 @@
 .obs-meta{font-size:.72rem;color:var(--text-muted,#5F6973);margin-bottom:2px}
 .obs-txt{font-size:.86rem;white-space:pre-wrap}
 .obs-vacio{color:var(--text-muted,#5F6973);font-size:.82rem}
+
+/* ═══════ Grupo "Futuro" del menú (#20) ═══════ */
+.tab-futuro{position:relative;display:inline-flex;align-items:center}
+.tab-futuro-menu{position:fixed;display:none;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 30px rgba(28,38,50,.16);padding:6px;z-index:400;min-width:180px}
+.tab-futuro-menu.open{display:block}
+.tab-futuro-menu .tab{display:block;width:100%;text-align:left;border-bottom:none;padding:10px 12px;border-radius:7px}
+.tab-futuro-menu .tab:hover{background:var(--teal-lt)}
+.tab-futuro-menu .tab.active{color:var(--teal);background:var(--teal-lt)}
+
+/* ═══════ Configuración de operativos (#17) ═══════ */
+.op-cfg{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px}
+.op-cfg-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px}
+.op-cfg-title{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;color:var(--primary);text-transform:uppercase}
+.op-cfg .muted{font-size:.84rem;color:var(--text-muted)}
+.op-form{background:#f7fafa;border:1px solid var(--border);border-radius:11px;padding:14px;margin-bottom:14px}
+.op-tbl-wrap{overflow:auto;border:1px solid var(--border);border-radius:11px}
+table.op-tbl{border-collapse:collapse;width:100%;font-size:.86rem;min-width:640px}
+.op-tbl th{position:sticky;top:0;background:var(--teal);color:#fff;text-align:left;padding:9px 11px;font-size:.74rem;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
+.op-tbl td{padding:9px 11px;border-top:1px solid var(--border);vertical-align:middle}
+.op-tbl tbody tr:nth-child(even){background:#f7fafa}
+.op-acc{white-space:nowrap;display:flex;gap:6px}
+.op-acc .btn{width:auto;padding:5px 10px;font-size:.76rem}
+.op-badge{display:inline-block;font-size:.72rem;font-weight:700;padding:2px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.02em}
+.op-badge.programado{background:#fff3d6;color:#8a6d00}
+.op-badge.activo{background:#e9f7ef;color:#1a7a38}
+.op-badge.finalizado{background:#eef1f4;color:#5F6973}
