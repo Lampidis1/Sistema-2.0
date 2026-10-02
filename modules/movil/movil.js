@@ -174,6 +174,12 @@ async function guardarRegistro(){
   const nuevo=formToObj();
   if(!nuevo.nombres && !nuevo.apellidos){ toast('Ingresa al menos nombre o apellido','err'); return false; }
   const errC=movValidarContacto(); if(errC){ toast(errC,'err'); return false; }
+  // #25 — Ficha única por RUT: si no estamos editando pero el RUT ya existe en el
+  // sistema, se adopta esa ficha (misma persona) en lugar de crear un duplicado.
+  if(!ES_EDICION && nuevo.rut && typeof AMForm!=='undefined' && AMForm.rutValido(nuevo.rut)){
+    const ya=LEVANTADOS.find(c=>normRut(c.rut)===normRut(nuevo.rut));
+    if(ya && ya.cv_id!==nuevo.cv_id){ nuevo.cv_id=ya.cv_id; if(ACTUAL) ACTUAL.cv_id=ya.cv_id; ES_EDICION=true; }
+  }
   const previo = ES_EDICION ? LEVANTADOS.find(c=>c.cv_id===nuevo.cv_id) : null;
   const row={
     cv_id:nuevo.cv_id, rut:nuevo.rut, nombres:nuevo.nombres, apellidos:nuevo.apellidos,
