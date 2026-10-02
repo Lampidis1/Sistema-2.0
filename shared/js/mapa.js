@@ -148,8 +148,19 @@ Mapa.prototype._draw = function(){
   if(this._raf) return;
   this._raf = requestAnimationFrame(()=>{ this._raf=null; this._render(); if(this.onView) this.onView(this); });
 };
+// Evita que las etiquetas se solapen: registra la caja de cada texto dibujado y
+// rechaza las siguientes que choquen. Como se dibujan por orden de prioridad
+// (ciudades/pueblos antes que lugares y calles), las importantes ganan el lugar.
+Mapa.prototype._lblFits = function(x,y,w,h){
+  const pad=2, nx0=x-pad, ny0=y-pad, nx1=x+w+pad, ny1=y+h+pad;
+  const boxes=this._lblBoxes||(this._lblBoxes=[]);
+  for(let i=0;i<boxes.length;i++){ const b=boxes[i];
+    if(nx0<b[2]&&nx1>b[0]&&ny0<b[3]&&ny1>b[1]) return false; }
+  boxes.push([nx0,ny0,nx1,ny1]); return true;
+};
 Mapa.prototype._render = function(){
   const ctx=this.ctx, e=this.base.estilos||{};
+  this._lblBoxes=[];
   ctx.clearRect(0,0,this.w,this.h);
   ctx.fillStyle = e.fondo||'#eef3f2'; ctx.fillRect(0,0,this.w,this.h);
   // imágenes de fondo georreferenciadas (p. ej. satelital estática). Cada una:
@@ -221,8 +232,13 @@ Mapa.prototype._render = function(){
         ctx.font=pf._font||e.puntoFont||'11px system-ui,sans-serif';
         const cen=!!pf._nodot; ctx.textAlign=cen?'center':'left'; ctx.textBaseline='middle';
         const lx=cen?q[0]:q[0]+5;
-        ctx.lineWidth=3; ctx.strokeStyle=e.puntoHalo||'rgba(255,255,255,.85)';
-        ctx.strokeText(lbl,lx,q[1]); ctx.fillStyle=pf._labelColor||e.puntoLabelColor||'#3a4550'; ctx.fillText(lbl,lx,q[1]);
+        // Anti-solapamiento: si el texto chocaría con otra etiqueta ya puesta, se omite.
+        const tw=ctx.measureText(lbl).width, fh=(parseInt(ctx.font,10)||11)+2;
+        const bx=cen?(lx-tw/2):lx;
+        if(this._lblFits(bx, q[1]-fh/2, tw, fh)){
+          ctx.lineWidth=3; ctx.strokeStyle=e.puntoHalo||'rgba(255,255,255,.85)';
+          ctx.strokeText(lbl,lx,q[1]); ctx.fillStyle=pf._labelColor||e.puntoLabelColor||'#3a4550'; ctx.fillText(lbl,lx,q[1]);
+        }
       }
     });
   });

@@ -334,3 +334,9 @@ table.op-tbl{border-collapse:collapse;width:100%;font-size:.86rem;min-width:640p
 .op-badge.programado{background:#fff3d6;color:#8a6d00}
 .op-badge.activo{background:#e9f7ef;color:#1a7a38}
 .op-badge.finalizado{background:#eef1f4;color:#5F6973}
+
+/* Mapa — "Sin georreferenciar" (#22) */
+.em-kpi.em-kpi-warn b{color:#b06a00}
+.em-kpi.em-kpi-warn{background:#fff6e4;border-color:#f0d49a}
+.em-row-nogeo{opacity:.85;cursor:default}
+.em-row-nogeo b{color:#b06a00}

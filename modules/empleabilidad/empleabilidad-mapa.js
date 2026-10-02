@@ -59,9 +59,13 @@ async function mapCargar(){
       MapaAM.cargar({comunas:'../../shared/assets/geo/comunas-antofagasta.geojson?v=20260925b',
                      localidades:'../../shared/assets/geo/localidades-antofagasta.geojson?v=20260925b'})
     ]);
-    EM.operativos=(op.data||[]).filter(o=>o.lat!=null&&o.lng!=null);
+    // #23 — Solo operativos con coordenada VÁLIDA entran al mapa (coma decimal
+    // normalizada; se descartan 0,0 y fuera de rango).
+    EM.operativos=(op.data||[]).map(o=>({...o, lng:emNum(o.lng), lat:emNum(o.lat)}))
+                               .filter(o=>emCoordValida(o.lng,o.lat));
     // Se cuentan TODAS las atenciones. La ubicación es el PUNTO DE ATENCIÓN
-    // (operativo). Las que no tienen operativo caen al centro de su comuna.
+    // (operativo). #22 — Las atenciones SIN operativo con coordenada válida NO se
+    // ubican en un punto falso: se marcan como "Sin georreferenciar".
     EM.atenciones=(at.data||[]);
     EM.base=base;
     EM.centro=emCentroides(base&&base.localidades);
@@ -71,6 +75,12 @@ async function mapCargar(){
 // Centro de cada comuna = su cabecera (Ciudad/Pueblo) o el punto más poblado.
 // Sirve para ubicar atenciones sin operativo (sin coordenada propia).
 function emNorm(s){ return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+// #23 — Normaliza un número aceptando coma decimal (datos históricos) y valida
+// el rango de coordenadas. Una coordenada 0,0 o fuera de rango NO es válida.
+function emNum(v){ if(v==null||v==='') return NaN; return parseFloat(String(v).replace(',','.')); }
+function emCoordValida(lng,lat){
+  return Number.isFinite(lng)&&Number.isFinite(lat)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180&&!(lng===0&&lat===0);
+}
 function emCentroides(loc){
   const c={}; const feats=(loc&&loc.features)||[];
   feats.forEach(f=>{ const p=f.properties||{}, g=f.geometry||{}; if(g.type!=='Point') return;
@@ -141,10 +151,11 @@ function mapAtenciones(){
 }
 // Comuna donde se ATENDIÓ (la del operativo; si no hay, la que trae la atención).
 function mapComunaAtencion(a){ return (a._op&&a._op.comuna) || a.comuna || 'Sin comuna'; }
-// Coordenada del punto de atención: el operativo, o el centro de su comuna.
+// Coordenada del punto de atención = la del operativo (si es válida). Sin
+// operativo válido → null = "Sin georreferenciar" (no se inventa un punto · #22).
 function mapCoord(a){
-  if(a._op && a._op.lat!=null && a._op.lng!=null) return [a._op.lng, a._op.lat];
-  const c=emCentroComuna(mapComunaAtencion(a)); return c||null;
+  if(a._op && emCoordValida(a._op.lng, a._op.lat)) return [a._op.lng, a._op.lat];
+  return null;
 }
 
 // Ciudades con calles vectorizadas (GeoJSON del repo). Se cargan por DEMANDA al
@@ -287,54 +298,58 @@ function mapPintar(refit){
   if(!EM.mapa) return;
   const ats=mapAtenciones();
   EM.modo = EM.modo || (EM.mapa.view.ppd < EM.thresh ? 'comuna':'operativo');
-  let pines=[], grupos=[];
+  let pines=[], grupos=[], sinGeo=0;   // sinGeo = atenciones sin coordenada válida (#22)
   if(EM.modo==='comuna'){
     // Agrupa por la comuna DONDE SE ATENDIÓ (no la de origen de la persona).
     const g={};
-    ats.forEach(a=>{ const c=mapComunaAtencion(a); const xy=mapCoord(a);
+    ats.forEach(a=>{ const xy=mapCoord(a); if(!xy){ sinGeo++; return; }
+      const c=mapComunaAtencion(a);
       (g[c]=g[c]||{comuna:c, n:0, sx:0, sy:0, nc:0, ats:[]});
-      g[c].n++; g[c].ats.push(a); if(xy){ g[c].sx+=xy[0]; g[c].sy+=xy[1]; g[c].nc++; } });
+      g[c].n++; g[c].ats.push(a); g[c].sx+=xy[0]; g[c].sy+=xy[1]; g[c].nc++; });
     grupos=Object.values(g).map(x=>({...x, lng:x.nc?x.sx/x.nc:null, lat:x.nc?x.sy/x.nc:null}));
     pines=grupos.filter(x=>x.lat!=null).map((x,i)=>({id:'c'+i, lat:x.lat, lng:x.lng, label:x.n, r:mapR(x.n), color:'#00A399', data:{tipo:'comuna',g:x}}));
   }else{
-    // Agrupa por operativo; las atenciones sin operativo, por comuna atendida.
+    // Agrupa por operativo. Las atenciones sin coordenada válida no van al mapa.
     const g={};
-    ats.forEach(a=>{ const key=a._op?('op:'+a.operativo_id):('sc:'+mapComunaAtencion(a)); const xy=mapCoord(a);
-      (g[key]=g[key]||{op:a._op, comuna:mapComunaAtencion(a), n:0, ats:[], xy});
-      g[key].n++; g[key].ats.push(a); if(!g[key].xy&&xy) g[key].xy=xy; });
+    ats.forEach(a=>{ const xy=mapCoord(a); if(!xy){ sinGeo++; return; }
+      const key='op:'+a.operativo_id;
+      (g[key]=g[key]||{op:a._op, comuna:mapComunaAtencion(a), n:0, ats:[], xy:xy});
+      g[key].n++; g[key].ats.push(a); });
     grupos=Object.values(g);
     pines=grupos.filter(x=>x.xy).map((x,i)=>({id:'o'+i, lat:x.xy[1], lng:x.xy[0], label:x.n, r:mapR(x.n),
       color:x.op?'#5b4fcf':'#8a949a', data:{tipo:'operativo',g:x}}));
   }
   EM.mapa.setPines(pines);
-  if(refit!==false && grupos.length){ /* no re-encuadrar en cada modo para no marear */ }
-  mapKpis(ats);
-  mapLista(grupos);
+  mapKpis(ats, sinGeo);
+  mapLista(grupos, sinGeo);
 }
 function mapR(n){ return Math.max(11, Math.min(26, 9+Math.round(Math.sqrt(n)*3))); }
-function mapKpis(ats){
+function mapKpis(ats, sinGeo){
   const el=document.getElementById('emKpis'); if(!el) return;
   const h=ats.filter(a=>/^m/i.test(a.sexo||'')).length, m=ats.filter(a=>/^f/i.test(a.sexo||'')).length;
   const ap=ats.filter(a=>a.apresto).length, it=ats.filter(a=>a.intermediacion).length, fo=ats.filter(a=>a.formacion).length;
+  const geoPts=new Set(ats.filter(a=>mapCoord(a)).map(a=>a.operativo_id)).size;
   el.innerHTML=`
     <div class="em-kpi"><b>${ats.length}</b><span>Atenciones (${EM_FLABEL[EM.filtro]})</span></div>
-    <div class="em-kpi"><b>${new Set(ats.map(a=>a.operativo_id)).size}</b><span>Puntos</span></div>
+    <div class="em-kpi"><b>${geoPts}</b><span>Puntos</span></div>
     <div class="em-kpi"><b>${h}/${m}</b><span>Hombres / Mujeres</span></div>
     <div class="em-kpi"><b>${ap}</b><span>Apresto</span></div>
     <div class="em-kpi"><b>${it}</b><span>Intermediación</span></div>
-    <div class="em-kpi"><b>${fo}</b><span>Formación</span></div>`;
+    <div class="em-kpi"><b>${fo}</b><span>Formación</span></div>
+    ${sinGeo?`<div class="em-kpi em-kpi-warn"><b>${sinGeo}</b><span>Sin georreferenciar</span></div>`:''}`;
 }
-function mapLista(grupos){
+function mapLista(grupos, sinGeo){
   const el=document.getElementById('emLista'); if(!el) return;
   const ord=grupos.slice().sort((a,b)=>b.n-a.n);
+  const nogeo=sinGeo?`<div class="em-row em-row-nogeo" title="Atenciones sin coordenada válida — no se ubican en el mapa"><div>📍 Sin georreferenciar</div><span class="em-row-r"><b>${sinGeo}</b></span></div>`:'';
   el.innerHTML=`<div class="em-lista-t">${EM.modo==='comuna'?'Por ciudad / comuna':'Por punto de atención'} · ${EM_FLABEL[EM.filtro]}</div>`+
-    (!ord.length?'<div class="em-nota">Sin atenciones en este rango. Cambia el filtro de tiempo.</div>'
+    ((!ord.length&&!sinGeo)?'<div class="em-nota">Sin atenciones en este rango. Cambia el filtro de tiempo.</div>'
     : ord.map(x=>{
         const nom=EM.modo==='comuna'?x.comuna
           :(x.op?((x.op.lugar?x.op.lugar+' · ':'')+(x.op.comuna||'')):(x.comuna+' · sin operativo'));
         return `<div class="em-row" title="Ver la zona en el mapa"><div>${esc(nom||'—')}</div>
           <span class="em-row-r"><b>${x.n}</b><button class="em-row-i" title="Ver detalle">ⓘ</button></span></div>`;
-      }).join(''));
+      }).join('')+nogeo);
   // clic en la fila → centra/hace zoom en esa zona; el botón ⓘ abre la ficha.
   [...el.querySelectorAll('.em-row')].forEach((r,i)=>{
     r.onclick=()=>mapZoomGrupo(ord[i]);
