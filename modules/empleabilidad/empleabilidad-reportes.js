@@ -19,7 +19,6 @@ let REP = { ats:[], ops:[], opById:{}, cvById:{}, cargado:false, mapa:null, base
 // Preguntas del cuestionario complementario (espejo de CUEST en movil.js —
 // mantener en sync; la reestructuración de preguntas unificará esto a futuro).
 const REP_CUEST=[
-  {k:'q_postulacion',t:'Si postuló a vacantes, ¿interna o externa?'},
   {k:'q_apresto',t:'Si hubo orientación (apresto), ¿qué temática?'},
   {k:'q_tipo_cap',t:'Si registró capacitación, ¿a qué tipo postula?'}
 ];
