@@ -317,3 +317,7 @@ table.rsm-table{border-collapse:collapse;width:100%;font-size:.84rem;min-width:7
 .mf-list{margin-top:10px}
 .mf-forms{display:flex;flex-direction:column;gap:6px}
 .mf-form-row{border:1px solid var(--border);border-radius:9px;padding:8px 11px;background:#fff;font-size:.86rem}
+
+/* ═══════ Operativos programados (#16, #17) ═══════ */
+.op-prog{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between;border:1px solid var(--border);border-radius:11px;padding:9px 13px;margin-bottom:8px;background:#fff}
+.op-prog .btn{width:auto;padding:7px 14px;font-size:.82rem}
