@@ -97,11 +97,26 @@
     return [ini, f].filter(Boolean).join(' - ');
   }
 
+  // ── Licencias habilitantes (catálogo único, reutilizable) ──────────────────
+  // Fuente única de las licencias de conducir/operación (CLAUDE.md Regla 8). Se
+  // usa en el Levantamiento del móvil y en cualquier otro punto que las necesite,
+  // para no repetir el texto en varios componentes.
+  var LICENCIAS=[
+    {code:'B',    label:'Clase B: Automóviles y camionetas'},
+    {code:'A2',   label:'Clase A2: Taxis, ambulancias y transporte menor de pasajeros'},
+    {code:'A3',   label:'Clase A3: Buses y transporte de pasajeros'},
+    {code:'A4',   label:'Clase A4: Camiones y transporte de carga'},
+    {code:'D',    label:'Clase D: Maquinaria pesada y equipos'},
+    {code:'CAEX', label:'Operador CAEX: Camiones de extracción minera'}
+  ];
+  function licenciaLabel(code){ var x=LICENCIAS.find(function(l){return l.code===code;}); return x?x.label:code; }
+
   window.AMForm={
     rutLimpio, rutFormat, rutValido,
     fonoFormat, fonoValido,
     emailValido,
     fmtFechaDMY, fmtMesAnio, fechaHoyISO, periodoTexto,
-    selMesAnio, leerMesAnio, setMesAnioDisabled
+    selMesAnio, leerMesAnio, setMesAnioDisabled,
+    LICENCIAS: LICENCIAS, licenciaLabel: licenciaLabel
   };
 })();

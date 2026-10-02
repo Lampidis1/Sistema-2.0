@@ -13,7 +13,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="../../config/supabase.config.js"></script>
-<link rel="stylesheet" href="movil.css?v=20260928l">
+<link rel="stylesheet" href="movil.css?v=20261002a">
 <!-- Ajustes de tableta y telefono comunes a todo el sistema (shared/).
      Va SIEMPRE AL FINAL: algunas reglas deben ganarle al CSS del modulo. -->
 <link rel="stylesheet" href="../../shared/css/responsive.css?v=20260808f">
@@ -71,8 +71,8 @@
   <nav class="navtabs">
     <button class="active" data-p="recepcion" onclick="movTab('recepcion',this)">🎯 Recepción</button>
     <button data-p="intermediacion" onclick="movTab('intermediacion',this)">🔗 Vacantes</button>
-    <button data-p="cuestionario" onclick="movTab('cuestionario',this)">📊 Dashboard</button>
-    <button data-p="listado" onclick="movTab('listado',this)">📇 Levantados</button>
+    <button data-p="formacion" onclick="movTab('formacion',this)">🎓 Formación</button>
+    <button data-p="resumen" onclick="movTab('resumen',this)">📋 Resumen</button>
   </nav>
 
   <main>
@@ -144,10 +144,6 @@
         <div class="fld"><label>¿Presenta alguna contraindicación médica actualmente?</label>
           <div class="rc-nota" style="margin:2px 0 6px">Ej.: enfermedades, tratamientos o condiciones que puedan afectar su participación en actividades físicas o laborales.</div>
           <div id="rcContra"></div></div>
-        <div class="btn-row">
-          <button class="btn gray" onclick="document.getElementById('cvArch').click()">📄 Cargar CV (PDF/Word)</button>
-          <input type="file" id="cvArch" accept=".pdf,.doc,.docx" style="display:none" onchange="cargarArchivo(this.files)">
-        </div>
         <div id="editInfo" style="text-align:center;font-size:.74rem;color:var(--text-muted);margin-top:6px"></div>
       </div>
 
@@ -173,7 +169,6 @@
           <div class="fld"><label>Cursos realizados</label><textarea id="fCursos" placeholder="Uno por línea"></textarea></div>
           <div class="fld"><label>Certificaciones</label><textarea id="fCertif" placeholder="Uno por línea"></textarea></div>
           <div class="fld"><label>Observaciones</label><textarea id="fObs"></textarea></div>
-          <div class="btn-row"><button class="btn gold" onclick="exportarCVactual()">📄 CV PDF</button></div>
         </div>
       </div>
 
@@ -181,29 +176,21 @@
       <div id="rcBody"></div>
     </div>
 
-    <!-- PÁGINA: DASHBOARD (reemplaza el cuestionario) -->
+    <!-- PÁGINA: VACANTES (intermediación — movil-intermediacion.js) -->
     <div class="page" id="page-intermediacion"></div>
 
-    <div class="page" id="page-cuestionario"></div>
+    <!-- PÁGINA: FORMACIÓN (catálogo compartido de cursos — movil-formacion.js) -->
+    <div class="page" id="page-formacion"></div>
 
-    <!-- PÁGINA: LISTADO -->
-    <div class="page" id="page-listado">
-      <div class="card">
-        <div class="sec-t">👥 Levantados</div>
-        <input class="search" id="lSearch" placeholder="🔍 Buscar por nombre o RUT" oninput="renderListado()">
-        <div class="btn-row" style="margin-bottom:12px">
-          <button class="btn sec" onclick="exportarCuestionario()">📊 Exportar cuestionario</button>
-        </div>
-        <div id="listadoBody"></div>
-      </div>
-    </div>
+    <!-- PÁGINA: RESUMEN (todas las atenciones, con filtros — movil.js) -->
+    <div class="page" id="page-resumen"></div>
   </main>
 
   <div class="tabbar">
     <button class="active" data-p="recepcion" onclick="movTab('recepcion',this)"><span class="ic">🎯</span>Recepción</button>
     <button data-p="intermediacion" onclick="movTab('intermediacion',this)"><span class="ic">🔗</span>Vacantes</button>
-    <button data-p="cuestionario" onclick="movTab('cuestionario',this)"><span class="ic">📊</span>Dashboard</button>
-    <button data-p="listado" onclick="movTab('listado',this)"><span class="ic">📇</span>Listado</button>
+    <button data-p="formacion" onclick="movTab('formacion',this)"><span class="ic">🎓</span>Formación</button>
+    <button data-p="resumen" onclick="movTab('resumen',this)"><span class="ic">📋</span>Resumen</button>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -217,11 +204,11 @@
   msgPassCorta: 'Mínimo 6 caracteres',
   onAcceso: function(user){ return _movilOnAcceso(user); }
 };</script>
-<script src="../../shared/js/validaciones.js?v=20260928k"></script>
+<script src="../../shared/js/validaciones.js?v=20261002a"></script>
 <script src="../../shared/js/auth-guard.js"></script>
-<script src="movil.js?v=20260928m"></script>
-<script src="movil-recepcion.js?v=20260928m"></script>
+<script src="movil.js?v=20261002a"></script>
+<script src="movil-recepcion.js?v=20261002a"></script>
 <script src="movil-intermediacion.js?v=20260925i"></script>
 <script src="movil-operativo.js?v=20260925a"></script>
-<script src="movil-dashboard.js?v=20260914b"></script></body>
+<script src="movil-formacion.js?v=20261002a"></script></body>
 </html>

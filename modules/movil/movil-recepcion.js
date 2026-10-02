@@ -19,7 +19,16 @@ let RC = { servicios:{apresto:false,intermediacion:false,formacion:false},
            vacantes:[], vacLoaded:false, cursos:[], curLoaded:false, cvPdf:null,
            did:{apresto:false,intermediacion:false,formacion:false}, cuestAbierto:false,
            homolog:{mineria:'',exam:''}, contra:{items:[],alergia:'',tratamiento:'',otras:''},
-           oficios:[], oficiosOtras:'', formTab:'inscripcion', dirCV:false };
+           oficios:[], oficiosOtras:'', licencias:[], lev:{modalidad:'',disp:'',comentario:''},
+           levGuardado:false, formTab:'inscripcion', dirCV:false, comentario:'', atencionId:null };
+
+// Id único de la atención en curso. Se crea una sola vez por visita y se usa para
+// LIGAR la derivación, la inscripción y el levantamiento a SU atención (#9, #12,
+// #26), y para la fila final de `atenciones`. Se limpia al guardar la atención.
+function rcAtencionId(){
+  if(!RC.atencionId) RC.atencionId='at_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6);
+  return RC.atencionId;
+}
 
 // Oficios para el levantamiento de capacitación (selección múltiple).
 const RC_OFICIOS=[
@@ -49,6 +58,18 @@ function rcOficioToggle(v, checked){
   RC.oficios=s; rcOficiosRender();
 }
 
+// Licencias habilitantes (#11) — selección múltiple. Catálogo único en AMForm.
+function rcLicenciasHTML(){
+  const sel=RC.licencias||[], has=c=>sel.indexOf(c)>=0;
+  return (typeof AMForm!=='undefined'?AMForm.LICENCIAS:[]).map(l=>
+    `<label class="rc-chkline"><input type="checkbox" ${has(l.code)?'checked':''} onchange="rcLicenciaToggle('${l.code}',this.checked)"> ${esc(l.label)}</label>`).join('');
+}
+function rcLicenciaToggle(code, checked){
+  let s=(RC.licencias||[]).slice();
+  if(checked){ if(s.indexOf(code)<0) s.push(code); } else s=s.filter(x=>x!==code);
+  RC.licencias=s;
+}
+
 // ── Realtime de cargos (vacantes/cursos): se refresca la lista sin recargar ──
 let RC_RT=null;
 function rcRealtimeInit(){
@@ -67,6 +88,7 @@ function rcRefrescarCargos(tipo){
       if(p && p.classList.contains('active') && typeof imRender==='function') imRender(); }
   }else{
     RC.curLoaded=false; if(document.getElementById('rcCurLista') && typeof rcCargarCursos==='function') rcCargarCursos();
+    if(typeof mfInvalidar==='function') mfInvalidar();   // pestaña Formación (catálogo compartido)
   }
 }
 
@@ -178,6 +200,12 @@ function rcRender(){
     </div>
 
     <div id="rcPaneles"></div>
+
+    <div class="card">
+      <div class="fld"><label>💬 Comentario de la atención</label>
+        <div class="rc-nota" style="margin:2px 0 6px">Queda ligado a <b>esta visita</b>; no sobrescribe comentarios de atenciones anteriores. Se podrá consultar desde el historial.</div>
+        <textarea id="rcComent" rows="2" oninput="RC.comentario=this.value">${esc(RC.comentario||'')}</textarea></div>
+    </div>
 
     <div class="btn-row btn-row-final">
       <button class="btn" onclick="rcGuardarTodo()">💾 Guardar atención</button>
@@ -339,7 +367,6 @@ function rcInterHTML(){
     <div id="rcCvBlock"></div>
     <input class="search" id="rcVacBuscar" placeholder="🔍 Buscar cargo o empresa" oninput="rcRenderVacantes()">
     <div id="rcVacLista"><div class="rc-nota">Cargando vacantes…</div></div>
-    ${rcCuestField('q_postulacion')}
     ${rcHomologHTML('inter')}</div>`;
 }
 // Estado del CV que se adjuntará al derivar (apresto y/o PDF cargado).
@@ -412,6 +439,7 @@ async function rcDerivar(vacanteId){
       derivacion_id:'der_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6),
       vacante_id:vacanteId, cargo_txt:v.cargo, rut:per.rut||null,
       cv_id:(typeof ACTUAL!=='undefined'&&ACTUAL&&ACTUAL.cv_id)||null,
+      atencion_id:rcAtencionId(),
       cv_pdf_url:(RC.cvPdf&&RC.cvPdf.url)||null,
       nombre:partes[0]||null, apellidos:partes.slice(1).join(' ')||null, telefono:per.telefono||null,
       eecc:v.empresa||null, localidad:per.comuna||v.residencia||null,
@@ -450,16 +478,21 @@ function rcInscripcionHTML(){
     ${rcCuestField('q_tipo_cap')}`;
 }
 function rcLevantamientoHTML(){
-  return `<div class="rc-nota">Levantamiento del interés de capacitación de la persona (homologación del formulario).</div>
+  const L=RC.lev||{}; const sel=(v,o)=>v===o?'selected':'';
+  return `<div class="rc-nota">Levantamiento del interés de capacitación de la persona. Se guarda <b>ligado a esta atención</b>; al cambiar de sección y volver, reaparece. <b>Guardar levantamiento</b> NO finaliza la atención.</div>
+    ${RC.levGuardado?'<div class="rc-ok-badge">✓ Levantamiento guardado en esta atención</div>':''}
     <div class="fld"><label>¿Al candidato/a le gustaría capacitarse en alguno de los siguientes oficios?</label>
       <div class="rc-nota" style="margin:2px 0 6px">Selección múltiple.</div>
       <div id="lvOficios">${rcOficiosHTML()}</div></div>
+    <div class="fld"><label>Licencias habilitantes</label>
+      <div class="rc-nota" style="margin:2px 0 6px">Selección múltiple.</div>
+      <div class="rc-lic">${rcLicenciasHTML()}</div></div>
     <div class="g2">
-      <div class="fld"><label>Modalidad preferida</label><select id="lvModal"><option value="">—</option><option>Presencial</option><option>Online</option><option>Mixta</option></select></div>
-      <div class="fld"><label>Disponibilidad</label><select id="lvDisp"><option value="">—</option><option>Inmediata</option><option>Por turnos</option><option>Fines de semana</option><option>Horario limitado</option></select></div>
+      <div class="fld"><label>Modalidad preferida</label><select id="lvModal" onchange="RC.lev.modalidad=this.value"><option value="">—</option>${['Presencial','Online','Mixta'].map(o=>`<option ${sel(L.modalidad,o)}>${o}</option>`).join('')}</select></div>
+      <div class="fld"><label>Disponibilidad</label><select id="lvDisp" onchange="RC.lev.disp=this.value"><option value="">—</option>${['Inmediata','Por turnos','Fines de semana','Horario limitado'].map(o=>`<option ${sel(L.disp,o)}>${o}</option>`).join('')}</select></div>
     </div>
     ${rcHomologHTML('form')}
-    <div class="fld"><label>Comentario</label><textarea id="lvComent" rows="2"></textarea></div>
+    <div class="fld"><label>Comentario</label><textarea id="lvComent" rows="2" oninput="RC.lev.comentario=this.value">${esc(L.comentario||'')}</textarea></div>
     <div class="btn-row"><button class="btn" onclick="rcGuardarLevantamiento()">💾 Guardar levantamiento</button></div>`;
 }
 async function rcCargarCursos(){
@@ -522,7 +555,9 @@ async function rcGuardarCurso(id){
   try{
     if(id){ const {error}=await SB.from('cursos').update(fila).eq('curso_id',id); if(error) throw error; }
     else{ fila.curso_id='curso_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6); fila.created_by=miNombre(); const {error}=await SB.from('cursos').insert(fila); if(error) throw error; }
-    imCerrar(); RC.curLoaded=false; await rcCargarCursos(); toast('✅ Curso guardado','ok');
+    imCerrar(); RC.curLoaded=false; await rcCargarCursos();
+    if(typeof mfInvalidar==='function') mfInvalidar();
+    toast('✅ Curso guardado','ok');
   }catch(e){ toast('Error: '+e.message,'err'); }
 }
 async function rcInscribirCurso(cursoId){
@@ -531,6 +566,7 @@ async function rcInscribirCurso(cursoId){
   try{
     const {error}=await SB.from('formaciones').insert({
       formacion_id:'form_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6),
+      atencion_id:rcAtencionId(),
       curso_id:cursoId, rut:per.rut||null, nombre:per.nombre||null, telefono:per.telefono||null, comuna:per.comuna||null,
       ruta:c.ruta||'amsa', tipo:c.nombre, registrado_por:miNombre() });
     if(error) throw error;
@@ -541,19 +577,25 @@ async function rcInscribirCurso(cursoId){
 async function rcGuardarLevantamiento(){
   const per=rcPersona(); if(!per.rut && !per.nombre){ toast('Identifica a la persona','err'); return; }
   const g=i=>{const e=document.getElementById(i);return e?e.value.trim():'';};
+  // Asegura que lo escrito quede en el estado (persiste al cambiar de sección — #12).
+  RC.lev.modalidad=g('lvModal')||RC.lev.modalidad; RC.lev.disp=g('lvDisp')||RC.lev.disp; RC.lev.comentario=g('lvComent')||RC.lev.comentario;
   try{
     const {error}=await SB.from('formaciones').insert({
       formacion_id:'form_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6),
+      atencion_id:rcAtencionId(),
       rut:per.rut||null, nombre:per.nombre||null, telefono:per.telefono||null, comuna:per.comuna||null,
       ruta:'amsa', tipo:'Levantamiento de capacitación',
       area_interes:((RC.oficios||[]).join(', ')+((RC.oficios||[]).indexOf('Otras')>=0&&RC.oficiosOtras?(': '+RC.oficiosOtras):''))||null,
       oficios_interes_json:JSON.stringify({items:RC.oficios||[], otras:RC.oficiosOtras||''}),
-      modalidad:g('lvModal')||null, disponibilidad:g('lvDisp')||null,
-      comentario:g('lvComent')||null, registrado_por:miNombre() });
+      licencias_json:JSON.stringify(RC.licencias||[]),
+      modalidad:RC.lev.modalidad||null, disponibilidad:RC.lev.disp||null,
+      comentario:RC.lev.comentario||null, registrado_por:miNombre() });
     if(error) throw error;
-    RC.did.formacion=true;
-    RC.oficios=[]; RC.oficiosOtras=''; if(typeof rcOficiosRender==='function') rcOficiosRender();
-    toast('✅ Levantamiento de capacitación guardado','ok');
+    RC.did.formacion=true; RC.levGuardado=true;
+    // #12: NO se borra lo capturado; el botón solo guarda este levantamiento
+    // dentro de la atención actual. Al volver a la sección, todo reaparece.
+    toast('✅ Levantamiento guardado (sigue disponible en esta atención)','ok');
+    if(RC.formTab==='levantamiento'){ const b=document.getElementById('rcFormBody'); if(b){ b.innerHTML=rcLevantamientoHTML(); if(typeof rcOficiosRender==='function') rcOficiosRender(); } }
   }catch(e){ toast('Error: '+e.message,'err'); }
 }
 
@@ -570,15 +612,16 @@ async function rcGuardarAtencion(){
   const val=id=>{ const e=document.getElementById(id); return e&&e.value?e.value:null; };
   try{
     const {error}=await SB.from('atenciones').insert({
-      atencion_id:'at_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6),
+      atencion_id:rcAtencionId(),
       cv_id:(ACTUAL&&ACTUAL.cv_id)||null, rut:per.rut||null, nombre:per.nombre||null,
-      comuna:per.comuna||null, sexo:per.sexo||null,
+      comuna:per.comuna||null, localidad:val('fLocalidad'), telefono:per.telefono||null, sexo:per.sexo||null,
       // Servicios que se le harán a la persona (casillas marcadas)
       apresto:!!svc.apresto, intermediacion:!!svc.intermediacion, formacion:!!svc.formacion,
       // Antecedentes de la recepción (para el dashboard y los filtros)
       nacionalidad:val('fNacion'), residencia:val('fResid'),
       nivel_estudios:val('fEstudios'), cesantia:val('fCesantia'),
       operativo_id:(typeof opActivoId==='function'?opActivoId():null),
+      comentario:(RC.comentario||'').trim()||null,
       cuestionario_completo:completo, cuestionario_json:JSON.stringify(cuest),
       ejecutivo:(typeof miNombre==='function'?miNombre():null) });
     if(error) throw error;
@@ -594,10 +637,22 @@ async function rcGuardarAtencion(){
         Object.assign(ACTUAL,{exp_mineria:RC.homolog.mineria||ACTUAL.exp_mineria,examenes_preocupacionales:RC.homolog.exam||ACTUAL.examenes_preocupacionales}); }catch(e){} }
     }
     toast('✅ Atención guardada','ok');
+    // #13 — Finaliza la atención: SOLO tras confirmar el backend, dejar TODO
+    // limpio y el sistema preparado para una nueva persona.
     RC.did={apresto:false,intermediacion:false,formacion:false};
     RC.servicios={apresto:false,intermediacion:false,formacion:false};
     RC.cvPdf=null; RC.homolog={mineria:'',exam:''}; RC.contra={items:[],alergia:'',tratamiento:'',otras:''};
-    RC.dirCV=false; rcRender(); if(typeof rcContraRender==='function') rcContraRender();
+    RC.oficios=[]; RC.oficiosOtras=''; RC.licencias=[]; RC.lev={modalidad:'',disp:'',comentario:''};
+    RC.levGuardado=false; RC.dirCV=false; RC.comentario=''; RC.atencionId=null;
+    if(typeof limpiarForm==='function') limpiarForm();
+    const cr=document.getElementById('cRut'); if(cr) cr.value='';
+    if(typeof ACTUAL!=='undefined'){ ACTUAL={ cv_id:'cv_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), cuestionario:{}, _nuevo:true }; }
+    if(typeof ES_EDICION!=='undefined') ES_EDICION=false;
+    _rutCargado=null;
+    try{ if(typeof resumenCargar==='function') await resumenCargar(); }catch(e){}
+    try{ if(typeof cargarLevantados==='function') await cargarLevantados(); }catch(e){}
+    rcRender(); if(typeof rcContraRender==='function') rcContraRender();
+    const ei=document.getElementById('editInfo'); if(ei) ei.textContent='Atención guardada ✓ — listo para una nueva persona';
   }catch(e){ toast('Error al guardar: '+e.message,'err'); }
 }
 

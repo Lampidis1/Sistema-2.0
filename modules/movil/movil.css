@@ -274,3 +274,46 @@ main{padding:22px 28px 40px;max-width:1240px;margin:0 auto}
 .rc-ofi-grp:first-child{border-top:none}
 .rc-ofi-cat{font-size:.74rem;font-weight:700;color:var(--teal-dk,#006973);text-transform:uppercase;margin-bottom:3px}
 .rc-ofi-grp .rc-chkline{margin-left:6px}
+
+/* ═══════ Resumen de atenciones (#3, #4) ═══════ */
+.rsm-filtros{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px}
+.rsm-filtros .fld{margin:0}
+.rsm-filtros .fld input[type=date]{min-width:150px}
+.rsm-servf{flex:1;min-width:240px}
+.rsm-chips{display:flex;gap:8px;flex-wrap:wrap}
+.rsm-chip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--border);border-radius:999px;padding:6px 12px;font-size:.82rem;font-weight:600;cursor:pointer;background:#fff;color:var(--text-muted)}
+.rsm-chip.on{border-color:var(--teal2);background:var(--teal-lt);color:var(--teal)}
+.rsm-chip input{accent-color:var(--teal2)}
+.rsm-filtros2{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.rsm-filtros2 .search{flex:1;min-width:200px;margin:0}
+.rsm-count{font-size:.8rem;color:var(--text-muted);margin-bottom:6px}
+.rsm-wrap{overflow:auto;border:1px solid var(--border);border-radius:11px}
+table.rsm-table{border-collapse:collapse;width:100%;font-size:.84rem;min-width:720px}
+.rsm-table th{position:sticky;top:0;background:var(--teal);color:#fff;font-weight:700;text-align:left;padding:9px 10px;white-space:nowrap;font-size:.76rem;text-transform:uppercase;letter-spacing:.02em}
+.rsm-table td{padding:8px 10px;border-top:1px solid var(--border);vertical-align:top}
+.rsm-table tbody tr:nth-child(even){background:#f7fafa}
+.rsm-c{text-align:center}
+.rsm-si{color:var(--teal);font-weight:700}
+.rsm-no{color:#9aa5ad}
+.rsm-op{max-width:160px;color:var(--text-muted);font-size:.8rem}
+.rsm-estado{display:inline-block;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:#e9f7ef;color:#1a7a38}
+.rsm-acc{white-space:nowrap;display:flex;gap:6px}
+.rsm-acc .btn{width:auto;padding:5px 10px;font-size:.76rem}
+.rsm-det{display:flex;flex-direction:column;gap:5px;font-size:.88rem}
+.rsm-det .rsm-com{background:#f7fafa;border:1px solid var(--border);border-radius:8px;padding:8px}
+
+/* ═══════ Historial de la persona (#15) ═══════ */
+.hist-link{color:var(--teal);font-weight:700;cursor:pointer;text-decoration:underline}
+.hist-item{border:1px solid var(--border);border-radius:9px;padding:9px 11px;margin-bottom:7px;background:#fff}
+.hist-top{font-size:.82rem}
+.hist-serv{font-size:.8rem;color:var(--teal);font-weight:600;margin-top:2px}
+.hist-com{font-size:.82rem;color:var(--text-muted);margin-top:4px}
+
+/* ═══════ Licencias habilitantes (#11) ═══════ */
+.rc-lic{display:flex;flex-direction:column;gap:2px;margin-top:2px}
+.rc-ok-badge{display:inline-block;font-size:.78rem;font-weight:700;color:#1a7a38;background:#e9f7ef;border:1px solid #bfe6cd;border-radius:999px;padding:4px 12px;margin-bottom:8px}
+
+/* ═══════ Pestaña Formación (#2, #10) ═══════ */
+.mf-list{margin-top:10px}
+.mf-forms{display:flex;flex-direction:column;gap:6px}
+.mf-form-row{border:1px solid var(--border);border-radius:9px;padding:8px 11px;background:#fff;font-size:.86rem}

@@ -11,6 +11,7 @@ async function _movilOnAcceso(user){
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('hUser').textContent=(user.email||'').split('@')[0];
   await cargarLevantados();
+  try{ await resumenCargar(); }catch(e){}            // atenciones (para historial e indicador)
   if(typeof opBootstrap==='function') opBootstrap();   // carga el operativo activo (Fase 5)
   if(typeof rcRender==='function') rcRender();   // pinta la Recepción (pestaña de entrada)
 }
@@ -21,14 +22,14 @@ async function _movilOnAcceso(user){
 // se marcan, para que al girar el equipo o cambiar de tamaño quede coherente.
 function movTab(p,btn){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
-  document.getElementById('page-'+p).classList.add('active');
+  const pg=document.getElementById('page-'+p); if(pg) pg.classList.add('active');
   document.querySelectorAll('.tabbar button, .navtabs button').forEach(b=>{
     b.classList.toggle('active', b.dataset.p===p);
   });
   if(p==='recepcion' && typeof rcRender==='function')rcRender();
   if(p==='intermediacion' && typeof imRender==='function')imRender();
-  if(p==='listado')renderListado();
-  if(p==='cuestionario' && typeof dbRender==='function')dbRender();
+  if(p==='formacion' && typeof mfRender==='function')mfRender();
+  if(p==='resumen')renderResumen();
   window.scrollTo(0,0);
 }
 
@@ -117,23 +118,45 @@ function rutBlur(el){ if(!el) return; el.value=rutFmt(el.value);
 function emailBlur(el){ if(!el) return; el.classList.toggle('campo-mal', !!el.value.trim() && !AMForm.emailValido(el.value)); }
 function buscarPorRut(inmediato){
   clearTimeout(_rutTimer);
+  // #5 — Al borrar, modificar o reemplazar el RUT, limpiar de inmediato TODA la
+  // información temporal de la persona anterior (antes de consultar el nuevo RUT).
+  const rutAhora=normRut((document.getElementById('cRut')||{}).value||'');
+  if(_rutCargado){
+    const prev=LEVANTADOS.find(c=>c.cv_id===_rutCargado);
+    if(!prev || normRut(prev.rut)!==rutAhora){ _limpiarPersonaTemporal(); }
+  }
   const run=async()=>{
-    const rut=normRut(document.getElementById('cRut').value); const warn=document.getElementById('rutWarn');
-    if(rut.length<7){ if(warn){warn.style.display='none';} _rutCargado=null; return; }
+    const rut=normRut((document.getElementById('cRut')||{}).value||''); const warn=document.getElementById('rutWarn');
+    const histN=movHistorialAtenciones(rut).length;
+    const histLink=histN?` · <span class="hist-link" onclick="movHistorialAbrir('${rut}')">🕑 Historial (${histN})</span>`:'';
+    if(rut.length<7){ if(warn){warn.style.display='none';} return; }
     const encontrado=LEVANTADOS.find(c=>normRut(c.rut)===rut);
     if(encontrado){
-      const nom=((encontrado.nombres||'')+' '+(encontrado.apellidos||'')).trim()||'registro existente';
-      if(warn){ warn.style.display='block'; warn.textContent='✔ Ya existe: '+nom+' — datos precargados'; }
       // Precarga automática (una sola vez por persona): trae todos sus datos.
-      if(_rutCargado!==encontrado.cv_id){
-        _rutCargado=encontrado.cv_id;
-        complementar(encontrado.cv_id);
-        if(warn){ warn.style.display='block'; warn.textContent='✔ Ya existe: '+nom+' — datos precargados'; }
-        toast('Datos precargados: '+nom,'ok');
-      }
-    } else { if(warn){warn.style.display='none';} _rutCargado=null; }
+      if(_rutCargado!==encontrado.cv_id){ _rutCargado=encontrado.cv_id; complementar(encontrado.cv_id); toast('Datos precargados','ok'); }
+      const nom=((encontrado.nombres||'')+' '+(encontrado.apellidos||'')).trim()||'registro existente';
+      const ult=movUltimaAtencion(rut); const uc=ult&&ult.comentario?(' · última: “'+esc(ult.comentario.slice(0,48))+(ult.comentario.length>48?'…':'')+'”'):'';
+      if(warn){ warn.style.display='block'; warn.innerHTML='✔ Ya existe: '+esc(nom)+' — datos precargados'+histLink+uc; }
+    } else if(histN){
+      if(warn){ warn.style.display='block'; warn.innerHTML='🕑 Esta persona tiene atenciones previas'+histLink; }
+    } else { if(warn){warn.style.display='none';} }
   };
-  if(inmediato===true){ run(); } else { _rutTimer=setTimeout(run,400); }
+  if(inmediato===true){ run(); } else { _rutTimer=setTimeout(run,350); }
+}
+// #5 — Deja la ficha en blanco para una persona nueva, conservando SOLO el RUT
+// que se está escribiendo. Limpia nombre, datos, CV, servicios y estado local.
+function _limpiarPersonaTemporal(){
+  _rutCargado=null;
+  ACTUAL={ cv_id:'cv_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), cuestionario:{}, _nuevo:true };
+  ES_EDICION=false; limpiarForm();
+  if(typeof RC!=='undefined'){
+    RC.servicios={apresto:false,intermediacion:false,formacion:false};
+    RC.did={apresto:false,intermediacion:false,formacion:false};
+    RC.cvPdf=null; RC.homolog={mineria:'',exam:''}; RC.contra={items:[],alergia:'',tratamiento:'',otras:''};
+    RC.oficios=[]; RC.oficiosOtras=''; RC.licencias=[]; RC.dirCV=false; RC.comentario='';
+  }
+  const ei=document.getElementById('editInfo'); if(ei) ei.textContent='';
+  if(typeof rcRender==='function') rcRender();
 }
 function complementar(id){
   const c=LEVANTADOS.find(x=>x.cv_id===id); if(!c)return;
@@ -193,46 +216,19 @@ async function registrarCambios(previo, nuevo){
   if(logs.length){ try{ await SB.from('cv_logs').insert(logs); }catch(e){} }
 }
 
-// ═══════════ CUESTIONARIO ═══════════
+// ═══════════ CUESTIONARIO (preguntas reubicadas a sus servicios) ═══════════
 // Las preguntas de residencia, nivel de estudios, especialización, situación/
-// cesantía y "qué servicio" ya se responden en los ANTECEDENTES de la recepción
-// (no se repiten aquí). El ejecutivo se toma automáticamente del usuario logueado.
-// Preguntas reubicadas a sus servicios (ya no hay "Cuestionario complementario"):
-//  q_postulacion → Intermediación · q_apresto → Apresto · q_tipo_cap → Formación
+// cesantía y "qué servicio" ya se responden en los ANTECEDENTES de la recepción.
+// El ejecutivo se toma automáticamente del usuario logueado. Las que quedan se
+// muestran dentro de su panel de servicio:
+//   q_apresto → Apresto · q_tipo_cap → Formación
+// (La pregunta "¿postuló interna/externa?" se eliminó — requerimiento #9.)
 const CUEST=[
-  {k:'q_postulacion',t:'Si postuló a vacantes, ¿interna o externa?',op:['Interna (Antofagasta Minerals)','Externa (Empresa colaboradora)']},
   {k:'q_apresto',t:'Si hubo orientación (apresto), ¿qué temática?',op:['Mejora de curriculum vitae','Postulación digital efectiva','Preparación para entrevista laboral']},
   {k:'q_tipo_cap',t:'Si registró capacitación, ¿a qué tipo postula?',op:['Ruta formativa Antofagasta Minerals','Capacitación de empresa colaboradora']}
 ];
-function construirCuestionario(){
-  const cont=document.getElementById('qForm'); let h='';
-  CUEST.forEach(q=>{
-    h+='<div class="fld"><label>'+esc(q.t)+'</label>';
-    if(q.op){ h+='<select id="'+q.k+'"><option value="">—</option>'+q.op.map(o=>'<option>'+esc(o)+'</option>').join('')+'</select>'; }
-    else { h+='<input id="'+q.k+'">'; }
-    h+='</div>';
-  });
-  cont.innerHTML=h;
-}
-function refrescarCuestionarioActual(){
-  const info=document.getElementById('qActual');
-  if(!ACTUAL||(!ACTUAL.nombres&&!ACTUAL.apellidos&&!ACTUAL.rut)){ info.textContent='⚠ Primero crea o carga una persona en la pestaña Captura.'; return; }
-  info.innerHTML='Cuestionario de: <b>'+esc((ACTUAL.nombres||'')+' '+(ACTUAL.apellidos||''))+'</b>'+(ACTUAL.rut?' ('+esc(ACTUAL.rut)+')':'');
-  const q=(ACTUAL.cuestionario)||{};
-  CUEST.forEach(c=>{ const el=document.getElementById(c.k); if(el) el.value=q[c.k]||''; });
-}
-async function guardarCuestionario(){
-  if(!ACTUAL||(!ACTUAL.nombres&&!ACTUAL.apellidos&&!ACTUAL.rut)){ toast('Primero crea o carga una persona','err'); return; }
-  const q={}; CUEST.forEach(c=>{ const el=document.getElementById(c.k); if(el&&el.value) q[c.k]=el.value; });
-  ACTUAL.cuestionario=q;
-  const {error}=await SB.from('cv_personas').update({cuestionario_json:JSON.stringify(q),updated_by:miNombre(),updated_at:new Date().toISOString()}).eq('cv_id',ACTUAL.cv_id);
-  if(error){ toast('Error: '+error.message,'err'); return; }
-  try{ await SB.from('cv_logs').insert([{cv_id:ACTUAL.cv_id,usuario_email:miNombre(),accion:'cuestionario',campo:'cuestionario',valor_anterior:'',valor_nuevo:JSON.stringify(q).slice(0,500),origen:'movil.html'}]); }catch(e){}
-  toast('✅ Cuestionario guardado','ok');
-  await cargarLevantados();
-}
 
-// ═══════════ LISTADO ═══════════
+// ═══════════ CACHE DE PERSONAS (para la precarga por RUT) ═══════════
 async function cargarLevantados(){
   const {data,error}=await SB.from('cv_personas').select('*').neq('estado_registro','Eliminado').order('updated_at',{ascending:false});
   if(error){ toast('Error: '+error.message,'err'); return; }
@@ -241,166 +237,140 @@ async function cargarLevantados(){
     cuestionario:(function(){try{return JSON.parse(c.cuestionario_json||'{}')}catch(e){return{}}})()
   }));
 }
-function renderListado(){
-  const q=(document.getElementById('lSearch').value||'').toLowerCase().trim();
-  const cont=document.getElementById('listadoBody');
-  const list=LEVANTADOS.filter(c=>{ if(!q)return true; return [c.nombres,c.apellidos,c.rut,c.comuna].join(' ').toLowerCase().includes(q); });
-  if(!list.length){ cont.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px">Sin registros.</div>'; return; }
-  cont.innerHTML=list.map(c=>{
-    const desdeMovil=(c.origen_plataforma==='movil'||c.fuente==='movil');
-    const qCount=Object.keys(c.cuestionario||{}).length;
-    return '<div class="list-item"><div class="info"><div class="nm">'+esc((c.nombres||'')+' '+(c.apellidos||''))+'</div>'
-      +'<div class="mt">'+esc(c.rut||'sin rut')+' · '+esc(c.comuna||'')+(desdeMovil?' · <span class="badge">móvil</span>':'')+(qCount?' · '+qCount+' resp.':'')+'</div></div>'
-      +'<button class="btn sec" style="width:auto;padding:8px 12px" onclick="complementar(\''+c.cv_id+'\');movTab(\'captura\',document.querySelector(\'.tabbar button\'))">✏</button>'
-      +'<button class="btn gold" style="width:auto;padding:8px 12px" onclick="exportarCVde(\''+c.cv_id+'\')">📄</button></div>';
-  }).join('');
-}
+// ═══════════ RESUMEN DE ATENCIONES (pestaña Resumen · #3, #4) ═══════════
+// Lista consolidada de TODAS las atenciones (una fila por recepción). Filtros
+// combinables por fecha (desde/hasta) y por servicios (Apresto/Intermediación/
+// Formación, selección múltiple + "Todos"). Cada fila lleva al detalle y al
+// historial de la persona.
+let RESUMEN={ atenciones:[], operativos:{}, loaded:false, desde:'', hasta:'',
+  serv:{apresto:false,intermediacion:false,formacion:false}, todos:true, q:'' };
 
-// ═══════════ CARGA DE ARCHIVO (PDF/Word) ═══════════
-async function cargarArchivo(files){
-  if(!files||!files.length)return;
-  const file=files[0];
+async function resumenCargar(){
   try{
-    let texto='';
-    if(/\.pdf$/i.test(file.name)){ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; const buf=await file.arrayBuffer(); const pdf=await pdfjsLib.getDocument({data:buf}).promise; for(let i=1;i<=pdf.numPages;i++){ const p=await pdf.getPage(i); const t=await p.getTextContent(); texto+=t.items.map(x=>x.str).join(' ')+'\n'; } }
-    else if(/\.docx?$/i.test(file.name)){ const buf=await file.arrayBuffer(); const r=await mammoth.extractRawText({arrayBuffer:buf}); texto=r.value||''; }
-    else { toast('Formato no soportado','err'); return; }
-    nuevoRegistro();
-    const S=(id,v)=>{ if(v)document.getElementById(id).value=v; };
-    const bajo=texto.toLowerCase();
-    // RUT, email, teléfonos
-    const mrut=texto.match(/(\d{1,2}\.?\d{3}\.?\d{3}\s*[\-\.]?\s*[\dkK])/); if(mrut)S('cRut',mrut[1].replace(/\s/g,''));
-    const mail=texto.match(/[\w.\-]+@[\w.\-]+\.\w+/); if(mail)S('fEmail',mail[0]);
-    const tels=texto.match(/(\+?56\s?9\s?\d{4}\s?\d{4}|\b9\s?\d{4}\s?\d{4}\b)/g)||[]; if(tels[0])S('fTel',tels[0].trim());
-    // fecha nac, nacionalidad, sexo, comuna, dirección
-    const mfn=texto.match(/(?:nacimiento|nacid[oa]|f\.?\s*nac)[^\d]{0,15}(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/i); if(mfn)S('fNac',mfn[1]);
-    if(/chilen[oa]/.test(bajo)) S('fNacion','Chilena');
-    if(/femenino|mujer/.test(bajo)) S('fSexo','Femenino'); else if(/masculino|hombre/.test(bajo)) S('fSexo','Masculino');
-    const mcom=texto.match(/comuna\s*:?\s*([A-ZÁÉÍÓÚÑa-záéíóúñ ]{3,30})/i); if(mcom)S('fComuna',mcom[1].trim());
-    const mdir=texto.match(/(?:direcci[oó]n|domicilio)\s*:?\s*([^\n]{5,60})/i); if(mdir)S('fDir',mdir[1].trim());
-    // licencia
-    const mlic=texto.match(/licencia[^\n]{0,30}(clase\s*)?([A-E]\-?\d?)/i); if(mlic){ S('fLic','Sí'); S('fTipoLic',(mlic[2]||'').toUpperCase()); } else if(/licencia de conducir/i.test(bajo)) S('fLic','Sí');
-    // experiencia minera
-    if(/miner[íia]|faena|caex|extracci[oó]n|planta concentradora/i.test(bajo)) S('fMineria','Sí');
-    // nombre
-    const lineas=texto.split('\n').map(l=>l.trim()).filter(Boolean);
-    for(const l of lineas.slice(0,8)){ const p=l.split(/\s+/); if(p.length>=2&&p.length<=5&&/^[A-ZÁÉÍÓÚÑ]/.test(l)&&!/@|\d{3}|rut|curr[íi]culum|vitae/i.test(l)&&p.every(w=>/^[A-ZÁÉÍÓÚÑa-záéíóúñ.\-]+$/.test(w))){ const mid=Math.ceil(p.length/2); S('fNombres',p.slice(0,mid).join(' ')); S('fApellidos',p.slice(mid).join(' ')); break; } }
-    // secciones: cursos/certificaciones/educación por encabezado
-    function sec(re){ const encs=/(perfil|resumen|experiencia|formaci[oó]n|educaci[oó]n|cursos|seminarios|capacitaci|certificaci|idiomas|habilidades|referencias)/i; for(let i=0;i<lineas.length;i++){ if(re.test(lineas[i])){ const out=[]; for(let j=i+1;j<lineas.length;j++){ if(encs.test(lineas[j])&&lineas[j].length<40)break; out.push(lineas[j]); } return out; } } return null; }
-    const cur=sec(/cursos|seminarios|capacitaci|certificaci/i); if(cur&&cur.length) S('fCursos',cur.slice(0,8).map(l=>l.replace(/^[\-•·*]\s*/,'').trim()).join(String.fromCharCode(10)));
-    const edu=sec(/formaci[oó]n|educaci[oó]n|estudios/i); if(edu&&edu.length) S('fEducacion',edu.slice(0,4).join(' · '));
-    toast('Datos extraídos. Revisa y completa.','ok');
-  }catch(e){ toast('Error: '+e.message,'err'); }
-  document.getElementById('cvArch').value='';
+    const {data,error}=await SB.from('atenciones').select('*').neq('estado_registro','Eliminado').order('created_at',{ascending:false});
+    if(error) throw error; RESUMEN.atenciones=data||[]; RESUMEN.loaded=true;
+    try{ const {data:ops}=await SB.from('operativos').select('operativo_id,lugar,comuna,fecha');
+      RESUMEN.operativos={}; (ops||[]).forEach(o=>{ RESUMEN.operativos[o.operativo_id]=o; }); }catch(e){}
+  }catch(e){ RESUMEN.atenciones=[]; toast('Error al cargar el resumen: '+e.message,'err'); }
 }
+async function renderResumen(){
+  const cont=document.getElementById('page-resumen'); if(!cont) return;
+  if(!RESUMEN.loaded){ cont.innerHTML='<div class="card"><div class="rc-nota">Cargando atenciones…</div></div>'; await resumenCargar(); }
+  resumenPintar();
+}
+function resumenPintar(){
+  const cont=document.getElementById('page-resumen'); if(!cont) return;
+  const chip=(id,on,txt,h)=>`<label class="rsm-chip ${on?'on':''}"><input type="checkbox" ${on?'checked':''} onchange="${h}"> ${txt}</label>`;
+  cont.innerHTML=`<div class="card">
+    <div class="sec-t">📋 Resumen de atenciones</div>
+    <div class="rsm-filtros">
+      <div class="fld"><label>Desde</label><input type="date" value="${esc(RESUMEN.desde)}" onchange="RESUMEN.desde=this.value;resumenAplicar()"></div>
+      <div class="fld"><label>Hasta</label><input type="date" value="${esc(RESUMEN.hasta)}" onchange="RESUMEN.hasta=this.value;resumenAplicar()"></div>
+      <div class="fld rsm-servf"><label>Servicios</label><div class="rsm-chips">
+        ${chip('todos',RESUMEN.todos,'Todos','resumenTodos(this.checked)')}
+        ${chip('ap',RESUMEN.serv.apresto,'Apresto','resumenServ(\'apresto\',this.checked)')}
+        ${chip('in',RESUMEN.serv.intermediacion,'Intermediación','resumenServ(\'intermediacion\',this.checked)')}
+        ${chip('fo',RESUMEN.serv.formacion,'Formación','resumenServ(\'formacion\',this.checked)')}
+      </div></div>
+    </div>
+    <div class="rsm-filtros2">
+      <input class="search" placeholder="🔍 Buscar por nombre o RUT" value="${esc(RESUMEN.q||'')}" oninput="RESUMEN.q=this.value;resumenAplicar()">
+      <button class="btn gray" onclick="resumenLimpiar()">Limpiar filtros</button>
+    </div>
+    <div id="rsmTabla"></div>
+  </div>`;
+  resumenAplicar();
+}
+// "Todos" es la selección general: excluye combinaciones con las otras.
+function resumenTodos(v){ RESUMEN.todos=!!v; if(v) RESUMEN.serv={apresto:false,intermediacion:false,formacion:false}; resumenPintar(); }
+function resumenServ(s,v){ RESUMEN.serv[s]=!!v;
+  RESUMEN.todos=!(RESUMEN.serv.apresto||RESUMEN.serv.intermediacion||RESUMEN.serv.formacion); resumenPintar(); }
+function resumenLimpiar(){ RESUMEN.desde='';RESUMEN.hasta='';RESUMEN.serv={apresto:false,intermediacion:false,formacion:false};RESUMEN.todos=true;RESUMEN.q=''; resumenPintar(); }
 
-// ═══════════ EXPORTAR CV PDF (formato modelo, con QR) ═══════════
-async function exportarCVactual(){
-  // Combina lo escrito en el formulario con lo que la persona ya tenía guardado
-  // (experiencia/académicos/cursos que pudo llenar por el link de apresto), para
-  // que el PDF salga CONSOLIDADO y completo.
-  const c=Object.assign({}, ACTUAL||{}, formToObj());
-  if(!c.nombres&&!c.apellidos){ toast('Completa el nombre primero','err'); return; }
-  await exportarCVpdfObj(normalizarParaPDF(c));
+function _atFechaHora(a){
+  const iso=String(a.created_at||''); const d=new Date(iso);
+  const f=(typeof AMForm!=='undefined')?AMForm.fmtFechaDMY(iso.slice(0,10)):iso.slice(0,10);
+  const h=isNaN(d)?'':String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  return {f,h,iso:iso.slice(0,10)};
 }
-async function exportarCVde(id){ const c=LEVANTADOS.find(x=>x.cv_id===id); if(!c)return; await exportarCVpdfObj(normalizarParaPDF(c)); }
-// Arma el objeto de CV con TODA la información: usa las listas ya parseadas si
-// existen, y si no, las obtiene de los *_json (experiencia/académicos/cursos que
-// la persona llenó por el link de apresto). Nada se descarta.
-function normalizarParaPDF(c){
-  const pj=s=>{ try{ const x=JSON.parse(s||'[]'); return Array.isArray(x)?x:[]; }catch(e){ return []; } };
-  const usar=(arr,json)=> (Array.isArray(arr)&&arr.length)?arr:pj(json);
-  return {...c,
-    experiencia: usar(c.experiencia, c.experiencia_json),
-    academico:   usar(c.academico,   c.academico_json),
-    cursos:      usar(c.cursos,       c.cursos_json),
-    idiomas:     usar(c.idiomas,      c.idiomas_json),
-    software:    usar(c.software,     c.software_json) };
-}
-async function exportarCVpdfObj(c){
-  const fichaUrl=location.origin+location.pathname.replace(/modules\/[^/]*\/.*$/,'modules/empleabilidad/')+'#cv='+encodeURIComponent(c.cv_id);
-  let qr=null; try{ const u='https://api.qrserver.com/v1/create-qr-code/?size=180x180&data='+encodeURIComponent(fichaUrl); const b=await (await fetch(u)).blob(); qr=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.onerror=()=>r(null);fr.readAsDataURL(b);}); }catch(e){}
-  generarCVpdf(c,{qrUrl:qr});
-}
-
-// ═══════════ GENERADOR CV PDF · formato limpio "Apresto Laboral" (sin logo) ═══════════
-function generarCVpdf(c,opts){
-  opts=opts||{};
-  const { jsPDF }=window.jspdf; const doc=new jsPDF({unit:'mm',format:'a4'});
-  const W=210,H=297,M=20; let y=22;
-  const dark=[34,34,34],gray=[110,110,110],rule=[180,180,180];
-  const nl=()=>{ if(y>H-24){doc.addPage();y=22;} };
-  const wrap=(t,w)=>doc.splitTextToSize(String(t||''),w);
-  function titulo(t){ nl(); y+=2; doc.setFont('times','bold'); doc.setFontSize(13); doc.setTextColor.apply(doc,dark); doc.text(t,M,y); y+=1.5; doc.setDrawColor.apply(doc,rule); doc.setLineWidth(.3); doc.line(M,y,W-M,y); y+=6; }
-  doc.setFont('times','bold'); doc.setFontSize(20); doc.setTextColor.apply(doc,dark);
-  doc.text((((c.nombres||'')+' '+(c.apellidos||'')).trim().toUpperCase())||'CURRÍCULUM VITAE',M,y); y+=7;
-  doc.setFont('times','normal'); doc.setFontSize(10.5);
-  const datos=[];
-  if(c.rut)datos.push('RUT: '+c.rut);
-  if(c.fecha_nacimiento)datos.push('Fecha de nacimiento: '+c.fecha_nacimiento);
-  if(c.nacionalidad)datos.push('Nacionalidad: '+c.nacionalidad);
-  const dir=[c.direccion,c.comuna,c.region].filter(Boolean).join(', '); if(dir)datos.push(dir);
-  if(c.telefono)datos.push('Teléfono: '+c.telefono);
-  if(c.email)datos.push(c.email);
-  datos.forEach(d=>{ nl(); doc.text(d,M,y); y+=5; });
-  y+=2; doc.setDrawColor.apply(doc,rule); doc.setLineWidth(.4); doc.line(M,y,W-M,y); y+=7;
-  if((c.resumen||'').trim()){ titulo('Resumen Profesional'); doc.setFont('times','normal'); doc.setFontSize(10.5); wrap(c.resumen,W-2*M).forEach(l=>{nl();doc.text(l,M,y);y+=5;}); y+=3; }
-  if((c.experiencia||[]).length){ titulo('Antecedentes Laborales');
-    c.experiencia.forEach(e=>{ nl(); doc.setFont('times','bold'); doc.setFontSize(10.5);
-      const emp=[(e.empresa||''),(e.ciudad||'')].filter(Boolean).join('. ')+((e.empresa||e.ciudad)?'.':'');
-      doc.text(emp,M,y);
-      const per=(typeof AMForm!=='undefined' && (e.inicio||e.fin||e.actual)) ? AMForm.periodoTexto(e.inicio,e.fin,e.actual) : [e.desde,e.hasta].filter(Boolean).join(' – ');
-      if(per){doc.setFont('times','italic');doc.setFontSize(9.5);doc.text(per,W-M,y,{align:'right'});} y+=5;
-      if(e.cargo){doc.setFont('times','bold');doc.setFontSize(10);doc.text(e.cargo,M,y);y+=5;}
-      doc.setFont('times','normal');doc.setFontSize(10);
-      (e.funciones||[]).forEach(fn=>{ wrap('•  '+fn,W-2*M-3).forEach((l,i)=>{nl();doc.text(l,M+(i?3:0),y);y+=4.8;}); });
-      if(e.logro){doc.setFont('times','italic');wrap('Logro: '+e.logro,W-2*M-3).forEach(l=>{nl();doc.text(l,M,y);y+=4.8;});doc.setFont('times','normal');}
-      y+=3;
-    });
-  }
-  // Académicos: estructurados (si la persona los llenó por el link) o el texto del móvil.
-  if((c.academico||[]).length){ titulo('Antecedentes Académicos');
-    c.academico.forEach(a=>{ nl(); doc.setFont('times','bold'); doc.setFontSize(10.5);
-      const t=[a.nivel,a.titulo].filter(Boolean).join(' · ')||'Estudios'; doc.text(t,M,y);
-      if(a.periodo){doc.setFont('times','italic');doc.setFontSize(9.5);doc.text(String(a.periodo),W-M,y,{align:'right'});} y+=5;
-      const inst=[a.institucion,a.ciudad].filter(Boolean).join(', ');
-      if(inst){doc.setFont('times','normal');doc.setFontSize(10);doc.text(inst,M,y);y+=5;} y+=1;
-    }); y+=2;
-  } else if((c.educacion||'').trim()){ titulo('Antecedentes Académicos'); doc.setFont('times','normal'); doc.setFontSize(10.5); wrap(c.educacion,W-2*M).forEach(l=>{nl();doc.text(l,M,y);y+=5;}); y+=3; }
-  // Información adicional
-  const info=[];
-  if(c.licencia||c.tipo_licencia)info.push('Licencia de conducir: '+[c.licencia,c.tipo_licencia].filter(Boolean).join(' '));
-  if(c.disponibilidad)info.push('Disponibilidad: '+c.disponibilidad);
-  if(c.exp_mineria)info.push('Experiencia en minería: '+c.exp_mineria+(c.anios_exp?(' ('+c.anios_exp+' años)'):''));
-  if(c.oficios)info.push('Oficios/cargos: '+c.oficios);
-  if(c.certificaciones)info.push('Certificaciones: '+c.certificaciones);
-  if(info.length){ titulo('Información Adicional'); doc.setFont('times','normal'); doc.setFontSize(10.5); info.forEach(d=>{ wrap('•  '+d,W-2*M-3).forEach((l,i)=>{nl();doc.text(l,M+(i?3:0),y);y+=4.8;}); }); y+=3; }
-  if((c.cursos||[]).length){ titulo('Seminarios y Cursos'); c.cursos.forEach(cu=>{ nl(); doc.setFont('times','normal'); doc.setFontSize(10.5); doc.setTextColor.apply(doc,gray); doc.text(String(cu.anio||''),M,y); doc.setTextColor.apply(doc,dark); const t=[cu.evento,cu.tema,cu.institucion].filter(Boolean).join(' — '); wrap(t,W-M-42).forEach((l,i)=>{if(i)nl();doc.text(l,M+16,y);y+=5;}); }); y+=3; }
-  if(opts.qrUrl){ try{ const qy=Math.min(y+4,H-40); doc.addImage(opts.qrUrl,'PNG',W-M-26,qy,26,26); doc.setFont('times','italic'); doc.setFontSize(7.5); doc.setTextColor.apply(doc,gray); doc.text('Ficha digital',W-M-13,qy+29,{align:'center'}); }catch(e){} }
-  doc.save(('CV_'+(c.nombres||'')+'_'+(c.apellidos||'')).replace(/\s+/g,'_').replace(/[^\w\-]/g,'')+'.pdf');
-}
-
-// ═══════════ EXPORTAR CUESTIONARIO CONSOLIDADO (Excel) ═══════════
-function exportarCuestionario(){
-  if(!LEVANTADOS.length){ toast('No hay personas levantadas','err'); return; }
-  const rows=LEVANTADOS.map(c=>{
-    const q=c.cuestionario||{};
-    const base={
-      RUT:c.rut||'', 'Nombre completo':((c.nombres||'')+' '+(c.apellidos||'')).trim(),
-      Comuna:c.comuna||'', Region:c.region||'', Telefono:c.telefono||'', Correo:c.email||'',
-      Sexo:c.sexo||'', Nacionalidad:c.nacionalidad||'',
-      'Fecha levantamiento':c.fecha_levantamiento||'', 'Levantado por':c.levantado_por||'',
-      'Estado CV':(c.origen_plataforma==='movil'?'Móvil':'Empleabilidad'),
-      Licencia:[c.licencia,c.tipo_licencia].filter(Boolean).join(' '),
-      Disponibilidad:c.disponibilidad||'', 'Exp. minería':c.exp_mineria||'', 'Años exp':c.anios_exp||'',
-      Educacion:c.educacion||'', Certificaciones:c.certificaciones||'', Observaciones:c.observaciones||''
-    };
-    CUEST.forEach(qq=>{ base[qq.t]=q[qq.k]||''; });
-    base['Link ficha CV']=location.origin+location.pathname.replace(/modules\/[^/]*\/.*$/,'modules/empleabilidad/')+'#cv='+c.cv_id;
-    return base;
+function resumenFiltradas(){
+  const q=(RESUMEN.q||'').toLowerCase().trim(), s=RESUMEN.serv;
+  return (RESUMEN.atenciones||[]).filter(a=>{
+    const iso=String(a.created_at||'').slice(0,10);
+    if(RESUMEN.desde && iso<RESUMEN.desde) return false;
+    if(RESUMEN.hasta && iso>RESUMEN.hasta) return false;
+    if(!RESUMEN.todos){ // debe incluir TODOS los servicios marcados (combinación)
+      if(s.apresto && !a.apresto) return false;
+      if(s.intermediacion && !a.intermediacion) return false;
+      if(s.formacion && !a.formacion) return false;
+    }
+    if(q && ![a.nombre,a.rut].join(' ').toLowerCase().includes(q)) return false;
+    return true;
   });
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Cuestionario');
-  XLSX.writeFile(wb,'Cuestionario_OficinaMovil_'+new Date().toISOString().slice(0,10)+'.xlsx');
-  toast('✅ Cuestionario exportado ('+rows.length+')','ok');
 }
+function resumenAplicar(){
+  const el=document.getElementById('rsmTabla'); if(!el) return;
+  const list=resumenFiltradas();
+  if(!list.length){ el.innerHTML='<div class="rc-nota" style="text-align:center;padding:18px">Sin atenciones para el filtro.</div>'; return; }
+  const sn=v=>v?'<span class="rsm-si">Sí</span>':'<span class="rsm-no">No</span>';
+  el.innerHTML=`<div class="rsm-count">${list.length} atención(es)</div>
+   <div class="rsm-wrap"><table class="rsm-table">
+    <thead><tr><th>Fecha</th><th>Hora</th><th>RUT</th><th>Nombre</th><th>Apr.</th><th>Int.</th><th>For.</th><th>Operativo</th><th>Atendió</th><th>Estado</th><th></th></tr></thead>
+    <tbody>${list.map(a=>{ const fh=_atFechaHora(a);
+      const op=RESUMEN.operativos[a.operativo_id]; const opt=op?((op.lugar||'')+(op.comuna?(' · '+op.comuna):'')):(a.operativo_id?'—':'');
+      return `<tr>
+        <td>${esc(fh.f)}</td><td>${esc(fh.h)}</td>
+        <td>${esc(a.rut||'')}</td><td>${esc(a.nombre||'')}</td>
+        <td class="rsm-c">${sn(a.apresto)}</td><td class="rsm-c">${sn(a.intermediacion)}</td><td class="rsm-c">${sn(a.formacion)}</td>
+        <td class="rsm-op">${esc(opt)}</td>
+        <td>${esc((a.ejecutivo||'').split('@')[0])}</td>
+        <td><span class="rsm-estado">${esc(a.estado_registro||'Activo')}</span></td>
+        <td class="rsm-acc"><button class="btn gray" onclick="resumenDetalle('${a.atencion_id}')">Ver</button>${a.rut?`<button class="btn sec" onclick="movHistorialAbrir('${esc(normRut(a.rut))}')">Historial</button>`:''}</td>
+      </tr>`; }).join('')}</tbody></table></div>`;
+}
+function resumenDetalle(id){
+  const a=(RESUMEN.atenciones||[]).find(x=>x.atencion_id===id); if(!a||typeof imModal!=='function') return;
+  const fh=_atFechaHora(a);
+  const serv=[a.apresto&&'Apresto',a.intermediacion&&'Intermediación',a.formacion&&'Formación'].filter(Boolean).join(', ')||'—';
+  const op=RESUMEN.operativos[a.operativo_id];
+  imModal(`<h3>Atención · ${esc(fh.f)} ${esc(fh.h)}</h3>
+    <div class="rsm-det">
+      <div><b>Persona:</b> ${esc(a.nombre||'—')}${a.rut?(' · '+esc(a.rut)):''}</div>
+      <div><b>Comuna:</b> ${esc(a.comuna||'—')}${a.localidad?(' · '+esc(a.localidad)):''}</div>
+      <div><b>Servicios:</b> ${esc(serv)}</div>
+      <div><b>Atendió:</b> ${esc(a.ejecutivo||'—')}</div>
+      <div><b>Operativo:</b> ${op?esc((op.lugar||'')+(op.comuna?(' · '+op.comuna):'')):(a.operativo_id?'(sin datos)':'—')}</div>
+      ${a.nivel_estudios?`<div><b>Nivel de estudios:</b> ${esc(a.nivel_estudios)}</div>`:''}
+      ${a.resultado?`<div><b>Resultado:</b> ${esc(a.resultado)}</div>`:''}
+      ${a.comentario?`<div class="rsm-com"><b>Comentario de la visita:</b> ${esc(a.comentario)}</div>`:''}
+    </div>
+    <div class="btn-row" style="justify-content:flex-end;margin-top:12px">
+      ${a.rut?`<button class="btn sec" onclick="imCerrar();movHistorialAbrir('${esc(normRut(a.rut))}')">Ver historial de la persona</button>`:''}
+      <button class="btn gray" onclick="imCerrar()">Cerrar</button></div>`);
+}
+
+// ═══════════ HISTORIAL DE LA PERSONA (#15) ═══════════
+function movHistorialAtenciones(rutNorm){
+  return (RESUMEN.atenciones||[]).filter(a=>normRut(a.rut)===rutNorm)
+    .sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')));
+}
+// Resumen compacto de la última atención, para mostrar al cargar una persona.
+function movUltimaAtencion(rutNorm){ return movHistorialAtenciones(rutNorm)[0]||null; }
+function movHistorialAbrir(rutNorm){
+  if(typeof imModal!=='function') return;
+  const list=movHistorialAtenciones(rutNorm);
+  const per=LEVANTADOS.find(c=>normRut(c.rut)===rutNorm);
+  const nom=per?((per.nombres||'')+' '+(per.apellidos||'')).trim():((list[0]&&list[0].nombre)||'');
+  const filas=list.map(a=>{ const fh=_atFechaHora(a);
+    const serv=[a.apresto&&'Apresto',a.intermediacion&&'Intermediación',a.formacion&&'Formación'].filter(Boolean).join(', ')||'—';
+    return `<div class="hist-item"><div class="hist-top"><b>${esc(fh.f)} ${esc(fh.h)}</b> · ${esc((a.ejecutivo||'').split('@')[0]||'—')}</div>
+      <div class="hist-serv">${esc(serv)}</div>
+      ${a.comentario?`<div class="hist-com">💬 ${esc(a.comentario)}</div>`:''}</div>`; }).join('');
+  imModal(`<h3>Historial de ${esc(nom||'la persona')} (${list.length})</h3>
+    ${list.length?filas:'<div class="rc-nota">Sin atenciones previas registradas.</div>'}
+    <div class="btn-row" style="justify-content:flex-end;margin-top:12px"><button class="btn gray" onclick="imCerrar()">Cerrar</button></div>`);
+}
+
+// (El móvil ya no carga CV por archivo ni genera CV PDF — requerimientos #6 y #7.
+//  La creación del CV se hace por el link de apresto; el PDF se arma en
+//  Empleabilidad con el generador Harvard compartido.)
